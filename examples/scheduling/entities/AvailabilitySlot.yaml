@@ -1,0 +1,26 @@
+schema_version: "1.0"
+id: AvailabilitySlot
+version: 1.0.0
+name: Availability slot
+summary: A synthetic availability window used in public scheduling examples.
+canonical_id:
+  field: slot_id
+  pattern: "^SLOT-[0-9]+$"
+data_classification:
+  default: tenant_confidential
+  fields:
+    participant_id: synthetic_user_reference
+    starts_at: synthetic_time_window
+    ends_at: synthetic_time_window
+relationships:
+  - name: invite
+    target_entity: MeetingInvite
+    cardinality: one_to_many
+    lookup_capability: scheduling.invite.prepare
+lookup:
+  primary_capability: scheduling.availability.get
+allowed_actions:
+  - scheduling.invite.prepare
+model_guidance: >
+  Availability slots are tenant-scoped. Public examples must use synthetic
+  participant and slot identifiers only.

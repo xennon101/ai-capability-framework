@@ -1,0 +1,91 @@
+schema_version: "1.0"
+id: scheduling.availability.get
+version: 1.0.0
+status: active
+name: Get scheduling availability
+summary: Read synthetic availability slots for a participant and date.
+domain: scheduling
+owner:
+  team: example-scheduling
+  contact: scheduling@example.com
+capability_type: read_data
+autonomy_tier: A1
+risk_tier: low
+model_description: >
+  Use this capability to retrieve synthetic availability slots before preparing
+  a meeting invite. This capability does not create or send invitations.
+when_to_use:
+  - The user asks whether a participant is available on a date.
+  - A meeting invite needs availability context before preparation.
+when_not_to_use:
+  - The user asks to send or update an invitation.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - participant_id
+    - requested_date
+  properties:
+    participant_id:
+      type: string
+      pattern: "^USR-[0-9]+$"
+    requested_date:
+      type: string
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - slots
+  properties:
+    slots:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required:
+          - starts_at
+          - ends_at
+        properties:
+          starts_at:
+            type: string
+          ends_at:
+            type: string
+side_effects:
+  reads_data: true
+  writes_data: false
+  creates_records: false
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - availability.read
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: false
+  max_autonomy_tier: A1
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: false
+  verify: false
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: scheduling
+    risk_tier: low
+evals:
+  golden:
+    - ../evals/scheduling.availability.get.valid.yaml

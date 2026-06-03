@@ -1,0 +1,13 @@
+{
+  "capabilityId": "conformance.note.get",
+  "operation": "select",
+  "args": {
+    "note_id": "NOTE-1001"
+  },
+  "context": {
+    "autonomyTier": "A1",
+    "permissions": [],
+    "tenantId": "tenant_example",
+    "userId": "user_example_conformance"
+  }
+}

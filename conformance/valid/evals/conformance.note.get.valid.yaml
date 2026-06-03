@@ -1,0 +1,33 @@
+schema_version: "1.0"
+id: conformance.note.get.valid
+name: Read a conformance note
+capability_under_test: conformance.note.get
+tags:
+  - conformance
+  - tool_selection
+input:
+  user_message: Read conformance note NOTE-1001.
+context:
+  request_context:
+    environment: test
+    user:
+      id: user_example_conformance
+      roles:
+        - reader
+      permissions:
+        - note.read
+      tenant_id: tenant_example
+    autonomy_tier: A1
+expected:
+  selected_capabilities:
+    includes:
+      - conformance.note.get
+  tool_calls:
+    - capability_id: conformance.note.get
+      args_match:
+        note_id: NOTE-1001
+  no_commit: true
+scorers:
+  - type: tool_selection_includes
+  - type: tool_input_json_subset
+  - type: no_unapproved_commit

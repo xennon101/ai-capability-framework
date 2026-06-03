@@ -1,0 +1,3 @@
+schema_version: "1.0"
+id: conformance.invalid.missing_required
+summary: This fixture is intentionally missing required capability fields.

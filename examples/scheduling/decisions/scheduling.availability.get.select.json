@@ -1,0 +1,14 @@
+{
+  "capabilityId": "scheduling.availability.get",
+  "operation": "select",
+  "args": {
+    "participant_id": "USR-3001",
+    "requested_date": "2026-06-10"
+  },
+  "context": {
+    "autonomyTier": "A1",
+    "permissions": ["availability.read"],
+    "tenantId": "tenant_example",
+    "userId": "user_example_scheduler"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "autonomyTier": "A2",
+  "permissions": ["availability.read", "invite.prepare"],
+  "tenantId": "tenant_example",
+  "userId": "user_example_scheduler"
+}

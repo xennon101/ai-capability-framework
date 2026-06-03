@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "results": [
+    {
+      "eval_id": "conformance.note.get.valid",
+      "selected_capabilities": ["conformance.note.get"],
+      "tool_calls": [
+        {
+          "capability_id": "conformance.note.get",
+          "args": {
+            "note_id": "NOTE-1001"
+          }
+        }
+      ],
+      "action_state": "none",
+      "committed_capabilities": []
+    }
+  ]
+}

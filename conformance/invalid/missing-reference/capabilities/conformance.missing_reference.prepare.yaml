@@ -1,0 +1,58 @@
+schema_version: "1.0"
+id: conformance.missing_reference.prepare
+version: 1.0.0
+status: active
+name: Missing reference fixture
+summary: Intentionally references a missing eval file.
+model_description: Prepare a synthetic conformance action.
+capability_type: write_prepare_only
+autonomy_tier: A2
+risk_tier: medium
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - note_id
+  properties:
+    note_id:
+      type: string
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - prepared_action_id
+  properties:
+    prepared_action_id:
+      type: string
+side_effects:
+  reads_data: true
+  writes_data: true
+  creates_records: true
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - note.prepare
+  tenant_scoped: true
+  requires_user_context: true
+policy:
+  approval_required: true
+lifecycle:
+  prepare: true
+  preview: true
+  approve: true
+  commit: false
+  verify: true
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+evals:
+  golden:
+    - ../evals/missing.conformance.eval.yaml

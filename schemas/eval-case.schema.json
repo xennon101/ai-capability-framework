@@ -7,7 +7,7 @@
   "required": ["schema_version", "id", "input", "expected", "scorers"],
   "properties": {
     "schema_version": {
-      "const": "0.1"
+      "const": "1.0"
     },
     "id": {
       "type": "string",

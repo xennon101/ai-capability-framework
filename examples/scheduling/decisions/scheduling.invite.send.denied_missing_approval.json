@@ -1,0 +1,18 @@
+{
+  "capabilityId": "scheduling.invite.send",
+  "operation": "commit",
+  "args": {
+    "prepared_action_id": "prepared_example_invite_1",
+    "approval_id": "approval_example_invite_1"
+  },
+  "context": {
+    "autonomyTier": "A0",
+    "permissions": ["invite.send"],
+    "tenantId": "tenant_example",
+    "userId": "user_example_scheduler"
+  },
+  "facts": {
+    "scheduling.approval_missing_or_invalid": false
+  },
+  "idempotencyKey": "idem_example_invite_send_1"
+}

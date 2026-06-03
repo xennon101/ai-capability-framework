@@ -1,6 +1,6 @@
 {
   "name": "ai-capability-framework",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "Public schemas, examples, and guidance for AI capability manifests.",
   "license": "MIT",
@@ -37,6 +37,7 @@
     "dist",
     "schemas",
     "examples",
+    "conformance",
     "docs",
     "CHANGELOG.md",
     "CONTRIBUTING.md",

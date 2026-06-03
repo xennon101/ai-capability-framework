@@ -14,7 +14,7 @@ Use it when you need to answer these questions:
 
 ## Basic Workflow
 
-1. Read the [v0.1 spec](spec.md).
+1. Read the [1.0 spec](spec.md).
 2. Identify one application behavior that the model may request.
 3. Write a capability manifest for that behavior.
 4. Define strict input and output JSON Schemas.

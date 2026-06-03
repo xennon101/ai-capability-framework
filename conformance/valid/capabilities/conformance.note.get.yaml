@@ -1,0 +1,82 @@
+schema_version: "1.0"
+id: conformance.note.get
+version: 1.0.0
+status: active
+name: Get conformance note
+summary: Read a synthetic note used by public conformance fixtures.
+domain: conformance
+owner:
+  team: example-conformance
+  contact: conformance@example.com
+capability_type: read_data
+autonomy_tier: A1
+risk_tier: low
+model_description: >
+  Use this capability to retrieve a synthetic conformance note by ID.
+when_to_use:
+  - The user asks to read a conformance note.
+when_not_to_use:
+  - The user asks to change, delete, or publish a note.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - note_id
+  properties:
+    note_id:
+      type: string
+      pattern: "^NOTE-[0-9]+$"
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - note
+  properties:
+    note:
+      type: object
+      additionalProperties: false
+      required:
+        - note_id
+        - title
+      properties:
+        note_id:
+          type: string
+        title:
+          type: string
+side_effects:
+  reads_data: true
+  writes_data: false
+  creates_records: false
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - note.read
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: false
+  max_autonomy_tier: A1
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: false
+  verify: false
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: conformance
+evals:
+  golden:
+    - ../evals/conformance.note.get.valid.yaml

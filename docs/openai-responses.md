@@ -1,8 +1,8 @@
 # OpenAI Responses Adapter
 
-Phase 4 adds a no-model-call adapter for exporting AICF capabilities as OpenAI
-Responses function tools. It converts validated manifests into tool definitions
-and maps model tool calls back to capability IDs and validated arguments.
+The OpenAI Responses adapter exports AICF capabilities as no-model-call function
+tool definitions. It converts validated manifests into tool definitions and maps
+model tool calls back to capability IDs and validated arguments.
 
 The adapter does not call OpenAI, execute handlers, persist action state, verify
 real authorization, collect approvals, commit side effects, or write audit logs.

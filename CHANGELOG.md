@@ -2,6 +2,17 @@
 
 All notable public changes to AI Capability Framework are documented here.
 
+## 1.0.0-rc.1 - 2026-06-03
+
+1.0 spec-complete release candidate.
+
+- Promoted public manifests and eval result fixtures to
+  `schema_version: "1.0"`.
+- Made the spec normative and explicit about the no-execution boundary.
+- Added migration, host responsibility, and interoperability guidance.
+- Added a second synthetic domain and conformance fixtures for external review.
+- Kept the package private and GitHub-release-only for this release candidate.
+
 ## 0.1.0 - 2026-06-03
 
 Initial public v0.1 release candidate.

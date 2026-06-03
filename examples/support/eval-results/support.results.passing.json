@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "1.0",
   "results": [
     {
       "eval_id": "support.refund.prepare_case.approval_required",

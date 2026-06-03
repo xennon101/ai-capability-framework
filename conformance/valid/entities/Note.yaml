@@ -1,0 +1,18 @@
+schema_version: "1.0"
+id: Note
+version: 1.0.0
+name: Note
+summary: A synthetic note used by public conformance fixtures.
+canonical_id:
+  field: note_id
+  pattern: "^NOTE-[0-9]+$"
+data_classification:
+  default: tenant_confidential
+  fields:
+    title: synthetic_note_title
+lookup:
+  primary_capability: conformance.note.get
+allowed_actions:
+  - conformance.note.get
+model_guidance: >
+  Notes in conformance fixtures are synthetic and tenant-scoped.

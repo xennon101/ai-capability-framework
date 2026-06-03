@@ -14,7 +14,7 @@ The repository contains:
   without calling models or executing capabilities.
 - A deterministic eval runner for scoring public-safe candidate fixtures
   without API keys or live model calls.
-- A concise `v0.1` public spec for capability IDs, tiers, lifecycle, and
+- A normative `1.0` public spec for capability IDs, tiers, lifecycle, and
   public-safe examples.
 
 ## Why This Exists
@@ -63,13 +63,13 @@ Run deterministic evals against a public-safe candidate fixture:
 
 ```bash
 npm run build
-node dist/cli.js eval examples --results examples/support/eval-results/support.results.passing.json
+node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json
 ```
 
 Start a capability manifest excerpt:
 
 ```yaml
-schema_version: "0.1"
+schema_version: "1.0"
 id: support.refund.prepare_case
 version: 1.0.0
 status: active
@@ -89,19 +89,25 @@ eval references. Complete copyable examples live under `examples/`.
 ```text
 schemas/   JSON Schema contracts for AICF manifests
 examples/  Synthetic public example capabilities, entities, and evals
+conformance/ Public valid and invalid fixtures for contract review
 docs/      Public usage guidance
 src/       TypeScript core, CLI, generated types, and tests
 scripts/   Local type-generation utilities
 ```
 
-Start with [the v0.1 spec](docs/spec.md), read the
+Start with [the 1.0 spec](docs/spec.md), read the
 [API guide](docs/api.md), the [control-plane guide](docs/control-plane.md), the
-[OpenAI Responses adapter](docs/openai-responses.md), and the
-[eval runner guide](docs/eval-runner.md), then inspect the support examples.
+[OpenAI Responses adapter](docs/openai-responses.md), the
+[eval runner guide](docs/eval-runner.md), the
+[host responsibilities guide](docs/host-responsibilities.md), and the
+[interoperability guide](docs/interoperability.md). For future provider and
+runtime adapters, see the [adapter roadmap](docs/adapter-roadmap.md), then
+inspect the examples.
 
 Release and collaboration docs:
 [CHANGELOG](CHANGELOG.md), [CONTRIBUTING](CONTRIBUTING.md),
-[SECURITY](SECURITY.md), and the [release checklist](docs/release.md).
+[SECURITY](SECURITY.md), the [migration guide](docs/migration-0.1-to-1.0.md),
+and the [release checklist](docs/release.md).
 
 Private drafts and source material are intentionally excluded from this public
 repository. See `AGENTS.md` for the tracking boundary used in this workspace.
@@ -143,7 +149,7 @@ tests, and validation on pushes and pull requests.
 
 ## TypeScript API
 
-Phase 2 exposes a small runtime surface:
+AICF exposes a small no-execution TypeScript surface:
 
 - `loadManifests(options)`
 - `validateManifests(manifests, options)`

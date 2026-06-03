@@ -1,7 +1,7 @@
 # Control Plane
 
-Phase 3 adds deterministic decision APIs for capability selection, preparation,
-and commit gating. The control plane does not execute capabilities, store action
+The control plane provides deterministic decision APIs for capability selection,
+preparation, and commit gating. It does not execute capabilities, store action
 state, call models, or enforce host application authorization.
 
 ## Decision API

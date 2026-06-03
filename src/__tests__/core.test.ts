@@ -34,7 +34,7 @@ describe("AICF core", () => {
     expect(loaded.errors).toEqual([]);
     expect(validation.errors).toEqual([]);
     expect(validation.valid).toBe(true);
-    expect(loaded.manifests).toHaveLength(8);
+    expect(loaded.manifests).toHaveLength(16);
   });
 
   it("builds a registry and inspect summary for the public examples", async () => {
@@ -44,15 +44,19 @@ describe("AICF core", () => {
     const output = formatInspection(inspection);
 
     expect(registry.capabilityById.has("support.ticket.get")).toBe(true);
+    expect(registry.capabilityById.has("scheduling.invite.prepare")).toBe(true);
     expect(registry.entityById.has("Ticket")).toBe(true);
+    expect(registry.entityById.has("MeetingInvite")).toBe(true);
     expect(registry.evalById.has("support.refund.prepare_case.valid")).toBe(true);
+    expect(registry.evalById.has("scheduling.invite.prepare.valid")).toBe(true);
     expect(inspection.counts).toEqual({
-      capabilities: 3,
-      entities: 2,
-      evals: 3,
-      manifests: 8
+      capabilities: 6,
+      entities: 4,
+      evals: 6,
+      manifests: 16
     });
     expect(output).toContain("support.refund.prepare_case");
+    expect(output).toContain("scheduling.invite.prepare");
     expect(output).toContain("Warnings:\n- none");
   });
 
@@ -140,7 +144,7 @@ describe("AICF CLI", () => {
     const exitCode = await runCli(["validate", "examples"], { stderr, stdout });
 
     expect(exitCode).toBe(0);
-    expect(stdout.value).toContain("Validated 8 manifest(s).");
+    expect(stdout.value).toContain("Validated 16 manifest(s).");
     expect(stderr.value).toBe("");
   });
 
@@ -151,8 +155,9 @@ describe("AICF CLI", () => {
     const exitCode = await runCli(["inspect", "examples"], { stderr, stdout });
 
     expect(exitCode).toBe(0);
-    expect(stdout.value).toContain("Manifests: 8 (3 capabilities, 2 entities, 3 evals)");
+    expect(stdout.value).toContain("Manifests: 16 (6 capabilities, 4 entities, 6 evals)");
     expect(stdout.value).toContain("support.ticket.get");
+    expect(stdout.value).toContain("scheduling.invite.prepare");
     expect(stdout.value).toContain("Warnings:\n- none");
     expect(stderr.value).toBe("");
   });
@@ -207,24 +212,24 @@ describe("AICF CLI", () => {
       "eval",
       "examples",
       "--results",
-      "examples/support/eval-results/support.results.passing.json"
+      "examples/eval-results/public.results.passing.json"
     ], { stderr: textStderr, stdout: textStdout });
     const jsonExitCode = await runCli([
       "eval",
       "examples",
       "--results",
-      "examples/support/eval-results/support.results.passing.json",
+      "examples/eval-results/public.results.passing.json",
       "--format",
       "json"
     ], { stderr: jsonStderr, stdout: jsonStdout });
     const parsed = JSON.parse(jsonStdout.value) as { status: string; summary: { total: number } };
 
     expect(textExitCode).toBe(0);
-    expect(textStdout.value).toContain("Eval suite passed: 3/3 passed.");
+    expect(textStdout.value).toContain("Eval suite passed: 6/6 passed.");
     expect(textStderr.value).toBe("");
     expect(jsonExitCode).toBe(0);
     expect(parsed.status).toBe("passed");
-    expect(parsed.summary.total).toBe(3);
+    expect(parsed.summary.total).toBe(6);
     expect(jsonStderr.value).toBe("");
   });
 
@@ -232,7 +237,7 @@ describe("AICF CLI", () => {
     const stdout = createWritableBuffer();
     const stderr = createWritableBuffer();
     const fixturePath = await writeTemporaryEvalResults({
-      schema_version: "0.1",
+      schema_version: "1.0",
       results: [{
         eval_id: "support.refund.prepare_case.valid",
         selected_capabilities: ["support.refund.commit_case"],
@@ -309,12 +314,19 @@ describe("AICF release readiness", () => {
       "LICENSE",
       "README.md",
       "SECURITY.md",
+      "conformance/valid/capabilities/conformance.note.get.yaml",
+      "conformance/invalid/schema/capabilities/conformance.invalid.missing_required.yaml",
       "dist/index.js",
       "dist/cli.js",
       "docs/api.md",
       "docs/control-plane.md",
       "docs/eval-runner.md",
+      "docs/host-responsibilities.md",
+      "docs/interoperability.md",
+      "docs/migration-0.1-to-1.0.md",
       "docs/openai-responses.md",
+      "examples/eval-results/public.results.passing.json",
+      "examples/scheduling/capabilities/scheduling.invite.prepare.yaml",
       "examples/support/capabilities/support.ticket.get.yaml",
       "examples/support/eval-results/support.results.passing.json",
       "schemas/capability-manifest.schema.json",
@@ -542,6 +554,24 @@ describe("AICF decision control plane", () => {
     });
   });
 
+  it("allows scheduling invite send with approval and idempotency key", async () => {
+    const registry = await loadValidRegistry();
+    const request = await readDecisionExample(
+      "scheduling.invite.send.allowed.json",
+      "examples/scheduling/decisions"
+    );
+
+    const result = decideCapability(registry, request);
+
+    expect(result.status).toBe("allowed");
+    expect(result.audit).toMatchObject({
+      capabilityId: "scheduling.invite.send",
+      idempotencyKey: "idem_example_invite_send_1",
+      operation: "commit",
+      status: "allowed"
+    });
+  });
+
   it("prints JSON from the decide CLI and exits zero for denied decisions", async () => {
     const stdout = createWritableBuffer();
     const stderr = createWritableBuffer();
@@ -564,6 +594,7 @@ describe("AICF decision control plane", () => {
     const registry = await loadValidRegistry();
     const commitCapability = registry.capabilityById.get("support.refund.commit_case");
 
+    expect(generatedTypes).toContain("schema_version: \"1.0\";");
     expect(generatedTypes).toContain("idempotency?:");
     expect(commitCapability?.manifest.idempotency).toEqual({
       required: true,
@@ -573,19 +604,19 @@ describe("AICF decision control plane", () => {
 });
 
 describe("AICF deterministic eval runner", () => {
-  it("loads a valid public support fixture and passes all current evals", async () => {
+  it("loads a valid public fixture and passes all current evals", async () => {
     const registry = await loadValidRegistry();
-    const loadedResults = await loadEvalResults("examples/support/eval-results/support.results.passing.json");
+    const loadedResults = await loadEvalResults("examples/eval-results/public.results.passing.json");
 
     const suite = runEvalSuite(registry, loadedResults.results);
 
     expect(loadedResults.errors).toEqual([]);
-    expect(loadedResults.results).toHaveLength(3);
+    expect(loadedResults.results).toHaveLength(6);
     expect(suite.status).toBe("passed");
     expect(suite.summary).toEqual({
       failed: 0,
-      passed: 3,
-      total: 3
+      passed: 6,
+      total: 6
     });
   });
 
@@ -741,7 +772,7 @@ describe("AICF deterministic eval runner", () => {
 
   it("fails when a candidate result is missing for a loaded eval", async () => {
     const registry = await loadValidRegistry();
-    const loadedResults = await loadEvalResults("examples/support/eval-results/support.results.passing.json");
+    const loadedResults = await loadEvalResults("examples/eval-results/public.results.passing.json");
     const suite = runEvalSuite(
       registry,
       loadedResults.results.filter((candidate) => candidate.eval_id !== "support.refund.prepare_case.valid")
@@ -790,6 +821,22 @@ describe("OpenAI Responses adapter", () => {
       "aicf_support_refund_prepare_case",
       "aicf_support_ticket_get"
     ]);
+  });
+
+  it("exports allowed read and prepare capabilities for the scheduling context", async () => {
+    const registry = await loadValidRegistry();
+    const content = await readFile("examples/scheduling/openai/context.scheduler.json", "utf8");
+    const context = JSON.parse(content) as DecisionRequest["context"];
+    const toolset = buildOpenAIResponsesTools(registry, { context });
+
+    expect(toolset.bindings.map((binding) => binding.capabilityId)).toEqual([
+      "scheduling.availability.get",
+      "scheduling.invite.prepare"
+    ]);
+    expect(toolset.excluded).toContainEqual(expect.objectContaining({
+      capabilityId: "scheduling.invite.send",
+      reason: "restricted"
+    }));
   });
 
   it("excludes the refund commit capability by default with diagnostics", async () => {
@@ -985,11 +1032,109 @@ describe("OpenAI Responses adapter", () => {
   });
 });
 
-async function loadValidRegistry() {
-  const loaded = await loadManifests({ path: "examples" });
+describe("AICF public conformance fixtures", () => {
+  it("valid conformance manifests load, validate, and pass eval scoring", async () => {
+    const registry = await loadValidRegistry("conformance/valid");
+    const loadedResults = await loadEvalResults("conformance/valid/eval-results/conformance.results.passing.json");
+    const suite = runEvalSuite(registry, loadedResults.results);
+
+    expect(registry.capabilityById.has("conformance.note.get")).toBe(true);
+    expect(loadedResults.errors).toEqual([]);
+    expect(suite.status).toBe("passed");
+    expect(suite.summary).toEqual({
+      failed: 0,
+      passed: 1,
+      total: 1
+    });
+  });
+
+  it("invalid conformance schema fixtures fail validation", async () => {
+    const loaded = await loadManifests({ path: "conformance/invalid/schema" });
+    const validation = validateManifests(loaded.manifests);
+
+    expect(loaded.errors).toEqual([]);
+    expect(validation.valid).toBe(false);
+    expect(validation.errors).toContainEqual(expect.objectContaining({
+      code: "schema",
+      id: "conformance.invalid.missing_required"
+    }));
+  });
+
+  it("invalid conformance duplicate fixtures fail validation", async () => {
+    const loaded = await loadManifests({ path: "conformance/invalid/duplicate" });
+    const validation = validateManifests(loaded.manifests);
+
+    expect(loaded.errors).toEqual([]);
+    expect(validation.valid).toBe(false);
+    expect(validation.errors).toContainEqual(expect.objectContaining({
+      code: "duplicate_id",
+      id: "conformance.duplicate.get"
+    }));
+  });
+
+  it("invalid conformance missing-reference fixtures fail validation", async () => {
+    const loaded = await loadManifests({ path: "conformance/invalid/missing-reference" });
+    const validation = validateManifests(loaded.manifests);
+
+    expect(loaded.errors).toEqual([]);
+    expect(validation.valid).toBe(false);
+    expect(validation.errors).toContainEqual(expect.objectContaining({
+      code: "missing_reference",
+      id: "conformance.missing_reference.prepare"
+    }));
+  });
+
+  it("conformance decision fixtures produce deterministic denial", async () => {
+    const registry = await loadValidRegistry("conformance/valid");
+    const content = await readFile(
+      "conformance/valid/decisions/conformance.note.get.denied_missing_permission.json",
+      "utf8"
+    );
+    const request = JSON.parse(content) as DecisionRequest;
+    const result = decideCapability(registry, request);
+
+    expect(result.status).toBe("denied");
+    expect(result.reasons).toContainEqual(expect.objectContaining({
+      code: "missing_permission"
+    }));
+  });
+
+  it("conformance OpenAI fixture excludes denied capabilities", async () => {
+    const registry = await loadValidRegistry("conformance/valid");
+    const content = await readFile("conformance/valid/openai/context.no_permissions.json", "utf8");
+    const context = JSON.parse(content) as DecisionRequest["context"];
+    const toolset = buildOpenAIResponsesTools(registry, { context });
+
+    expect(toolset.tools).toHaveLength(0);
+    expect(toolset.excluded).toContainEqual(expect.objectContaining({
+      capabilityId: "conformance.note.get",
+      reason: "decision_denied"
+    }));
+  });
+
+  it("conformance failing eval-result fixture fails scorer checks", async () => {
+    const registry = await loadValidRegistry("conformance/valid");
+    const loadedResults = await loadEvalResults("conformance/invalid/eval-results/conformance.results.failing.json");
+    const suite = runEvalSuite(registry, loadedResults.results);
+
+    expect(loadedResults.errors).toEqual([]);
+    expect(suite.status).toBe("failed");
+    expect(suite.evals[0]?.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "tool_selection_includes"
+    }));
+    expect(suite.evals[0]?.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "no_unapproved_commit"
+    }));
+  });
+});
+
+async function loadValidRegistry(manifestPath = "examples") {
+  const loaded = await loadManifests({ path: manifestPath });
   const validation = validateManifests(loaded.manifests);
   if (loaded.errors.length > 0 || !validation.valid) {
-    throw new Error("Expected public examples to load and validate.");
+    throw new Error(`Expected ${manifestPath} to load and validate.`);
   }
 
   return buildRegistry(loaded.manifests);
@@ -1000,8 +1145,11 @@ async function readOpenAIContextExample(): Promise<DecisionRequest["context"]> {
   return JSON.parse(content) as DecisionRequest["context"];
 }
 
-async function readDecisionExample(fileName: string): Promise<DecisionRequest> {
-  const content = await readFile(path.join("examples/support/decisions", fileName), "utf8");
+async function readDecisionExample(
+  fileName: string,
+  directory = "examples/support/decisions"
+): Promise<DecisionRequest> {
+  const content = await readFile(path.join(directory, fileName), "utf8");
   return JSON.parse(content) as DecisionRequest;
 }
 

@@ -3,7 +3,7 @@
 A capability manifest is the contract between model-facing intent and
 application-owned execution.
 
-See [the v0.1 spec](spec.md) for the shared vocabulary.
+See [the 1.0 spec](spec.md) for the shared vocabulary.
 
 ## Required Fields
 
@@ -41,8 +41,7 @@ capabilities.
 Commit capabilities should be excluded from normal model tool sets until
 application code has verified approval and idempotency state.
 
-Phase 2 tooling loads and validates capability manifests, then includes them in
-a registry for inspection. It does not execute capabilities or enforce policy.
-
-Phase 3 tooling can evaluate deterministic select, prepare, and commit
-decisions from manifest policy, lifecycle, idempotency, and request context.
+AICF tooling loads and validates capability manifests, builds registries,
+evaluates deterministic select, prepare, and commit decisions, exports adapter
+metadata, and scores eval fixtures. It does not execute capabilities, persist
+actions, collect approvals, or perform side effects.

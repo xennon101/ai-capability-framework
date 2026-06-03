@@ -3,7 +3,7 @@
  * Do not edit by hand. Run `npm run generate:types`.
  */
 export interface CapabilityManifest {
-  schema_version: "0.1";
+  schema_version: "1.0";
   id: string;
   version: string;
   status: "draft" | "experimental" | "active" | "deprecated" | "disabled";
@@ -106,7 +106,7 @@ export interface PolicyRule {
 }
 
 export interface EntityManifest {
-  schema_version: "0.1";
+  schema_version: "1.0";
   id: string;
   version: string;
   name: string;
@@ -139,7 +139,7 @@ export interface EntityManifest {
 }
 
 export interface EvalCase {
-  schema_version: "0.1";
+  schema_version: "1.0";
   id: string;
   name?: string;
   capability_under_test?: string;
@@ -195,7 +195,7 @@ export interface ExpectedBehavior {
 }
 
 export interface EvalResultFixture {
-  schema_version: "0.1";
+  schema_version: "1.0";
   results: EvalCandidateResult[];
   extensions?: {};
 }

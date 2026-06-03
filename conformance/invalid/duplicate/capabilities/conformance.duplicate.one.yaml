@@ -1,0 +1,55 @@
+schema_version: "1.0"
+id: conformance.duplicate.get
+version: 1.0.0
+status: active
+name: Duplicate conformance note one
+summary: First intentionally duplicated capability ID.
+model_description: Read a synthetic note.
+capability_type: read_data
+autonomy_tier: A1
+risk_tier: low
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - note_id
+  properties:
+    note_id:
+      type: string
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - note_id
+  properties:
+    note_id:
+      type: string
+side_effects:
+  reads_data: true
+  writes_data: false
+  creates_records: false
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - note.read
+  tenant_scoped: true
+  requires_user_context: true
+policy:
+  approval_required: false
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: false
+  verify: false
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary

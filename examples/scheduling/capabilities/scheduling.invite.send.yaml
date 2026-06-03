@@ -1,0 +1,97 @@
+schema_version: "1.0"
+id: scheduling.invite.send
+version: 1.0.0
+status: active
+name: Send approved meeting invite
+summary: Send a previously approved synthetic meeting invitation.
+domain: scheduling
+owner:
+  team: example-scheduling
+  contact: scheduling@example.com
+capability_type: external_message_send
+autonomy_tier: A0
+risk_tier: high
+model_description: >
+  Use this capability only when application code has verified an approved
+  prepared invitation. Do not expose it in broad model tool sets.
+when_to_use:
+  - A prepared meeting invite has already been approved.
+  - The application has verified approval and idempotency state.
+when_not_to_use:
+  - The user directly asks to send an invitation without an approved prepared action.
+  - The model only inferred that a meeting might be useful.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - prepared_action_id
+    - approval_id
+  properties:
+    prepared_action_id:
+      type: string
+      minLength: 1
+    approval_id:
+      type: string
+      minLength: 1
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - invite_id
+    - status
+    - audit_event_id
+  properties:
+    invite_id:
+      type: string
+    status:
+      type: string
+      enum:
+        - sent
+    audit_event_id:
+      type: string
+side_effects:
+  reads_data: true
+  writes_data: true
+  creates_records: false
+  updates_records: true
+  deletes_records: false
+  sends_external_messages: true
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: true
+  irreversible: false
+authorization:
+  permissions:
+    - invite.send
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: true
+  deny_if:
+    - rule: scheduling.approval_missing_or_invalid
+      reason: Sending an invitation requires a verified prepared action and approval.
+  max_autonomy_tier: A0
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: true
+  verify: true
+  audit: true
+idempotency:
+  required: true
+  key_fields:
+    - prepared_action_id
+    - approval_id
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: scheduling
+    risk_tier: high
+evals:
+  red_team:
+    - ../evals/scheduling.invite.send.requires_approval.yaml

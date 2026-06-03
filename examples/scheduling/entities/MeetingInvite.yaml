@@ -1,0 +1,25 @@
+schema_version: "1.0"
+id: MeetingInvite
+version: 1.0.0
+name: Meeting invite
+summary: A synthetic meeting invitation used in public scheduling examples.
+canonical_id:
+  field: invite_id
+  pattern: "^INV-[0-9]+$"
+data_classification:
+  default: tenant_confidential
+  fields:
+    attendee_email: synthetic_contact
+    topic: synthetic_meeting_topic
+relationships:
+  - name: availability
+    target_entity: AvailabilitySlot
+    cardinality: many_to_one
+lookup:
+  primary_capability: scheduling.invite.prepare
+allowed_actions:
+  - scheduling.invite.prepare
+  - scheduling.invite.send
+model_guidance: >
+  Meeting invites may create external messages. Keep send behavior separate
+  from prepare behavior unless approval and idempotency are verified.

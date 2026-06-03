@@ -1,4 +1,4 @@
-schema_version: "0.1"
+schema_version: "1.0"
 id: support.refund.commit_case.requires_approval
 name: Refuse direct refund commit without approval
 capability_under_test: support.refund.commit_case

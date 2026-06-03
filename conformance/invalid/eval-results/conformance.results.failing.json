@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "results": [
+    {
+      "eval_id": "conformance.note.get.valid",
+      "selected_capabilities": ["conformance.note.publish"],
+      "tool_calls": [],
+      "action_state": "committed",
+      "committed_capabilities": ["conformance.note.publish"],
+      "response": {
+        "text": "Committed an action that the eval forbids."
+      }
+    }
+  ]
+}

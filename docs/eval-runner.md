@@ -1,22 +1,22 @@
 # Eval Runner
 
-Phase 5 adds a deterministic eval runner for AICF eval manifests. It scores
-candidate result fixtures against expected behavior without calling models,
-executing capabilities, storing traces, or reading raw provider payloads.
+The deterministic eval runner scores AICF eval manifests against candidate
+result fixtures without calling models, executing capabilities, storing traces,
+or reading raw provider payloads.
 
 Host applications are responsible for producing candidate results. AICF only
 validates and scores the summarized behavior.
 
 ## Candidate Fixture
 
-Candidate fixtures are JSON files with `schema_version: "0.1"` and a `results`
+Candidate fixtures are JSON files with `schema_version: "1.0"` and a `results`
 array. Each result is keyed by `eval_id` and may include selected capabilities,
 tool calls, policy decision, action state, committed capabilities, refusal
 information, and response text.
 
 ```json
 {
-  "schema_version": "0.1",
+  "schema_version": "1.0",
   "results": [
     {
       "eval_id": "support.refund.prepare_case.valid",
@@ -62,17 +62,17 @@ manifest is a commit capability.
 
 ## CLI
 
-Run the public support fixture:
+Run the full public example fixture:
 
 ```bash
 npm run build
-node dist/cli.js eval examples --results examples/support/eval-results/support.results.passing.json
+node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json
 ```
 
 For machine-readable output:
 
 ```bash
-node dist/cli.js eval examples --results examples/support/eval-results/support.results.passing.json --format json
+node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json --format json
 ```
 
 The command exits `0` only when manifests are valid, the result fixture is valid,

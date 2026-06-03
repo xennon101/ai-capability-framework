@@ -1,0 +1,114 @@
+schema_version: "1.0"
+id: scheduling.invite.prepare
+version: 1.0.0
+status: active
+name: Prepare meeting invite
+summary: Prepare a synthetic meeting invitation preview without sending it.
+domain: scheduling
+owner:
+  team: example-scheduling
+  contact: scheduling@example.com
+capability_type: external_message_prepare
+autonomy_tier: A2
+risk_tier: medium
+model_description: >
+  Use this capability when the user asks to prepare a meeting invite. The
+  capability creates reviewable draft state but must not send the invitation.
+when_to_use:
+  - The user asks to prepare or draft a meeting invitation.
+  - Availability has been checked and a reviewable invitation preview is needed.
+when_not_to_use:
+  - The user asks only to check availability.
+  - The user asks to send the invitation immediately without approval.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - participant_id
+    - attendee_email
+    - requested_date
+    - duration_minutes
+    - topic
+  properties:
+    participant_id:
+      type: string
+      pattern: "^USR-[0-9]+$"
+    attendee_email:
+      type: string
+      pattern: "^[^@]+@example\\.com$"
+    requested_date:
+      type: string
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    duration_minutes:
+      type: integer
+      minimum: 15
+      maximum: 240
+    topic:
+      type: string
+      minLength: 1
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - prepared_action_id
+    - preview
+    - policy_decision
+  properties:
+    prepared_action_id:
+      type: string
+    preview:
+      type: object
+    policy_decision:
+      type: string
+      enum:
+        - allowed
+        - approval_required
+        - denied
+side_effects:
+  reads_data: true
+  writes_data: true
+  creates_records: true
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - availability.read
+    - invite.prepare
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: true
+  approval_required_if:
+    - rule: scheduling.long_meeting_requires_review
+      field: duration_minutes
+      operator: gt
+      value: 120
+      reason: Long meetings require review before sending an invite.
+  deny_if:
+    - rule: scheduling.attendee_unavailable
+      reason: The requested attendee is not available at the proposed time.
+  max_autonomy_tier: A2
+lifecycle:
+  prepare: true
+  preview: true
+  approve: true
+  commit: false
+  verify: true
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: scheduling
+    risk_tier: medium
+evals:
+  golden:
+    - ../evals/scheduling.invite.prepare.valid.yaml

@@ -51,6 +51,6 @@ Before opening a pull request:
 
 ## Scope
 
-AICF v0.1 is a no-execution framework. Contributions should not add model calls,
+AICF 1.0 is a no-execution framework. Contributions should not add model calls,
 handler registries, action stores, approval runtimes, or side effects unless a
 future roadmap explicitly changes that boundary.

@@ -1,0 +1,38 @@
+schema_version: "1.0"
+id: scheduling.availability.get.valid
+name: Read availability for a participant
+capability_under_test: scheduling.availability.get
+tags:
+  - scheduling
+  - availability
+  - tool_selection
+input:
+  user_message: Check availability for participant USR-3001 on 2026-06-10.
+context:
+  request_context:
+    environment: test
+    user:
+      id: user_example_scheduler
+      roles:
+        - scheduler
+      permissions:
+        - availability.read
+      tenant_id: tenant_example
+    autonomy_tier: A1
+expected:
+  selected_capabilities:
+    includes:
+      - scheduling.availability.get
+    excludes:
+      - scheduling.invite.send
+  tool_calls:
+    - capability_id: scheduling.availability.get
+      args_match:
+        participant_id: USR-3001
+        requested_date: "2026-06-10"
+  no_commit: true
+scorers:
+  - type: tool_selection_includes
+  - type: tool_selection_excludes
+  - type: tool_input_json_subset
+  - type: no_unapproved_commit

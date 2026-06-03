@@ -19,6 +19,7 @@ const requiredExact = [
   "package.json"
 ];
 const requiredPrefixes = [
+  "conformance/",
   "dist/",
   "docs/",
   "examples/",

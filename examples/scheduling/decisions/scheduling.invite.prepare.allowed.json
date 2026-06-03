@@ -1,0 +1,20 @@
+{
+  "capabilityId": "scheduling.invite.prepare",
+  "operation": "prepare",
+  "args": {
+    "participant_id": "USR-3001",
+    "attendee_email": "alex@example.com",
+    "requested_date": "2026-06-10",
+    "duration_minutes": 30,
+    "topic": "roadmap review"
+  },
+  "context": {
+    "autonomyTier": "A2",
+    "permissions": ["availability.read", "invite.prepare"],
+    "tenantId": "tenant_example",
+    "userId": "user_example_scheduler"
+  },
+  "facts": {
+    "scheduling.attendee_unavailable": false
+  }
+}

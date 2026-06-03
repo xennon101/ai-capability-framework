@@ -1,8 +1,8 @@
 # API
 
-AICF exposes a small TypeScript API and the `aicf` CLI. The package is still
-private in Phase 6, but the exported surface is treated as public review
-material.
+AICF exposes a small TypeScript API and the `aicf` CLI. The package remains
+private for the 1.0 release candidate, but the exported surface is treated as
+public review material.
 
 Import from the package root:
 
@@ -81,9 +81,9 @@ runs exit `0` only when all targeted evals pass.
 
 ## Versioning
 
-The package version uses semver. Manifest schemas still use
-`schema_version: "0.1"`. While schemas remain at `0.1`, incompatible schema
-contract changes should be avoided or clearly documented in release notes.
-Changes to TypeScript exports, CLI output, or schema semantics should be covered
+The package version uses semver. Manifest schemas use `schema_version: "1.0"`.
+The 1.0 validator intentionally does not support the pre-release 0.1 schema.
+Changes to TypeScript exports, CLI output, or schema semantics must be covered
 by tests before release. Public API or schema changes must also update
-`CHANGELOG.md` and the GitHub release notes checklist in `docs/release.md`.
+`CHANGELOG.md`, the migration notes when relevant, and the GitHub release notes
+checklist in `docs/release.md`.
