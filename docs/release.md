@@ -1,7 +1,7 @@
 # Release Checklist
 
-This checklist prepares a GitHub-only AICF 1.0 release candidate. It does not
-publish to npm and does not remove `private: true` from `package.json`.
+This checklist prepares an AICF 1.0 release candidate for GitHub and public npm
+distribution.
 
 ## Preflight
 
@@ -9,6 +9,7 @@ publish to npm and does not remove `private: true` from `package.json`.
 - Confirm `CHANGELOG.md` has the target release entry.
 - Confirm README, API docs, spec docs, adapter docs, eval docs, and examples are
   internally consistent.
+- Confirm `package.json` is not private and `publishConfig.access` is `public`.
 - Confirm no private drafts, raw prompts, raw traces, provider payloads,
   credentials, generated local docs, or packed tarballs are tracked.
 
@@ -43,7 +44,8 @@ generated local docs, and local-only material must remain untracked or ignored.
 - Summarize the framework as schemas, TypeScript core, CLI, deterministic
   control plane, OpenAI Responses adapter, eval runner, docs, and public
   examples.
-- State that npm publishing is not part of this release.
+- Publish npm pre-release packages with a non-default dist tag such as `next`
+  until the final 1.0.0 release is ready.
 - Link to `CHANGELOG.md`, `docs/api.md`, `docs/spec.md`,
   `docs/control-plane.md`, `docs/openai-responses.md`,
   `docs/eval-runner.md`, `docs/host-responsibilities.md`,
@@ -53,5 +55,5 @@ generated local docs, and local-only material must remain untracked or ignored.
 
 - Confirm GitHub Actions pass for the release commit or tag.
 - Confirm the public repository file list does not expose private material.
-- Leave npm publishing disabled unless a future phase explicitly changes that
-  boundary.
+- Confirm the npm package page shows the expected version, files, README, and
+  license.

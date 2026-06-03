@@ -13,7 +13,8 @@ All notable public changes to AI Capability Framework are documented here.
 - Added a second synthetic domain and conformance fixtures for external review.
 - Added no-model-call adapters for Anthropic Claude, Google Gemini, Vercel AI
   SDK, Model Context Protocol, LangChain/LangGraph, and Semantic Kernel.
-- Kept the package private and GitHub-release-only for this release candidate.
+- Enabled public npm release-candidate publishing while keeping the no-execution
+  framework boundary.
 
 ## 0.1.0 - 2026-06-03
 
@@ -33,5 +34,4 @@ Initial public v0.1 release candidate.
 - Added release-readiness package checks, public API docs, CI validation, and
   public repository boundary guidance.
 
-This release is GitHub-release-ready only. The package remains private and is
-not published to npm.
+This release was GitHub-release-ready only and was not published to npm.

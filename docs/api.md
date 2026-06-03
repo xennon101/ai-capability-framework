@@ -1,8 +1,8 @@
 # API
 
-AICF exposes a small TypeScript API and the `aicf` CLI. The package remains
-private for the 1.0 release candidate, but the exported surface is treated as
-public review material.
+AICF exposes a small TypeScript API and the `aicf` CLI. The package is public
+npm release-candidate material, and the exported surface is treated as public
+developer API.
 
 Import from the package root:
 
