@@ -37,6 +37,22 @@ git ls-files
 `_private/`, `dist/`, `node_modules/`, traces, prompts, provider payloads,
 generated local docs, and local-only material must remain untracked or ignored.
 
+## Trusted Publishing
+
+Before relying on GitHub Actions publishing, configure the npm package trusted
+publisher:
+
+- Provider: GitHub Actions.
+- Organization or user: `xennon101`.
+- Repository: `ai-capability-framework`.
+- Workflow filename: `publish.yml`.
+- Allowed action: `npm publish`.
+
+The workflow publishes only when a `v*` tag is pushed and only if the tagged
+commit is already reachable from `origin/main`. Pre-release versions such as
+`1.0.0-rc.1` publish with the `next` dist tag. Stable versions publish with the
+`latest` dist tag.
+
 ## GitHub Release
 
 - Use tag `v1.0.0-rc.1`.
