@@ -4,15 +4,42 @@
   "private": true,
   "description": "Public schemas, examples, and guidance for AI capability manifests.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "aicf": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "examples",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "validate": "node scripts/validate.mjs"
+    "build": "tsc -p tsconfig.json",
+    "check:generated": "npm run generate:types --silent && git diff --exit-code -- src/generated",
+    "generate:types": "node scripts/generate-types.mjs",
+    "inspect": "npm run build --silent && node dist/cli.js inspect examples",
+    "test": "vitest run",
+    "validate": "npm run build --silent && node dist/cli.js validate examples"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
+    "@types/node": "^24.12.4",
     "ajv": "^8.17.1",
+    "json-schema-to-typescript": "^15.0.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8",
     "yaml": "^2.8.0"
   }
 }
-

@@ -43,9 +43,14 @@ the AI Capability Framework.
 - Use `rg` for discovery and read nearby files before editing.
 - Keep edits scoped to the framework contract, examples, or instructions touched
   by the request.
+- Run `npm run generate:types` when schemas change, then commit the generated
+  public manifest types under `src/generated/`.
+- Run `npm run build` and `npm test` when TypeScript core, CLI, or generated
+  types change.
 - Run `npm run validate` before handoff when schemas, examples, or validation
   scripts change.
-- CI must run `npm ci` and `npm run validate` for pushes and pull requests.
+- CI must run `npm ci`, generated-type freshness checks, `npm run build`,
+  `npm test`, and `npm run validate` for pushes and pull requests.
 - If new generated output, local data, or private drafts are created, add ignore
   rules before they can be staged.
 

@@ -24,6 +24,13 @@ Use it when you need to answer these questions:
    approval boundaries.
 8. Run `npm run validate`.
 
+## CLI Workflow
+
+- `npm run validate` builds the CLI and validates the public examples.
+- `npm run inspect` prints a readable registry summary.
+- After building, `node dist/cli.js validate <path>` and
+  `node dist/cli.js inspect <path>` can target another manifest bundle.
+
 ## Design Rules
 
 - Give the model the smallest relevant set of capabilities for a task.

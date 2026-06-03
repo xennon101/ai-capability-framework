@@ -39,3 +39,6 @@ capabilities.
 
 Commit capabilities should be excluded from normal model tool sets until
 application code has verified approval and idempotency state.
+
+Phase 2 tooling loads and validates capability manifests, then includes them in
+a registry for inspection. It does not execute capabilities or enforce policy.

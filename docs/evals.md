@@ -21,3 +21,6 @@ See [the v0.1 spec](spec.md) for public-safe example rules.
 Public examples must use fake identifiers, fake users, fake tenants, and generic
 domains. Do not commit real traces, customer records, raw prompts, internal
 schemas, or provider payloads.
+
+Phase 2 validation checks that eval files referenced by capability manifests are
+present in the loaded manifest bundle.

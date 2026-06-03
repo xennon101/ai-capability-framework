@@ -8,7 +8,8 @@ The repository contains:
 - JSON Schema contracts for capability, entity, and eval manifests.
 - Synthetic examples that show how to describe a capability without exposing
   private application internals.
-- A validation script for checking examples against the schemas.
+- A TypeScript core library and `aicf` CLI for loading, validating, and
+  inspecting manifests.
 - A concise `v0.1` public spec for capability IDs, tiers, lifecycle, and
   public-safe examples.
 
@@ -32,6 +33,12 @@ Install dependencies and validate the public examples:
 ```bash
 npm install
 npm run validate
+```
+
+Inspect the public example registry:
+
+```bash
+npm run inspect
 ```
 
 Start a capability manifest excerpt:
@@ -58,7 +65,8 @@ eval references. Complete copyable examples live under `examples/`.
 schemas/   JSON Schema contracts for AICF manifests
 examples/  Synthetic public example capabilities, entities, and evals
 docs/      Public usage guidance
-scripts/   Local validation utilities
+src/       TypeScript core, CLI, generated types, and tests
+scripts/   Local type-generation utilities
 ```
 
 Start with [the v0.1 spec](docs/spec.md), then inspect the support examples.
@@ -98,7 +106,20 @@ example under:
 
 The script fails on malformed examples or schema violations.
 
-GitHub Actions runs the same validation command on pushes and pull requests.
+GitHub Actions runs type generation, generated-type freshness checks, build,
+tests, and validation on pushes and pull requests.
+
+## TypeScript API
+
+Phase 2 exposes a small runtime surface:
+
+- `loadManifests(options)`
+- `validateManifests(manifests, options)`
+- `buildRegistry(manifests)`
+- `inspectRegistry(registry)`
+
+Generated public types include `CapabilityManifest`, `EntityManifest`, and
+`EvalCase`.
 
 ## License
 
