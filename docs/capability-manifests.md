@@ -25,6 +25,7 @@ See [the v0.1 spec](spec.md) for the shared vocabulary.
 - `policy`: Deny, approval, and review rules.
 - `lifecycle`: Explicit prepare, preview, approve, commit, verify, and audit
   flags.
+- `idempotency`: Optional commit idempotency requirements.
 - `observability`: Logging and trace expectations.
 
 ## Lifecycle Guidance
@@ -42,3 +43,6 @@ application code has verified approval and idempotency state.
 
 Phase 2 tooling loads and validates capability manifests, then includes them in
 a registry for inspection. It does not execute capabilities or enforce policy.
+
+Phase 3 tooling can evaluate deterministic select, prepare, and commit
+decisions from manifest policy, lifecycle, idempotency, and request context.

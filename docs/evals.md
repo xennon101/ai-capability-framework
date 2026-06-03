@@ -24,3 +24,7 @@ schemas, or provider payloads.
 
 Phase 2 validation checks that eval files referenced by capability manifests are
 present in the loaded manifest bundle.
+
+Decision behavior should be covered with synthetic request examples and tests
+for permission denial, autonomy denial, approval requirements, deny facts,
+missing facts, approval state, and idempotency keys.

@@ -172,6 +172,18 @@
         "audit": { "type": "boolean" }
       }
     },
+    "idempotency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "key_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "observability": {
       "type": "object",
       "additionalProperties": false,

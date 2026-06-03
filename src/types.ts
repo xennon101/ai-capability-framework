@@ -102,3 +102,79 @@ export interface RegistryInspection {
   }>;
   warnings: AicfDiagnostic[];
 }
+
+export type AutonomyTier = "A0" | "A1" | "A2" | "A3" | "A4" | "A5";
+
+export type DecisionOperation = "select" | "prepare" | "commit";
+
+export type DecisionStatus = "allowed" | "approval_required" | "denied";
+
+export type DecisionReasonCode =
+  | "approval_required"
+  | "autonomy_exceeded"
+  | "capability_not_found"
+  | "deny_rule_matched"
+  | "idempotency_required"
+  | "lifecycle_not_supported"
+  | "missing_fact"
+  | "missing_permission";
+
+export interface DecisionReason {
+  code: DecisionReasonCode;
+  message: string;
+  rule?: string;
+}
+
+export type DecisionFact = boolean | {
+  reason?: string;
+  value: boolean;
+};
+
+export interface DecisionRequest {
+  args?: Record<string, unknown>;
+  approval?: {
+    approvalId?: string;
+    approved: boolean;
+  };
+  capabilityId: string;
+  context: {
+    autonomyTier: AutonomyTier;
+    permissions: string[];
+    tenantId?: string;
+    userId?: string;
+  };
+  facts?: Record<string, DecisionFact>;
+  idempotencyKey?: string;
+  operation: DecisionOperation;
+}
+
+export interface DecisionAuditPreview {
+  capabilityId: string;
+  idempotencyKey?: string;
+  operation: DecisionOperation;
+  reasons: DecisionReason[];
+  status: DecisionStatus;
+}
+
+export interface DecisionResult {
+  audit: DecisionAuditPreview;
+  capabilityId: string;
+  diagnostics: AicfDiagnostic[];
+  lifecycle: LifecycleEvaluation;
+  operation: DecisionOperation;
+  policy: PolicyEvaluation;
+  reasons: DecisionReason[];
+  requiredApprovals: DecisionReason[];
+  status: DecisionStatus;
+}
+
+export interface PolicyEvaluation {
+  reasons: DecisionReason[];
+  requiredApprovals: DecisionReason[];
+  status: DecisionStatus;
+}
+
+export interface LifecycleEvaluation {
+  reasons: DecisionReason[];
+  status: DecisionStatus;
+}

@@ -41,6 +41,13 @@ Inspect the public example registry:
 npm run inspect
 ```
 
+Evaluate a deterministic capability decision:
+
+```bash
+npm run build
+node dist/cli.js decide examples --request examples/support/decisions/support.refund.prepare_case.approval_required.json
+```
+
 Start a capability manifest excerpt:
 
 ```yaml
@@ -69,7 +76,8 @@ src/       TypeScript core, CLI, generated types, and tests
 scripts/   Local type-generation utilities
 ```
 
-Start with [the v0.1 spec](docs/spec.md), then inspect the support examples.
+Start with [the v0.1 spec](docs/spec.md), read the
+[control-plane guide](docs/control-plane.md), then inspect the support examples.
 
 Private drafts and source material are intentionally excluded from this public
 repository. See `AGENTS.md` for the tracking boundary used in this workspace.
@@ -117,9 +125,13 @@ Phase 2 exposes a small runtime surface:
 - `validateManifests(manifests, options)`
 - `buildRegistry(manifests)`
 - `inspectRegistry(registry)`
+- `decideCapability(registry, request)`
+- `evaluatePolicy(capability, request)`
+- `evaluateLifecycle(capability, request)`
 
 Generated public types include `CapabilityManifest`, `EntityManifest`, and
-`EvalCase`.
+`EvalCase`. Decision types include `DecisionRequest`, `DecisionResult`,
+`DecisionReason`, `DecisionOperation`, and `DecisionStatus`.
 
 ## License
 

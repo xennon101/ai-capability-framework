@@ -1,0 +1,22 @@
+{
+  "capabilityId": "support.refund.commit_case",
+  "operation": "commit",
+  "args": {
+    "prepared_action_id": "prepared_example_refund_1",
+    "approval_id": "approval_example_1"
+  },
+  "context": {
+    "permissions": ["refund.case.commit"],
+    "autonomyTier": "A0",
+    "userId": "user_example_support_lead",
+    "tenantId": "tenant_example"
+  },
+  "facts": {
+    "refund.approval_missing_or_invalid": false
+  },
+  "approval": {
+    "approved": true,
+    "approvalId": "approval_example_1"
+  },
+  "idempotencyKey": "idem_example_refund_commit_1"
+}

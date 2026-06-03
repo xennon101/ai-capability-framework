@@ -30,6 +30,8 @@ Use it when you need to answer these questions:
 - `npm run inspect` prints a readable registry summary.
 - After building, `node dist/cli.js validate <path>` and
   `node dist/cli.js inspect <path>` can target another manifest bundle.
+- `node dist/cli.js decide <path> --request <decision.json>` evaluates a
+  deterministic decision request and prints JSON.
 
 ## Design Rules
 

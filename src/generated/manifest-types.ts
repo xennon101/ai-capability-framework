@@ -68,6 +68,10 @@ export interface CapabilityManifest {
     verify: boolean;
     audit: boolean;
   };
+  idempotency?: {
+    required: boolean;
+    key_fields?: string[];
+  };
   observability: {
     log_inputs: "none" | "summary" | "redacted";
     log_outputs: "none" | "summary" | "redacted";

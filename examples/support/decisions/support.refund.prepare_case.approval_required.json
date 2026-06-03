@@ -1,0 +1,19 @@
+{
+  "capabilityId": "support.refund.prepare_case",
+  "operation": "prepare",
+  "args": {
+    "ticket_id": "TCK-1002",
+    "order_id": "ORD-2003",
+    "reason_code": "damaged_item",
+    "requested_amount": 750
+  },
+  "context": {
+    "permissions": ["refund.case.create", "ticket.read"],
+    "autonomyTier": "A2",
+    "userId": "user_example_support_agent",
+    "tenantId": "tenant_example"
+  },
+  "facts": {
+    "refund.order_not_refundable": false
+  }
+}

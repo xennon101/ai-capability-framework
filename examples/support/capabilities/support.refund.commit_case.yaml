@@ -82,6 +82,11 @@ lifecycle:
   commit: true
   verify: true
   audit: true
+idempotency:
+  required: true
+  key_fields:
+    - prepared_action_id
+    - approval_id
 observability:
   log_inputs: redacted
   log_outputs: summary

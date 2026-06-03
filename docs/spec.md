@@ -72,6 +72,16 @@ Read-only capabilities normally set `audit: true` and the other lifecycle flags
 to `false`. Commit capabilities should not be exposed in normal model tool sets
 unless the application has already verified approval and idempotency state.
 
+## Idempotency
+
+Commit capabilities may declare idempotency metadata:
+
+- `idempotency.required`: whether commit decisions require an idempotency key.
+- `idempotency.key_fields`: optional manifest guidance for stable key inputs.
+
+The framework only decides whether a key is required and present. Host
+applications own idempotency storage and replay protection.
+
 ## Public-Safe Examples
 
 - Use fake users, tenants, tickets, orders, approvals, and amounts.
