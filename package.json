@@ -35,6 +35,8 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.10.0",
+    "@emnapi/runtime": "^1.10.0",
     "@types/node": "^24.12.4",
     "ajv": "^8.17.1",
     "json-schema-to-typescript": "^15.0.4",
