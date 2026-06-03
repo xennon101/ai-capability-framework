@@ -1,0 +1,63 @@
+# Private workspace material. These files are preserved locally but must never
+# enter the public repository.
+_private/
+private/
+local/
+.local/
+drafts/
+archive/
+archives/
+backups/
+scratch/
+tmp/
+
+# Original private/draft source filenames from this workspace.
+AICF_Framework_PRD_Codex.md
+AI_Implementation_Bible_2026.md
+AI_Implementation_Bible_2026.docx
+README_FOR_CODEX.md
+CODEX_TASKS.md
+FRAMEWORK_CHOICES_SUMMARY.md
+CHANGE_SUMMARY_AWS_AUTH_PLATFORM.md
+manifest.json
+docs/AI_Implementation_Bible_2026.md
+docs/AI_Implementation_Bible_2026.docx
+docs/PRODUCT_REQUIREMENTS_AND_TECH_SPEC.md
+
+# Secrets and environment-specific configuration.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.kubeconfig
+*.tfvars
+*.tfstate
+*.tfstate.*
+
+# Generated, runtime, and dependency output.
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+.turbo/
+.next/
+out/
+playwright-report/
+test-results/
+promptfoo-results/
+traces/
+logs/
+*.log
+
+# Office/export artifacts that often contain drafts or private notes.
+*.docx
+*.pptx
+*.xlsx
+*.pdf
+

@@ -1,0 +1,25 @@
+schema_version: "0.1"
+id: Ticket
+version: 1.0.0
+name: Ticket
+summary: A synthetic support ticket used in public examples.
+canonical_id:
+  field: ticket_id
+  pattern: "^TCK-[0-9]+$"
+data_classification:
+  default: tenant_confidential
+  fields:
+    requester_id: synthetic_user_reference
+    order_id: synthetic_order_reference
+relationships:
+  - name: order
+    target_entity: Order
+    cardinality: many_to_one
+    lookup_capability: support.order.get
+lookup:
+  primary_capability: support.ticket.get
+allowed_actions:
+  - support.refund.prepare_case
+model_guidance: >
+  Tickets are tenant-scoped. Use only synthetic identifiers in public examples.
+

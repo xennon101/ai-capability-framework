@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/capability-manifest.schema.json",
+  "title": "AICF Capability Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "version",
+    "status",
+    "name",
+    "summary",
+    "model_description",
+    "capability_type",
+    "autonomy_tier",
+    "risk_tier",
+    "input_schema",
+    "output_schema",
+    "side_effects",
+    "authorization",
+    "policy",
+    "observability"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){2,}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-.]+)?(?:\\+[0-9A-Za-z-.]+)?$"
+    },
+    "status": {
+      "enum": ["draft", "experimental", "active", "deprecated", "disabled"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "team": { "type": "string" },
+        "contact": { "type": "string" }
+      }
+    },
+    "capability_type": {
+      "enum": [
+        "read_data",
+        "retrieve_documents",
+        "compute",
+        "write_prepare_only",
+        "write_commit",
+        "external_message_prepare",
+        "external_message_send",
+        "workflow_start",
+        "workflow_step",
+        "human_handoff"
+      ]
+    },
+    "autonomy_tier": {
+      "enum": ["A0", "A1", "A2", "A3", "A4", "A5"]
+    },
+    "risk_tier": {
+      "enum": ["none", "low", "medium", "high", "critical"]
+    },
+    "when_to_use": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "when_not_to_use": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "input_schema": {
+      "type": "object"
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "side_effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reads_data",
+        "writes_data",
+        "creates_records",
+        "updates_records",
+        "deletes_records",
+        "sends_external_messages",
+        "charges_money",
+        "refunds_money",
+        "changes_permissions",
+        "triggers_external_workflow",
+        "irreversible"
+      ],
+      "properties": {
+        "reads_data": { "type": "boolean" },
+        "writes_data": { "type": "boolean" },
+        "creates_records": { "type": "boolean" },
+        "updates_records": { "type": "boolean" },
+        "deletes_records": { "type": "boolean" },
+        "sends_external_messages": { "type": "boolean" },
+        "charges_money": { "type": "boolean" },
+        "refunds_money": { "type": "boolean" },
+        "changes_permissions": { "type": "boolean" },
+        "triggers_external_workflow": { "type": "boolean" },
+        "irreversible": { "type": "boolean" }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["permissions", "tenant_scoped", "requires_user_context"],
+      "properties": {
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "tenant_scoped": { "type": "boolean" },
+        "requires_user_context": { "type": "boolean" },
+        "data_scope": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "approval_required": { "type": "boolean" },
+        "approval_required_if": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/policy_rule" }
+        },
+        "deny_if": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/policy_rule" }
+        },
+        "max_autonomy_tier": {
+          "enum": ["A0", "A1", "A2", "A3", "A4", "A5"]
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prepare": { "type": "boolean" },
+        "preview": { "type": "boolean" },
+        "approve": { "type": "boolean" },
+        "commit": { "type": "boolean" },
+        "verify": { "type": "boolean" },
+        "audit": { "type": "boolean" }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["log_inputs", "log_outputs"],
+      "properties": {
+        "log_inputs": {
+          "enum": ["none", "summary", "redacted"]
+        },
+        "log_outputs": {
+          "enum": ["none", "summary", "redacted"]
+        },
+        "trace_attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          }
+        }
+      }
+    },
+    "evals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "golden": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "red_team": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "policy_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "reason"],
+      "properties": {
+        "rule": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "field": { "type": "string" },
+        "operator": {
+          "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "in", "not_in", "exists"]
+        },
+        "value": {}
+      }
+    }
+  }
+}
+

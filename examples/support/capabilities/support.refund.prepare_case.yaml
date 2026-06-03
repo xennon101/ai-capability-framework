@@ -1,0 +1,116 @@
+schema_version: "0.1"
+id: support.refund.prepare_case
+version: 1.0.0
+status: active
+name: Prepare refund case
+summary: Prepare a refund case for review without issuing money.
+domain: support
+owner:
+  team: example-support
+  contact: support@example.com
+capability_type: write_prepare_only
+autonomy_tier: A2
+risk_tier: medium
+model_description: >
+  Use this capability when a user asks for a refund and the application should
+  assemble a reviewable refund case. This capability must not issue money.
+when_to_use:
+  - The user asks to start or prepare a refund.
+  - A support agent needs a preview before approval.
+when_not_to_use:
+  - The user only asks about refund policy.
+  - The user asks to issue the refund immediately.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - ticket_id
+    - order_id
+    - reason_code
+  properties:
+    ticket_id:
+      type: string
+      pattern: "^TCK-[0-9]+$"
+    order_id:
+      type: string
+      pattern: "^ORD-[0-9]+$"
+    reason_code:
+      type: string
+      enum:
+        - damaged_item
+        - late_delivery
+        - duplicate_charge
+        - customer_request
+        - other
+    requested_amount:
+      type:
+        - number
+        - "null"
+      minimum: 0
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - prepared_action_id
+    - preview
+    - policy_decision
+  properties:
+    prepared_action_id:
+      type: string
+    preview:
+      type: object
+    policy_decision:
+      type: string
+      enum:
+        - allowed
+        - approval_required
+        - denied
+side_effects:
+  reads_data: true
+  writes_data: true
+  creates_records: true
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - refund.case.create
+    - ticket.read
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: true
+  approval_required_if:
+    - rule: refund.amount_over_threshold
+      field: requested_amount
+      operator: gt
+      value: 500
+      reason: Refund requests over the threshold require human approval.
+  deny_if:
+    - rule: refund.order_not_refundable
+      reason: The order is outside the refundable window.
+  max_autonomy_tier: A2
+lifecycle:
+  prepare: true
+  preview: true
+  approve: true
+  commit: false
+  verify: true
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: support
+    risk_tier: medium
+evals:
+  golden:
+    - ../evals/support.refund.prepare_case.valid.yaml
+
