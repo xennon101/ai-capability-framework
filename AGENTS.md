@@ -54,6 +54,36 @@ the AI Capability Framework.
 - If new generated output, local data, or private drafts are created, add ignore
   rules before they can be staged.
 
+## Publishing Workflow
+
+- This package is public on npm. Keep `package.json` publishable with
+  `"private": false` and `publishConfig.access: "public"` unless the user
+  explicitly changes the release boundary.
+- Never commit npm credentials, npm tokens, local `.npmrc` auth lines, or
+  one-time passwords. GitHub Actions publishing must use npm Trusted Publishing
+  with OIDC, not long-lived `NPM_TOKEN` secrets.
+- The trusted publishing workflow is `.github/workflows/publish.yml`. It should
+  run only for `v*` tags, request `id-token: write`, run `npm ci`, run
+  `npm run check`, and publish with `npm publish --access public`.
+- Do not publish from ordinary branch pushes. Publish by tagging a commit that is
+  already pushed to `origin/main`.
+- Release tags must match the package version exactly, for example package
+  version `1.0.0-rc.2` uses tag `v1.0.0-rc.2`.
+- npm versions are immutable. Never try to republish an existing version. Bump
+  the version first with `npm version <version>` or an equivalent intentional
+  package/package-lock update.
+- Pre-release versions containing a hyphen, such as `1.0.0-rc.2`, must publish
+  with the `next` dist tag. Stable releases, such as `1.0.0`, publish with the
+  `latest` dist tag.
+- Before any release tag is pushed, run `npm run check`, inspect
+  `npm publish --dry-run --tag next --access public` for pre-releases or
+  `npm publish --dry-run --tag latest --access public` for stable releases, and
+  confirm package contents exclude private/local-only material.
+- After publishing, verify npm with `npm view ai-capability-framework version`
+  and `npm view ai-capability-framework dist-tags --json`.
+- If a pre-release is accidentally tagged as `latest`, correct npm dist tags
+  before announcing the release.
+
 ## Repository Shape
 
 - `schemas/` contains JSON Schema contracts for framework manifests.
