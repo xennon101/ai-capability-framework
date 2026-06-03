@@ -3,6 +3,8 @@
 A capability manifest is the contract between model-facing intent and
 application-owned execution.
 
+See [the v0.1 spec](spec.md) for the shared vocabulary.
+
 ## Required Fields
 
 - `schema_version`: Manifest schema version.
@@ -21,6 +23,8 @@ application-owned execution.
   external messages, permission changes, and irreversible actions.
 - `authorization`: Required permissions and scoping rules.
 - `policy`: Deny, approval, and review rules.
+- `lifecycle`: Explicit prepare, preview, approve, commit, verify, and audit
+  flags.
 - `observability`: Logging and trace expectations.
 
 ## Lifecycle Guidance
@@ -33,3 +37,5 @@ High-risk capabilities should require explicit approval before commit. Critical
 capabilities should usually be split into separate prepare and commit
 capabilities.
 
+Commit capabilities should be excluded from normal model tool sets until
+application code has verified approval and idempotency state.

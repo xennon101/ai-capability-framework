@@ -1,0 +1,85 @@
+schema_version: "0.1"
+id: support.ticket.get
+version: 1.0.0
+status: active
+name: Get support ticket
+summary: Read a tenant-scoped support ticket for AI-assisted support workflows.
+domain: support
+owner:
+  team: example-support
+  contact: support@example.com
+capability_type: read_data
+autonomy_tier: A1
+risk_tier: low
+model_description: >
+  Use this capability to retrieve a synthetic support ticket when the current
+  user is allowed to view that ticket. This capability does not change data.
+when_to_use:
+  - The user asks about a specific support ticket.
+  - Another capability needs ticket details before preparing an action.
+when_not_to_use:
+  - The user asks to change, close, refund, or message from the ticket.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - ticket_id
+  properties:
+    ticket_id:
+      type: string
+      pattern: "^TCK-[0-9]+$"
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - ticket
+  properties:
+    ticket:
+      type: object
+      additionalProperties: false
+      required:
+        - ticket_id
+        - status
+        - order_id
+      properties:
+        ticket_id:
+          type: string
+        status:
+          type: string
+        order_id:
+          type: string
+side_effects:
+  reads_data: true
+  writes_data: false
+  creates_records: false
+  updates_records: false
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: false
+  changes_permissions: false
+  triggers_external_workflow: false
+  irreversible: false
+authorization:
+  permissions:
+    - ticket.read
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: false
+  max_autonomy_tier: A1
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: false
+  verify: false
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: support
+    risk_tier: low

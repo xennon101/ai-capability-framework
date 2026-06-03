@@ -20,6 +20,7 @@
     "side_effects",
     "authorization",
     "policy",
+    "lifecycle",
     "observability"
   ],
   "properties": {
@@ -89,12 +90,8 @@
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },
-    "input_schema": {
-      "type": "object"
-    },
-    "output_schema": {
-      "type": "object"
-    },
+    "input_schema": { "$ref": "#/$defs/json_schema_object" },
+    "output_schema": { "$ref": "#/$defs/json_schema_object" },
     "side_effects": {
       "type": "object",
       "additionalProperties": false,
@@ -132,6 +129,7 @@
       "properties": {
         "permissions": {
           "type": "array",
+          "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
         "tenant_scoped": { "type": "boolean" },
@@ -145,6 +143,7 @@
     "policy": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "approval_required": { "type": "boolean" },
         "approval_required_if": {
@@ -163,6 +162,7 @@
     "lifecycle": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["prepare", "preview", "approve", "commit", "verify", "audit"],
       "properties": {
         "prepare": { "type": "boolean" },
         "preview": { "type": "boolean" },
@@ -210,6 +210,16 @@
     }
   },
   "$defs": {
+    "json_schema_object": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": ["string", "array"]
+        }
+      }
+    },
     "policy_rule": {
       "type": "object",
       "additionalProperties": false,
@@ -226,4 +236,3 @@
     }
   }
 }
-

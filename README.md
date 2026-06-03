@@ -9,8 +9,8 @@ The repository contains:
 - Synthetic examples that show how to describe a capability without exposing
   private application internals.
 - A validation script for checking examples against the schemas.
-- Short instructions for designing capabilities, policies, action lifecycles,
-  and regression evals.
+- A concise `v0.1` public spec for capability IDs, tiers, lifecycle, and
+  public-safe examples.
 
 ## Why This Exists
 
@@ -34,7 +34,7 @@ npm install
 npm run validate
 ```
 
-Create a capability manifest:
+Start a capability manifest excerpt:
 
 ```yaml
 schema_version: "0.1"
@@ -48,8 +48,9 @@ autonomy_tier: A2
 risk_tier: medium
 ```
 
-Then add input/output schemas, side-effect metadata, authorization rules, policy
-gates, observability settings, and eval references.
+Then add the required input/output schemas, side-effect metadata,
+authorization rules, policy gates, lifecycle flags, observability settings, and
+eval references. Complete copyable examples live under `examples/`.
 
 ## Repository Layout
 
@@ -59,6 +60,8 @@ examples/  Synthetic public example capabilities, entities, and evals
 docs/      Public usage guidance
 scripts/   Local validation utilities
 ```
+
+Start with [the v0.1 spec](docs/spec.md), then inspect the support examples.
 
 Private drafts and source material are intentionally excluded from this public
 repository. See `AGENTS.md` for the tracking boundary used in this workspace.
@@ -95,3 +98,8 @@ example under:
 
 The script fails on malformed examples or schema violations.
 
+GitHub Actions runs the same validation command on pushes and pull requests.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

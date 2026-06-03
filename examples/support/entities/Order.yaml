@@ -1,0 +1,23 @@
+schema_version: "0.1"
+id: Order
+version: 1.0.0
+name: Order
+summary: A synthetic purchase order used in public examples.
+canonical_id:
+  field: order_id
+  pattern: "^ORD-[0-9]+$"
+data_classification:
+  default: tenant_confidential
+  fields:
+    order_id: synthetic_order_reference
+    amount: synthetic_financial_amount
+relationships:
+  - name: tickets
+    target_entity: Ticket
+    cardinality: one_to_many
+lookup:
+  primary_capability: support.order.get
+allowed_actions:
+  - support.refund.prepare_case
+model_guidance: >
+  Orders are tenant-scoped. Public examples must use synthetic order IDs only.

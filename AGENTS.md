@@ -11,6 +11,8 @@ the AI Capability Framework.
 - Keep private drafts, research notes, raw product specs, generated documents,
   transcripts, traces, prompts, local experiments, and user-specific material in
   `_private/` or another ignored path.
+- Keep generated docs, exports, local validation artifacts, model traces, raw
+  prompts, and provider payloads out of tracked paths.
 - Never move material from `_private/` into tracked paths by copying it verbatim.
   Distill it into new public text, remove private context, then validate it
   before staging.
@@ -18,6 +20,9 @@ the AI Capability Framework.
   private files remain ignored.
 - If a private file appears as tracked or staged, stop and fix the repository
   boundary before continuing.
+- Before committing or pushing, run `git ls-files` and verify that tracked files
+  exclude `_private/`, draft filenames, generated documents, traces, prompts,
+  and local-only material.
 
 ## Public Content Rules
 
@@ -40,6 +45,7 @@ the AI Capability Framework.
   by the request.
 - Run `npm run validate` before handoff when schemas, examples, or validation
   scripts change.
+- CI must run `npm ci` and `npm run validate` for pushes and pull requests.
 - If new generated output, local data, or private drafts are created, add ignore
   rules before they can be staged.
 
@@ -50,4 +56,3 @@ the AI Capability Framework.
   schemas.
 - `docs/` contains concise public guidance for using the framework.
 - `_private/` is local-only preserved source material and must stay ignored.
-

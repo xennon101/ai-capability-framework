@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
@@ -70,6 +70,34 @@ function formatErrors(errors = []) {
     .join("\n");
 }
 
+async function fileExists(relativePath) {
+  try {
+    await access(path.join(repoRoot, relativePath));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function validateCapabilityReferences(relativePath, capability) {
+  const evalRefs = [
+    ...(capability.evals?.golden ?? []),
+    ...(capability.evals?.red_team ?? [])
+  ];
+
+  const missingRefs = [];
+  for (const evalRef of evalRefs) {
+    const resolved = path.normalize(path.join(path.dirname(relativePath), evalRef));
+    if (!await fileExists(resolved)) {
+      missingRefs.push(evalRef);
+    }
+  }
+
+  if (missingRefs.length > 0) {
+    throw new Error(`missing eval reference(s): ${missingRefs.join(", ")}`);
+  }
+}
+
 const schemas = {};
 for (const [key, relativePath] of Object.entries(schemaPaths)) {
   const schema = await readJson(relativePath);
@@ -97,6 +125,17 @@ for (const file of exampleFiles) {
     console.error(`FAIL ${file}`);
     console.error(formatErrors(validate.errors));
   } else {
+    if (schemaKey === "capability") {
+      try {
+        await validateCapabilityReferences(file, value);
+      } catch (error) {
+        failures += 1;
+        console.error(`FAIL ${file}`);
+        console.error(`  - ${error.message}`);
+        continue;
+      }
+    }
+
     console.log(`OK   ${file}`);
   }
 }
@@ -107,4 +146,3 @@ if (failures > 0) {
 }
 
 console.log(`Validated ${exampleFiles.length} example file(s).`);
-

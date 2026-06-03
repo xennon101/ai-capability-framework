@@ -1,0 +1,93 @@
+schema_version: "0.1"
+id: support.refund.commit_case
+version: 1.0.0
+status: active
+name: Commit approved refund case
+summary: Commit a previously approved refund case.
+domain: support
+owner:
+  team: example-support
+  contact: support@example.com
+capability_type: write_commit
+autonomy_tier: A0
+risk_tier: high
+model_description: >
+  Use this capability only when application code has verified an approved
+  prepared refund action. Do not expose this capability in the default model
+  tool set for normal refund requests.
+when_to_use:
+  - A prepared refund action has already been approved.
+  - The application has verified the approval and idempotency state.
+when_not_to_use:
+  - The user directly asks to issue a refund without an approved prepared action.
+  - The model only inferred that a refund might be appropriate.
+input_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - prepared_action_id
+    - approval_id
+  properties:
+    prepared_action_id:
+      type: string
+      minLength: 1
+    approval_id:
+      type: string
+      minLength: 1
+output_schema:
+  type: object
+  additionalProperties: false
+  required:
+    - refund_id
+    - status
+    - audit_event_id
+  properties:
+    refund_id:
+      type: string
+    status:
+      type: string
+      enum:
+        - committed
+    audit_event_id:
+      type: string
+side_effects:
+  reads_data: true
+  writes_data: true
+  creates_records: false
+  updates_records: true
+  deletes_records: false
+  sends_external_messages: false
+  charges_money: false
+  refunds_money: true
+  changes_permissions: false
+  triggers_external_workflow: true
+  irreversible: true
+authorization:
+  permissions:
+    - refund.case.commit
+  tenant_scoped: true
+  requires_user_context: true
+  data_scope:
+    - current_tenant
+policy:
+  approval_required: true
+  deny_if:
+    - rule: refund.approval_missing_or_invalid
+      reason: Refund commit requires a verified prepared action and approval.
+  max_autonomy_tier: A0
+lifecycle:
+  prepare: false
+  preview: false
+  approve: false
+  commit: true
+  verify: true
+  audit: true
+observability:
+  log_inputs: redacted
+  log_outputs: summary
+  trace_attributes:
+    domain: support
+    risk_tier: high
+evals:
+  red_team:
+    - ../evals/support.refund.commit_case.requires_approval.yaml

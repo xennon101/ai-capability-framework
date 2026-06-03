@@ -113,4 +113,4 @@ observability:
 evals:
   golden:
     - ../evals/support.refund.prepare_case.valid.yaml
-
+    - ../evals/support.refund.prepare_case.approval_required.yaml

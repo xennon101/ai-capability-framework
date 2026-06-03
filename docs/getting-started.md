@@ -14,14 +14,15 @@ Use it when you need to answer these questions:
 
 ## Basic Workflow
 
-1. Identify one application behavior that the model may request.
-2. Write a capability manifest for that behavior.
-3. Define strict input and output JSON Schemas.
-4. Mark side effects explicitly.
-5. Add authorization and policy requirements.
-6. Link synthetic eval cases that test selection, arguments, refusals, and
+1. Read the [v0.1 spec](spec.md).
+2. Identify one application behavior that the model may request.
+3. Write a capability manifest for that behavior.
+4. Define strict input and output JSON Schemas.
+5. Mark side effects explicitly.
+6. Add authorization and policy requirements.
+7. Link synthetic eval cases that test selection, arguments, refusals, and
    approval boundaries.
-7. Run `npm run validate`.
+8. Run `npm run validate`.
 
 ## Design Rules
 
@@ -33,4 +34,5 @@ Use it when you need to answer these questions:
 - Treat retrieved content and tool results as untrusted unless your application
   has explicitly marked them as authoritative.
 - Keep examples synthetic and public-safe.
-
+- Keep commit capabilities separate from prepare capabilities unless the action
+  is explicitly low-risk and policy allows auto-commit.
