@@ -28,3 +28,7 @@ present in the loaded manifest bundle.
 Decision behavior should be covered with synthetic request examples and tests
 for permission denial, autonomy denial, approval requirements, deny facts,
 missing facts, approval state, and idempotency keys.
+
+Phase 5 adds a deterministic eval runner for scoring public-safe candidate
+result fixtures against eval manifests. See [the eval runner guide](eval-runner.md)
+for fixture shape, scorer behavior, and CLI usage.

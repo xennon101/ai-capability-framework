@@ -193,3 +193,32 @@ export interface ExpectedBehavior {
     must_not_include?: string[];
   };
 }
+
+export interface EvalResultFixture {
+  schema_version: "0.1";
+  results: EvalCandidateResult[];
+  extensions?: {};
+}
+/**
+ * This interface was referenced by `EvalResultFixture`'s JSON-Schema
+ * via the `definition` "eval_candidate_result".
+ */
+export interface EvalCandidateResult {
+  eval_id: string;
+  selected_capabilities?: string[];
+  tool_calls?: {
+    capability_id: string;
+    args?: {};
+  }[];
+  policy_decision?: "allowed" | "approval_required" | "denied";
+  action_state?: "none" | "prepared" | "approval_required" | "committed" | "denied" | "refused";
+  committed_capabilities?: string[];
+  refusal?: {
+    present?: boolean;
+    reason?: string;
+  };
+  response?: {
+    text?: string;
+  };
+  extensions?: {};
+}

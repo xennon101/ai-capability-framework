@@ -3,7 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { decideCapability } from "./decision.js";
+import { formatEvalSuiteResult, loadEvalResults, runEvalSuite } from "./eval-runner.js";
 import { loadManifests } from "./loader.js";
+import { buildOpenAIResponsesTools } from "./openai-responses.js";
 import { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
 import type { AicfDiagnostic, DecisionRequest } from "./types.js";
 import { validateManifests } from "./validator.js";
@@ -27,7 +29,7 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return command ? 0 : 1;
   }
 
-  if (command !== "validate" && command !== "inspect" && command !== "decide") {
+  if (command !== "validate" && command !== "inspect" && command !== "decide" && command !== "openai-tools" && command !== "eval") {
     stderr.write(`Unknown command "${command}".\n\n${helpText()}`);
     return 1;
   }
@@ -82,6 +84,72 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return 0;
   }
 
+  if (command === "openai-tools") {
+    if (!parsedArgs.contextPath) {
+      stderr.write("Missing required --context <context.json>.\n");
+      return 1;
+    }
+
+    const context = await readOpenAIToolContext(parsedArgs.contextPath);
+    if (!context.ok) {
+      stderr.write(`${context.error}\n`);
+      return 1;
+    }
+
+    const contextError = validateOpenAIToolContextShape(context.value);
+    if (contextError) {
+      stderr.write(`${contextError}\n`);
+      return 1;
+    }
+
+    const toolset = buildOpenAIResponsesTools(registry, {
+      context: context.value,
+      includeRestricted: parsedArgs.includeRestricted
+    });
+    const fatalDiagnostics = toolset.diagnostics.filter((diagnostic) => diagnostic.code === "tool_name_collision");
+
+    if (fatalDiagnostics.length > 0) {
+      stderr.write(formatDiagnostics(fatalDiagnostics));
+      return 1;
+    }
+
+    stdout.write(`${JSON.stringify(toolset, null, 2)}\n`);
+
+    if (toolset.tools.length === 0) {
+      stderr.write("No OpenAI tools were exportable.\n");
+      return 1;
+    }
+
+    return 0;
+  }
+
+  if (command === "eval") {
+    if (!parsedArgs.resultsPath) {
+      stderr.write("Missing required --results <results.json>.\n");
+      return 1;
+    }
+
+    if (parsedArgs.format !== "text" && parsedArgs.format !== "json") {
+      stderr.write("Eval format must be text or json.\n");
+      return 1;
+    }
+
+    const evalResults = await loadEvalResults(parsedArgs.resultsPath);
+    if (evalResults.errors.length > 0) {
+      stderr.write(formatDiagnostics(evalResults.errors));
+      return 1;
+    }
+
+    const suite = runEvalSuite(registry, evalResults.results);
+    if (parsedArgs.format === "json") {
+      stdout.write(`${JSON.stringify(suite, null, 2)}\n`);
+    } else {
+      stdout.write(formatEvalSuiteResult(suite));
+    }
+
+    return suite.passed ? 0 : 1;
+  }
+
   stdout.write(formatInspection(inspectRegistry(registry)));
   return 0;
 }
@@ -92,6 +160,8 @@ function helpText(): string {
     "",
     "Commands:",
     "  decide <path> --request <file>  Evaluate a decision request.",
+    "  eval <path> --results <file> [--format text|json]  Run deterministic evals.",
+    "  openai-tools <path> --context <file>  Export OpenAI Responses function tools.",
     "  validate [path]  Validate AICF manifests. Defaults to examples.",
     "  inspect [path]   Print a registry summary. Defaults to examples.",
     ""
@@ -99,11 +169,19 @@ function helpText(): string {
 }
 
 function parseCommandArgs(args: string[]): {
+  contextPath?: string;
   error?: string;
+  format?: "json" | "text" | string;
+  includeRestricted?: boolean;
   requestPath?: string;
+  resultsPath?: string;
   targetPath?: string;
 } {
+  let contextPath: string | undefined;
+  let format = "text";
+  let includeRestricted = false;
   let requestPath: string | undefined;
+  let resultsPath: string | undefined;
   let targetPath: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
@@ -119,6 +197,44 @@ function parseCommandArgs(args: string[]): {
       continue;
     }
 
+    if (arg === "--results") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --results." };
+      }
+
+      resultsPath = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--format") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --format." };
+      }
+
+      format = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--context") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --context." };
+      }
+
+      contextPath = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--include-restricted") {
+      includeRestricted = true;
+      continue;
+    }
+
     if (arg?.startsWith("--")) {
       return { error: `Unknown option "${arg}".` };
     }
@@ -131,7 +247,11 @@ function parseCommandArgs(args: string[]): {
   }
 
   return {
+    contextPath,
+    format,
+    includeRestricted,
     requestPath,
+    resultsPath,
     targetPath
   };
 }
@@ -149,6 +269,24 @@ async function readDecisionRequest(filePath: string): Promise<
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unable to read decision request.",
+      ok: false
+    };
+  }
+}
+
+async function readOpenAIToolContext(filePath: string): Promise<
+  | { ok: true; value: DecisionRequest["context"] }
+  | { error: string; ok: false }
+> {
+  try {
+    const content = await readFile(filePath, "utf8");
+    return {
+      ok: true,
+      value: JSON.parse(content) as DecisionRequest["context"]
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unable to read OpenAI tool context.",
       ok: false
     };
   }
@@ -177,6 +315,30 @@ function validateDecisionRequestShape(value: DecisionRequest): string | null {
 
   if (!["A0", "A1", "A2", "A3", "A4", "A5"].includes(value.context.autonomyTier)) {
     return "Decision request context.autonomyTier must be A0, A1, A2, A3, A4, or A5.";
+  }
+
+  return null;
+}
+
+function validateOpenAIToolContextShape(value: DecisionRequest["context"]): string | null {
+  if (typeof value !== "object" || value === null) {
+    return "OpenAI tool context must be a JSON object.";
+  }
+
+  if (!Array.isArray(value.permissions) || value.permissions.some((permission) => typeof permission !== "string")) {
+    return "OpenAI tool context.permissions must be an array of strings.";
+  }
+
+  if (!["A0", "A1", "A2", "A3", "A4", "A5"].includes(value.autonomyTier)) {
+    return "OpenAI tool context.autonomyTier must be A0, A1, A2, A3, A4, or A5.";
+  }
+
+  if (value.userId !== undefined && typeof value.userId !== "string") {
+    return "OpenAI tool context.userId must be a string when present.";
+  }
+
+  if (value.tenantId !== undefined && typeof value.tenantId !== "string") {
+    return "OpenAI tool context.tenantId must be a string when present.";
   }
 
   return null;

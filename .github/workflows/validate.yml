@@ -29,7 +29,7 @@ jobs:
         run: npm run generate:types
 
       - name: Check generated type freshness
-        run: git diff --exit-code -- src/generated
+        run: npm run check:generated
 
       - name: Build package
         run: npm run build
@@ -39,3 +39,6 @@ jobs:
 
       - name: Validate manifests
         run: npm run validate
+
+      - name: Check package contents
+        run: npm run check:package

@@ -2,25 +2,37 @@ import type { ErrorObject } from "ajv";
 import type {
   CapabilityManifest,
   EntityManifest,
-  EvalCase
+  EvalCandidateResult,
+  EvalCase,
+  EvalResultFixture
 } from "./generated/manifest-types.js";
 
 export type {
   CapabilityManifest,
   EntityManifest,
-  EvalCase
+  EvalCandidateResult,
+  EvalCase,
+  EvalResultFixture
 } from "./generated/manifest-types.js";
 
 export type ManifestKind = "capability" | "entity" | "eval";
 
 export type AicfErrorCode =
   | "duplicate_id"
+  | "invalid_context"
+  | "invalid_eval_result"
+  | "invalid_tool_call"
+  | "missing_candidate"
   | "missing_reference"
   | "parse"
   | "schema"
+  | "tool_name_collision"
+  | "unknown_scorer"
   | "unsupported";
 
 export type AicfWarningCode =
+  | "capability_excluded"
+  | "schema_normalization"
   | "unknown_allowed_action"
   | "unknown_capability_under_test";
 
@@ -177,4 +189,123 @@ export interface PolicyEvaluation {
 export interface LifecycleEvaluation {
   reasons: DecisionReason[];
   status: DecisionStatus;
+}
+
+export type JsonValue =
+  | boolean
+  | null
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export type JsonObject = { [key: string]: JsonValue };
+
+export interface OpenAIResponsesFunctionTool {
+  description: string;
+  name: string;
+  parameters: JsonObject;
+  strict: true;
+  type: "function";
+}
+
+export interface OpenAIResponsesToolBinding {
+  autonomyTier: CapabilityManifest["autonomy_tier"];
+  capabilityId: string;
+  capabilityType: CapabilityManifest["capability_type"];
+  inputSchema: JsonObject;
+  path: string;
+  restricted: boolean;
+  riskTier: CapabilityManifest["risk_tier"];
+  toolName: string;
+}
+
+export interface OpenAIResponsesExcludedCapability {
+  capabilityId: string;
+  diagnostics: AicfDiagnostic[];
+  path: string;
+  reason: "decision_denied" | "restricted" | "tool_name_collision" | "unsupported_schema";
+}
+
+export interface OpenAIResponsesToolset {
+  bindings: OpenAIResponsesToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: OpenAIResponsesExcludedCapability[];
+  tools: OpenAIResponsesFunctionTool[];
+}
+
+export interface BuildOpenAIResponsesToolsOptions {
+  context: DecisionRequest["context"];
+  includeRestricted?: boolean;
+  namePrefix?: string;
+}
+
+export interface OpenAIResponsesToolNameOptions {
+  namePrefix?: string;
+}
+
+export interface OpenAIResponsesFunctionCall {
+  arguments: string;
+  call_id?: string;
+  id?: string;
+  name: string;
+  type: "function_call";
+}
+
+export interface ParsedOpenAIResponsesToolCall {
+  args: Record<string, unknown>;
+  callId?: string;
+  capabilityId: string;
+  id?: string;
+  toolName: string;
+}
+
+export interface ParseOpenAIResponsesToolCallResult {
+  diagnostics: AicfDiagnostic[];
+  parsed?: ParsedOpenAIResponsesToolCall;
+  valid: boolean;
+}
+
+export type EvalRunStatus = "passed" | "failed";
+
+export interface LoadEvalResultsResult {
+  absolutePath: string;
+  errors: AicfDiagnostic[];
+  fixture?: EvalResultFixture;
+  path: string;
+  results: EvalCandidateResult[];
+}
+
+export interface EvalScorerResult {
+  actual?: unknown;
+  diagnostics: AicfDiagnostic[];
+  expected?: unknown;
+  message: string;
+  passed: boolean;
+  scorer: string;
+}
+
+export interface EvalCaseResult {
+  candidate?: EvalCandidateResult;
+  diagnostics: AicfDiagnostic[];
+  evalId: string;
+  passed: boolean;
+  scorers: EvalScorerResult[];
+  status: EvalRunStatus;
+}
+
+export interface EvalSuiteResult {
+  diagnostics: AicfDiagnostic[];
+  evals: EvalCaseResult[];
+  passed: boolean;
+  status: EvalRunStatus;
+  summary: {
+    failed: number;
+    passed: number;
+    total: number;
+  };
+}
+
+export interface RunEvalSuiteOptions {
+  evalIds?: string[];
 }

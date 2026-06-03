@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/eval-result.schema.json",
+  "title": "AICF Eval Result Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "results"],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/eval_candidate_result" }
+    },
+    "extensions": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "eval_candidate_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eval_id"],
+      "properties": {
+        "eval_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "tool_calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability_id"],
+            "properties": {
+              "capability_id": { "type": "string", "minLength": 1 },
+              "args": { "type": "object" }
+            }
+          }
+        },
+        "policy_decision": {
+          "enum": ["allowed", "approval_required", "denied"]
+        },
+        "action_state": {
+          "enum": ["none", "prepared", "approval_required", "committed", "denied", "refused"]
+        },
+        "committed_capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "refusal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "present": { "type": "boolean" },
+            "reason": { "type": "string" }
+          }
+        },
+        "response": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": { "type": "string" }
+          }
+        },
+        "extensions": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

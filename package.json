@@ -3,7 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "description": "Public schemas, examples, and guidance for AI capability manifests.",
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "capabilities",
+    "evals",
+    "json-schema",
+    "tool-calling",
+    "governance"
+  ],
+  "homepage": "https://github.com/xennon101/ai-capability-framework#readme",
+  "bugs": {
+    "url": "https://github.com/xennon101/ai-capability-framework/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xennon101/ai-capability-framework.git"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -20,12 +38,17 @@
     "schemas",
     "examples",
     "docs",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check:generated": "npm run generate:types --silent && git diff --exit-code -- src/generated",
+    "check": "npm run check:generated && npm run build && npm test && npm run validate && npm run check:package",
+    "check:generated": "node scripts/check-generated.mjs",
+    "check:package": "node scripts/check-package.mjs",
     "generate:types": "node scripts/generate-types.mjs",
     "inspect": "npm run build --silent && node dist/cli.js inspect examples",
     "test": "vitest run",

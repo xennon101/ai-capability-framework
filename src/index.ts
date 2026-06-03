@@ -1,5 +1,7 @@
 export { decideCapability, evaluateLifecycle, evaluatePolicy } from "./decision.js";
+export { formatEvalSuiteResult, loadEvalResults, runEvalSuite, scoreEvalCase } from "./eval-runner.js";
 export { loadManifests, kindFromPath } from "./loader.js";
+export { buildOpenAIResponsesTools, parseOpenAIResponsesToolCall, toOpenAIResponsesToolName } from "./openai-responses.js";
 export { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
 export { runCli } from "./cli.js";
 export { validateManifests } from "./validator.js";
@@ -17,9 +19,16 @@ export type {
   DecisionRequest,
   DecisionResult,
   DecisionStatus,
+  EvalCandidateResult,
   EntityManifest,
   EvalCase,
+  EvalCaseResult,
+  EvalResultFixture,
+  EvalRunStatus,
+  EvalScorerResult,
+  EvalSuiteResult,
   LifecycleEvaluation,
+  LoadEvalResultsResult,
   LoadedCapabilityManifest,
   LoadedEntityManifest,
   LoadedEvalCase,
@@ -28,8 +37,20 @@ export type {
   LoadManifestsResult,
   ManifestKind,
   ManifestRegistry,
+  BuildOpenAIResponsesToolsOptions,
+  JsonObject,
+  JsonValue,
+  OpenAIResponsesExcludedCapability,
+  OpenAIResponsesFunctionCall,
+  OpenAIResponsesFunctionTool,
+  OpenAIResponsesToolBinding,
+  OpenAIResponsesToolNameOptions,
+  OpenAIResponsesToolset,
+  ParsedOpenAIResponsesToolCall,
+  ParseOpenAIResponsesToolCallResult,
   PolicyEvaluation,
   RegistryInspection,
+  RunEvalSuiteOptions,
   ValidateManifestsOptions,
   ValidationResult
 } from "./types.js";

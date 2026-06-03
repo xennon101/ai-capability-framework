@@ -32,6 +32,10 @@ Use it when you need to answer these questions:
   `node dist/cli.js inspect <path>` can target another manifest bundle.
 - `node dist/cli.js decide <path> --request <decision.json>` evaluates a
   deterministic decision request and prints JSON.
+- `node dist/cli.js openai-tools <path> --context <context.json>` exports
+  OpenAI Responses function tools without calling a model.
+- `node dist/cli.js eval <path> --results <results.json>` scores deterministic
+  candidate eval results without calling a model.
 
 ## Design Rules
 

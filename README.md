@@ -10,6 +10,10 @@ The repository contains:
   private application internals.
 - A TypeScript core library and `aicf` CLI for loading, validating, and
   inspecting manifests.
+- An OpenAI Responses adapter that exports safe function tool definitions
+  without calling models or executing capabilities.
+- A deterministic eval runner for scoring public-safe candidate fixtures
+  without API keys or live model calls.
 - A concise `v0.1` public spec for capability IDs, tiers, lifecycle, and
   public-safe examples.
 
@@ -48,6 +52,20 @@ npm run build
 node dist/cli.js decide examples --request examples/support/decisions/support.refund.prepare_case.approval_required.json
 ```
 
+Export OpenAI Responses function tools from a validated registry:
+
+```bash
+npm run build
+node dist/cli.js openai-tools examples --context examples/support/openai/context.support_agent.json
+```
+
+Run deterministic evals against a public-safe candidate fixture:
+
+```bash
+npm run build
+node dist/cli.js eval examples --results examples/support/eval-results/support.results.passing.json
+```
+
 Start a capability manifest excerpt:
 
 ```yaml
@@ -77,7 +95,13 @@ scripts/   Local type-generation utilities
 ```
 
 Start with [the v0.1 spec](docs/spec.md), read the
-[control-plane guide](docs/control-plane.md), then inspect the support examples.
+[API guide](docs/api.md), the [control-plane guide](docs/control-plane.md), the
+[OpenAI Responses adapter](docs/openai-responses.md), and the
+[eval runner guide](docs/eval-runner.md), then inspect the support examples.
+
+Release and collaboration docs:
+[CHANGELOG](CHANGELOG.md), [CONTRIBUTING](CONTRIBUTING.md),
+[SECURITY](SECURITY.md), and the [release checklist](docs/release.md).
 
 Private drafts and source material are intentionally excluded from this public
 repository. See `AGENTS.md` for the tracking boundary used in this workspace.
@@ -128,10 +152,20 @@ Phase 2 exposes a small runtime surface:
 - `decideCapability(registry, request)`
 - `evaluatePolicy(capability, request)`
 - `evaluateLifecycle(capability, request)`
+- `buildOpenAIResponsesTools(registry, options)`
+- `parseOpenAIResponsesToolCall(toolset, call)`
+- `toOpenAIResponsesToolName(capabilityId, options)`
+- `loadEvalResults(path)`
+- `scoreEvalCase(evalCase, candidate, registry)`
+- `runEvalSuite(registry, candidates, options)`
 
 Generated public types include `CapabilityManifest`, `EntityManifest`, and
 `EvalCase`. Decision types include `DecisionRequest`, `DecisionResult`,
-`DecisionReason`, `DecisionOperation`, and `DecisionStatus`.
+`DecisionReason`, `DecisionOperation`, and `DecisionStatus`. OpenAI adapter
+types include `OpenAIResponsesToolset`, `OpenAIResponsesFunctionTool`, and
+`OpenAIResponsesToolBinding`. Eval runner types include `EvalResultFixture`,
+`EvalCandidateResult`, `EvalSuiteResult`, `EvalCaseResult`, and
+`EvalScorerResult`.
 
 ## License
 
