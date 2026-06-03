@@ -4,18 +4,36 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import {
-  buildRegistry,
+  buildAiSdkTools,
+  buildAnthropicClaudeTools,
+  buildGeminiFunctionDeclarations,
+  buildLangChainToolDescriptors,
+  buildMcpToolDescriptors,
   buildOpenAIResponsesTools,
+  buildRegistry,
+  buildSemanticKernelFunctions,
   decideCapability,
   formatInspection,
   loadEvalResults,
   inspectRegistry,
   loadManifests,
+  parseAiSdkToolCall,
+  parseAnthropicClaudeToolUse,
+  parseGeminiFunctionCall,
+  parseLangChainToolCall,
+  parseMcpToolCall,
   parseOpenAIResponsesToolCall,
+  parseSemanticKernelFunctionCall,
   runEvalSuite,
   runCli,
   scoreEvalCase,
+  toAiSdkToolName,
+  toAnthropicClaudeToolName,
+  toGeminiFunctionName,
+  toLangChainToolName,
+  toMcpToolName,
   toOpenAIResponsesToolName,
+  toSemanticKernelFunctionName,
   validateManifests,
   type CapabilityManifest,
   type DecisionRequest,
@@ -202,6 +220,46 @@ describe("AICF CLI", () => {
     expect(stderr.value).toContain("Missing required --context");
   });
 
+  it("exports each non-OpenAI adapter from the CLI", async () => {
+    for (const command of [
+      "anthropic-tools",
+      "gemini-tools",
+      "ai-sdk-tools",
+      "mcp-tools",
+      "langchain-tools",
+      "semantic-kernel-functions"
+    ]) {
+      const stdout = createWritableBuffer();
+      const stderr = createWritableBuffer();
+
+      const exitCode = await runCli([
+        command,
+        "examples",
+        "--context",
+        "examples/support/openai/context.support_agent.json"
+      ], { stderr, stdout });
+      const parsed = JSON.parse(stdout.value) as {
+        bindings: Array<{ capabilityId: string }>;
+        excluded: Array<{ capabilityId: string; reason: string }>;
+        functionDeclarations?: unknown[];
+        functions?: unknown[];
+        tools?: Record<string, unknown> | unknown[];
+      };
+
+      expect(exitCode, command).toBe(0);
+      expect(stderr.value, command).toBe("");
+      expect(adapterExportedCount(parsed), command).toBe(2);
+      expect(parsed.bindings.map((binding) => binding.capabilityId), command).toEqual([
+        "support.refund.prepare_case",
+        "support.ticket.get"
+      ]);
+      expect(parsed.excluded, command).toContainEqual(expect.objectContaining({
+        capabilityId: "support.refund.commit_case",
+        reason: "restricted"
+      }));
+    }
+  });
+
   it("runs deterministic evals with text and JSON output", async () => {
     const textStdout = createWritableBuffer();
     const textStderr = createWritableBuffer();
@@ -263,8 +321,14 @@ describe("AICF release readiness", () => {
   it("built package exports include the expected public API surface", async () => {
     const builtPackage = await import("../../dist/index.js") as Record<string, unknown>;
     const expectedExports = [
+      "buildAiSdkTools",
+      "buildAnthropicClaudeTools",
+      "buildGeminiFunctionDeclarations",
+      "buildLangChainToolDescriptors",
+      "buildMcpToolDescriptors",
       "buildOpenAIResponsesTools",
       "buildRegistry",
+      "buildSemanticKernelFunctions",
       "decideCapability",
       "evaluateLifecycle",
       "evaluatePolicy",
@@ -274,11 +338,23 @@ describe("AICF release readiness", () => {
       "kindFromPath",
       "loadEvalResults",
       "loadManifests",
+      "parseAiSdkToolCall",
+      "parseAnthropicClaudeToolUse",
+      "parseGeminiFunctionCall",
+      "parseLangChainToolCall",
+      "parseMcpToolCall",
       "parseOpenAIResponsesToolCall",
+      "parseSemanticKernelFunctionCall",
       "runCli",
       "runEvalSuite",
       "scoreEvalCase",
+      "toAiSdkToolName",
+      "toAnthropicClaudeToolName",
+      "toGeminiFunctionName",
+      "toLangChainToolName",
+      "toMcpToolName",
       "toOpenAIResponsesToolName",
+      "toSemanticKernelFunctionName",
       "validateManifests"
     ];
 
@@ -301,7 +377,19 @@ describe("AICF release readiness", () => {
     expect(cliContent).toContain("#!/usr/bin/env node");
     expect(exitCode).toBe(0);
     expect(stderr.value).toBe("");
-    for (const command of ["validate", "inspect", "decide", "openai-tools", "eval"]) {
+    for (const command of [
+      "validate",
+      "inspect",
+      "decide",
+      "openai-tools",
+      "anthropic-tools",
+      "gemini-tools",
+      "ai-sdk-tools",
+      "mcp-tools",
+      "langchain-tools",
+      "semantic-kernel-functions",
+      "eval"
+    ]) {
       expect(stdout.value).toContain(command);
     }
   });
@@ -318,6 +406,7 @@ describe("AICF release readiness", () => {
       "conformance/invalid/schema/capabilities/conformance.invalid.missing_required.yaml",
       "dist/index.js",
       "dist/cli.js",
+      "docs/adapters.md",
       "docs/api.md",
       "docs/control-plane.md",
       "docs/eval-runner.md",
@@ -1032,6 +1121,196 @@ describe("OpenAI Responses adapter", () => {
   });
 });
 
+describe("Non-OpenAI adapter exports", () => {
+  for (const adapter of nonOpenAiAdapterConfigs()) {
+    it(`${adapter.label} exports support read/prepare capabilities and excludes restricted commit by default`, async () => {
+      const registry = await loadValidRegistry();
+      const context = await readOpenAIContextExample();
+      const toolset = adapter.build(registry, { context });
+
+      expect(adapterExportedCount(toolset), adapter.label).toBe(2);
+      expect(toolset.bindings.map((binding) => binding.capabilityId), adapter.label).toEqual([
+        "support.refund.prepare_case",
+        "support.ticket.get"
+      ]);
+      expect(toolset.excluded, adapter.label).toContainEqual(expect.objectContaining({
+        capabilityId: "support.refund.commit_case",
+        reason: "restricted"
+      }));
+    });
+
+    it(`${adapter.label} exports scheduling read/prepare capabilities for the scheduling context`, async () => {
+      const registry = await loadValidRegistry();
+      const content = await readFile("examples/scheduling/openai/context.scheduler.json", "utf8");
+      const context = JSON.parse(content) as DecisionRequest["context"];
+      const toolset = adapter.build(registry, { context });
+
+      expect(toolset.bindings.map((binding) => binding.capabilityId), adapter.label).toEqual([
+        "scheduling.availability.get",
+        "scheduling.invite.prepare"
+      ]);
+      expect(toolset.excluded, adapter.label).toContainEqual(expect.objectContaining({
+        capabilityId: "scheduling.invite.send",
+        reason: "restricted"
+      }));
+    });
+
+    it(`${adapter.label} exports restricted capabilities only when explicitly included and selectable`, async () => {
+      const registry = await loadValidRegistry();
+      const allowedToolset = adapter.build(registry, {
+        context: {
+          autonomyTier: "A0",
+          permissions: ["refund.case.commit"]
+        },
+        includeRestricted: true
+      });
+      const deniedToolset = adapter.build(registry, {
+        context: {
+          autonomyTier: "A0",
+          permissions: []
+        },
+        includeRestricted: true
+      });
+
+      expect(allowedToolset.bindings).toContainEqual(expect.objectContaining({
+        capabilityId: "support.refund.commit_case",
+        restricted: true
+      }));
+      expect(deniedToolset.bindings.some((binding) => binding.capabilityId === "support.refund.commit_case")).toBe(false);
+      expect(deniedToolset.excluded).toContainEqual(expect.objectContaining({
+        capabilityId: "support.refund.commit_case",
+        reason: "decision_denied"
+      }));
+    });
+
+    it(`${adapter.label} generates safe names, truncates long names, and reports collisions`, async () => {
+      const registry = await loadValidRegistry();
+      const longName = adapter.toName(
+        "support.very_long_capability_name_segment_for_tool_export.with_many_more_segments.and_hashing"
+      );
+      const baseCapability = registry.capabilityById.get("support.ticket.get");
+      if (!baseCapability) {
+        throw new Error("Expected support.ticket.get example capability.");
+      }
+
+      const collisionRegistry = buildRegistry([
+        loadedCapability("examples/collision/capabilities/one.yaml", {
+          ...cloneManifest(baseCapability.manifest),
+          id: "support.alpha_case.get"
+        }),
+        loadedCapability("examples/collision/capabilities/two.yaml", {
+          ...cloneManifest(baseCapability.manifest),
+          id: "support.alpha.case_get"
+        })
+      ]);
+      const collisionToolset = adapter.build(collisionRegistry, {
+        context: {
+          autonomyTier: "A1",
+          permissions: ["ticket.read"]
+        }
+      });
+
+      expect(longName.length, adapter.label).toBeLessThanOrEqual(64);
+      expect(longName, adapter.label).toMatch(/^aicf_support_very_long_capability_name_segment_for_tool_[a-f0-9]{8}$/);
+      expect(collisionToolset.diagnostics, adapter.label).toContainEqual(expect.objectContaining({
+        code: "tool_name_collision",
+        id: "support.alpha.case_get"
+      }));
+      expect(collisionToolset.excluded, adapter.label).toContainEqual(expect.objectContaining({
+        capabilityId: "support.alpha.case_get",
+        reason: "tool_name_collision"
+      }));
+    });
+
+    it(`${adapter.label} normalizes schemas and excludes unsupported schemas`, async () => {
+      const registry = await loadValidRegistry();
+      const context = await readOpenAIContextExample();
+      const toolset = adapter.build(registry, { context });
+      const prepareBinding = toolset.bindings.find((binding) => binding.capabilityId === "support.refund.prepare_case");
+      if (!prepareBinding) {
+        throw new Error(`Expected support.refund.prepare_case binding for ${adapter.label}.`);
+      }
+      const properties = prepareBinding.normalizedInputSchema.properties as Record<string, { type?: unknown }>;
+      const baseCapability = registry.capabilityById.get("support.ticket.get");
+      if (!baseCapability) {
+        throw new Error("Expected support.ticket.get example capability.");
+      }
+      const unsupportedRegistry = buildRegistry([
+        loadedCapability("examples/unsupported/capabilities/support.ticket.get.yaml", {
+          ...cloneManifest(baseCapability.manifest),
+          input_schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["ticket_id"],
+            properties: {
+              ticket_id: {
+                anyOf: [
+                  { type: "string" },
+                  { type: "number" }
+                ]
+              }
+            }
+          }
+        })
+      ]);
+      const unsupportedToolset = adapter.build(unsupportedRegistry, {
+        context: {
+          autonomyTier: "A1",
+          permissions: ["ticket.read"]
+        }
+      });
+
+      expect(prepareBinding.normalizedInputSchema.required, adapter.label).toEqual([
+        "ticket_id",
+        "order_id",
+        "reason_code",
+        "requested_amount"
+      ]);
+      expect(properties.requested_amount?.type, adapter.label).toEqual(["number", "null"]);
+      expect(adapterExportedCount(unsupportedToolset), adapter.label).toBe(0);
+      expect(unsupportedToolset.excluded, adapter.label).toContainEqual(expect.objectContaining({
+        capabilityId: "support.ticket.get",
+        reason: "unsupported_schema"
+      }));
+      expect(unsupportedToolset.diagnostics, adapter.label).toContainEqual(expect.objectContaining({
+        code: "unsupported",
+        id: "support.ticket.get"
+      }));
+    });
+
+    it(`${adapter.label} parses valid tool calls and validates failure cases`, async () => {
+      const registry = await loadValidRegistry();
+      const context = await readOpenAIContextExample();
+      const toolset = adapter.build(registry, { context });
+      const ticketBinding = toolset.bindings.find((binding) => binding.capabilityId === "support.ticket.get");
+      if (!ticketBinding) {
+        throw new Error(`Expected support.ticket.get binding for ${adapter.label}.`);
+      }
+
+      const valid = adapter.parse(toolset, adapter.validCall(ticketBinding.toolName));
+      const malformed = adapter.parse(toolset, adapter.malformedCall());
+      const unknownTool = adapter.parse(toolset, adapter.unknownCall());
+      const schemaFailure = adapter.parse(toolset, adapter.schemaFailureCall(ticketBinding.toolName));
+
+      expect(valid.valid, adapter.label).toBe(true);
+      expect(valid.parsed, adapter.label).toMatchObject({
+        args: { ticket_id: "TCK-1001" },
+        capabilityId: "support.ticket.get"
+      });
+      expect(malformed.diagnostics, adapter.label).toContainEqual(expect.objectContaining({
+        code: "invalid_tool_call"
+      }));
+      expect(unknownTool.diagnostics, adapter.label).toContainEqual(expect.objectContaining({
+        code: "invalid_tool_call"
+      }));
+      expect(schemaFailure.diagnostics, adapter.label).toContainEqual(expect.objectContaining({
+        code: "schema",
+        id: "support.ticket.get"
+      }));
+    });
+  }
+});
+
 describe("AICF public conformance fixtures", () => {
   it("valid conformance manifests load, validate, and pass eval scoring", async () => {
     const registry = await loadValidRegistry("conformance/valid");
@@ -1130,6 +1409,200 @@ describe("AICF public conformance fixtures", () => {
   });
 });
 
+interface AdapterToolsetLike {
+  bindings: Array<{
+    capabilityId: string;
+    normalizedInputSchema: Record<string, unknown>;
+    restricted: boolean;
+    toolName: string;
+  }>;
+  diagnostics: Array<{ code: string; id?: string }>;
+  excluded: Array<{ capabilityId: string; reason: string }>;
+  functionDeclarations?: unknown[];
+  functions?: unknown[];
+  tools?: Record<string, unknown> | unknown[];
+}
+
+interface AdapterParseResultLike {
+  diagnostics: Array<{ code: string; id?: string }>;
+  parsed?: {
+    args: Record<string, unknown>;
+    capabilityId: string;
+  };
+  valid: boolean;
+}
+
+interface AdapterTestConfig {
+  build(
+    registry: Awaited<ReturnType<typeof loadValidRegistry>>,
+    options: {
+      context: DecisionRequest["context"];
+      includeRestricted?: boolean;
+    }
+  ): AdapterToolsetLike;
+  label: string;
+  malformedCall(): unknown;
+  parse(toolset: AdapterToolsetLike, call: unknown): AdapterParseResultLike;
+  schemaFailureCall(toolName: string): unknown;
+  toName(capabilityId: string): string;
+  unknownCall(): unknown;
+  validCall(toolName: string): unknown;
+}
+
+function nonOpenAiAdapterConfigs(): AdapterTestConfig[] {
+  return [
+    {
+      build: (registry, options) => buildAnthropicClaudeTools(registry, options),
+      label: "Anthropic Claude",
+      malformedCall: () => ({ name: "aicf_support_ticket_get", type: "tool_use" }),
+      parse: (toolset, call) => parseAnthropicClaudeToolUse(
+        toolset as Parameters<typeof parseAnthropicClaudeToolUse>[0],
+        call as Parameters<typeof parseAnthropicClaudeToolUse>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        input: { ticket_id: "bad" },
+        name: toolName,
+        type: "tool_use"
+      }),
+      toName: toAnthropicClaudeToolName,
+      unknownCall: () => ({
+        input: {},
+        name: "aicf_missing_tool",
+        type: "tool_use"
+      }),
+      validCall: (toolName) => ({
+        id: "toolu_example_1",
+        input: { ticket_id: "TCK-1001" },
+        name: toolName,
+        type: "tool_use"
+      })
+    },
+    {
+      build: (registry, options) => buildGeminiFunctionDeclarations(registry, options) as unknown as AdapterToolsetLike,
+      label: "Google Gemini",
+      malformedCall: () => ({ name: "aicf_support_ticket_get" }),
+      parse: (toolset, call) => parseGeminiFunctionCall(
+        toolset as Parameters<typeof parseGeminiFunctionCall>[0],
+        call as Parameters<typeof parseGeminiFunctionCall>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        args: { ticket_id: "bad" },
+        name: toolName
+      }),
+      toName: toGeminiFunctionName,
+      unknownCall: () => ({
+        args: {},
+        name: "aicf_missing_tool"
+      }),
+      validCall: (toolName) => ({
+        args: { ticket_id: "TCK-1001" },
+        id: "gemini_call_example_1",
+        name: toolName
+      })
+    },
+    {
+      build: (registry, options) => buildAiSdkTools(registry, options),
+      label: "Vercel AI SDK",
+      malformedCall: () => ({ toolName: "aicf_support_ticket_get" }),
+      parse: (toolset, call) => parseAiSdkToolCall(
+        toolset as Parameters<typeof parseAiSdkToolCall>[0],
+        call as Parameters<typeof parseAiSdkToolCall>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        input: { ticket_id: "bad" },
+        toolName
+      }),
+      toName: toAiSdkToolName,
+      unknownCall: () => ({
+        input: {},
+        toolName: "aicf_missing_tool"
+      }),
+      validCall: (toolName) => ({
+        input: { ticket_id: "TCK-1001" },
+        toolCallId: "call_example_1",
+        toolName
+      })
+    },
+    {
+      build: (registry, options) => buildMcpToolDescriptors(registry, options),
+      label: "Model Context Protocol",
+      malformedCall: () => ({ params: { name: "aicf_support_ticket_get" } }),
+      parse: (toolset, call) => parseMcpToolCall(
+        toolset as Parameters<typeof parseMcpToolCall>[0],
+        call as Parameters<typeof parseMcpToolCall>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        method: "tools/call",
+        params: {
+          arguments: { ticket_id: "bad" },
+          name: toolName
+        }
+      }),
+      toName: toMcpToolName,
+      unknownCall: () => ({
+        method: "tools/call",
+        params: {
+          arguments: {},
+          name: "aicf_missing_tool"
+        }
+      }),
+      validCall: (toolName) => ({
+        method: "tools/call",
+        params: {
+          arguments: { ticket_id: "TCK-1001" },
+          name: toolName
+        }
+      })
+    },
+    {
+      build: (registry, options) => buildLangChainToolDescriptors(registry, options),
+      label: "LangChain/LangGraph",
+      malformedCall: () => ({ name: "aicf_support_ticket_get" }),
+      parse: (toolset, call) => parseLangChainToolCall(
+        toolset as Parameters<typeof parseLangChainToolCall>[0],
+        call as Parameters<typeof parseLangChainToolCall>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        args: { ticket_id: "bad" },
+        name: toolName
+      }),
+      toName: toLangChainToolName,
+      unknownCall: () => ({
+        args: {},
+        name: "aicf_missing_tool"
+      }),
+      validCall: (toolName) => ({
+        args: { ticket_id: "TCK-1001" },
+        id: "lc_call_example_1",
+        name: toolName
+      })
+    },
+    {
+      build: (registry, options) => buildSemanticKernelFunctions(registry, options) as unknown as AdapterToolsetLike,
+      label: "Semantic Kernel",
+      malformedCall: () => ({ functionName: "aicf_support_ticket_get" }),
+      parse: (toolset, call) => parseSemanticKernelFunctionCall(
+        toolset as Parameters<typeof parseSemanticKernelFunctionCall>[0],
+        call as Parameters<typeof parseSemanticKernelFunctionCall>[1]
+      ),
+      schemaFailureCall: (toolName) => ({
+        arguments: { ticket_id: "bad" },
+        functionName: `aicf.${toolName}`
+      }),
+      toName: toSemanticKernelFunctionName,
+      unknownCall: () => ({
+        arguments: {},
+        functionName: "aicf.aicf_missing_tool"
+      }),
+      validCall: (toolName) => ({
+        arguments: { ticket_id: "TCK-1001" },
+        functionName: `aicf.${toolName}`,
+        id: "sk_call_example_1"
+      })
+    }
+  ];
+}
+
 async function loadValidRegistry(manifestPath = "examples") {
   const loaded = await loadManifests({ path: manifestPath });
   const validation = validateManifests(loaded.manifests);
@@ -1217,4 +1690,28 @@ function createWritableBuffer(): { value: string; write(chunk: string): void } {
       this.value += chunk;
     }
   };
+}
+
+function adapterExportedCount(output: {
+  functionDeclarations?: unknown[];
+  functions?: unknown[];
+  tools?: Record<string, unknown> | unknown[];
+}): number {
+  if (Array.isArray(output.tools)) {
+    return output.tools.length;
+  }
+
+  if (output.tools && typeof output.tools === "object") {
+    return Object.keys(output.tools).length;
+  }
+
+  if (output.functionDeclarations) {
+    return output.functionDeclarations.length;
+  }
+
+  if (output.functions) {
+    return output.functions.length;
+  }
+
+  return 0;
 }

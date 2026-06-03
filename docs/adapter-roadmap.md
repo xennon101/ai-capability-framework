@@ -1,9 +1,8 @@
-# Adapter Roadmap
+# Adapter Status And Roadmap
 
-AICF is provider-neutral. The current OpenAI Responses adapter is one adapter,
-not the framework boundary. Future adapters should keep the same rule: export
-tool metadata, bindings, parsers, and diagnostics, but do not call models,
-execute handlers, persist actions, collect approvals, or perform side effects.
+AICF is provider-neutral. Adapters export tool metadata, bindings, parsers, and
+diagnostics, but do not call models, execute handlers, persist actions, collect
+approvals, or perform side effects.
 
 ## Priority Criteria
 
@@ -30,12 +29,14 @@ Every adapter should expose the same high-level contract:
 
 | Priority | Adapter | Why It Comes Here | Primary Output |
 | --- | --- | --- | --- |
-| P1 | Anthropic Claude Messages tools | Major provider, JSON Schema tool inputs, strict tool mode, and strong fit with AICF descriptions. | Claude client tool definitions plus parser for `tool_use` blocks. |
-| P2 | Google Gemini function calling | Major provider with function declarations and OpenAPI-compatible schemas. | Gemini `functionDeclarations` plus parser for `functionCall` objects. |
-| P3 | Vercel AI SDK tools | High-value TypeScript target and multi-provider bridge. `execute` is optional, which fits descriptor-only export. | AI SDK tool map with `inputSchema`, `description`, `strict`, and no `execute`. |
-| P4 | Model Context Protocol tool descriptors | Broad interoperability standard with JSON Schema tool descriptors. Must avoid turning AICF into an executable MCP server. | MCP `Tool` descriptors and parser for `tools/call` requests. |
-| P5 | LangChain/LangGraph tools | Widely used runtime framework with tool schemas, but strongly execution-oriented. | Structured tool parameter specs and bindings for host-supplied functions. |
-| P6 | Semantic Kernel functions | Useful enterprise target with explicit manual invocation support, but more platform/language-specific. | Function/plugin metadata and parser guidance for manual invocation flows. |
+| Priority | Adapter | Status | Primary Output |
+| --- | --- | --- | --- |
+| P1 | Anthropic Claude Messages tools | Implemented | Claude client tool definitions plus parser for `tool_use` blocks. |
+| P2 | Google Gemini function calling | Implemented | Gemini `functionDeclarations` plus parser for `functionCall` objects. |
+| P3 | Vercel AI SDK tools | Implemented | AI SDK tool map with `inputSchema`, `description`, `strict`, and no `execute`. |
+| P4 | Model Context Protocol tool descriptors | Implemented | MCP `Tool` descriptors and parser for `tools/call` requests. |
+| P5 | LangChain/LangGraph tools | Implemented | Structured tool parameter specs and bindings for host-supplied functions. |
+| P6 | Semantic Kernel functions | Implemented | Function/plugin metadata and parser guidance for manual invocation flows. |
 
 ## P1: Anthropic Claude Messages Tools
 

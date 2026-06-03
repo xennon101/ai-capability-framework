@@ -11,6 +11,8 @@ All notable public changes to AI Capability Framework are documented here.
 - Made the spec normative and explicit about the no-execution boundary.
 - Added migration, host responsibility, and interoperability guidance.
 - Added a second synthetic domain and conformance fixtures for external review.
+- Added no-model-call adapters for Anthropic Claude, Google Gemini, Vercel AI
+  SDK, Model Context Protocol, LangChain/LangGraph, and Semantic Kernel.
 - Kept the package private and GitHub-release-only for this release candidate.
 
 ## 0.1.0 - 2026-06-03

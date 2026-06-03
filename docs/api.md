@@ -43,7 +43,7 @@ Diagnostics use `AicfDiagnostic` with `code`, `path`, optional `kind`, optional
 Decision results return `status`, `reasons`, `requiredApprovals`, `policy`,
 `lifecycle`, and an audit preview. The audit preview is not persisted.
 
-## OpenAI Responses Adapter
+## Provider And Runtime Adapters
 
 - `buildOpenAIResponsesTools(registry, options)` exports OpenAI-compatible
   function tools plus bindings, exclusions, and diagnostics.
@@ -51,9 +51,29 @@ Decision results return `status`, `reasons`, `requiredApprovals`, `policy`,
   `function_call` item back to a capability ID and validates arguments.
 - `toOpenAIResponsesToolName(capabilityId, options)` converts an AICF capability
   ID into a deterministic OpenAI-safe tool name.
+- `buildAnthropicClaudeTools(registry, options)` exports Anthropic Claude tool
+  definitions.
+- `parseAnthropicClaudeToolUse(toolset, toolUse)` maps Claude `tool_use` blocks
+  back to AICF capability requests.
+- `buildGeminiFunctionDeclarations(registry, options)` exports Gemini function
+  declarations.
+- `parseGeminiFunctionCall(functionSet, functionCall)` parses Gemini
+  `functionCall` objects.
+- `buildAiSdkTools(registry, options)` exports a Vercel AI SDK-compatible tool
+  map without `execute` handlers.
+- `parseAiSdkToolCall(toolset, toolCall)` parses AI SDK tool calls.
+- `buildMcpToolDescriptors(registry, options)` exports MCP tool descriptors.
+- `parseMcpToolCall(toolset, toolCall)` parses MCP `tools/call` requests.
+- `buildLangChainToolDescriptors(registry, options)` exports LangChain and
+  LangGraph descriptor metadata without callable implementations.
+- `parseLangChainToolCall(toolset, toolCall)` parses LangChain-style tool calls.
+- `buildSemanticKernelFunctions(registry, options)` exports Semantic Kernel
+  function metadata.
+- `parseSemanticKernelFunctionCall(functionSet, functionCall)` parses Semantic
+  Kernel manual invocation calls.
 
-The adapter emits tool JSON only. It does not call OpenAI or execute tool
-handlers.
+Adapters emit descriptor JSON only. They do not call providers or execute tool
+handlers. See [the adapter guide](adapters.md) for output shapes and CLI usage.
 
 ## Eval Runner APIs
 
@@ -73,6 +93,12 @@ aicf validate [path]
 aicf inspect [path]
 aicf decide <path> --request <decision.json>
 aicf openai-tools <path> --context <context.json> [--include-restricted]
+aicf anthropic-tools <path> --context <context.json> [--include-restricted]
+aicf gemini-tools <path> --context <context.json> [--include-restricted]
+aicf ai-sdk-tools <path> --context <context.json> [--include-restricted]
+aicf mcp-tools <path> --context <context.json> [--include-restricted]
+aicf langchain-tools <path> --context <context.json> [--include-restricted]
+aicf semantic-kernel-functions <path> --context <context.json> [--include-restricted]
 aicf eval <path> --results <results.json> [--format text|json]
 ```
 

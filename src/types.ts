@@ -209,23 +209,28 @@ export interface OpenAIResponsesFunctionTool {
   type: "function";
 }
 
-export interface OpenAIResponsesToolBinding {
+export interface AdapterToolBinding {
   autonomyTier: CapabilityManifest["autonomy_tier"];
   capabilityId: string;
   capabilityType: CapabilityManifest["capability_type"];
   inputSchema: JsonObject;
+  normalizedInputSchema: JsonObject;
   path: string;
   restricted: boolean;
   riskTier: CapabilityManifest["risk_tier"];
   toolName: string;
 }
 
-export interface OpenAIResponsesExcludedCapability {
+export interface AdapterExcludedCapability {
   capabilityId: string;
   diagnostics: AicfDiagnostic[];
   path: string;
   reason: "decision_denied" | "restricted" | "tool_name_collision" | "unsupported_schema";
 }
+
+export type OpenAIResponsesToolBinding = AdapterToolBinding;
+
+export type OpenAIResponsesExcludedCapability = AdapterExcludedCapability;
 
 export interface OpenAIResponsesToolset {
   bindings: OpenAIResponsesToolBinding[];
@@ -235,6 +240,12 @@ export interface OpenAIResponsesToolset {
 }
 
 export interface BuildOpenAIResponsesToolsOptions {
+  context: DecisionRequest["context"];
+  includeRestricted?: boolean;
+  namePrefix?: string;
+}
+
+export interface BuildAdapterToolsOptions {
   context: DecisionRequest["context"];
   includeRestricted?: boolean;
   namePrefix?: string;
@@ -260,11 +271,218 @@ export interface ParsedOpenAIResponsesToolCall {
   toolName: string;
 }
 
+export type ParsedAdapterToolCall = ParsedOpenAIResponsesToolCall;
+
 export interface ParseOpenAIResponsesToolCallResult {
   diagnostics: AicfDiagnostic[];
   parsed?: ParsedOpenAIResponsesToolCall;
   valid: boolean;
 }
+
+export type ParseAdapterToolCallResult = ParseOpenAIResponsesToolCallResult;
+
+export interface AnthropicClaudeTool {
+  description: string;
+  input_schema: JsonObject;
+  name: string;
+  strict: true;
+}
+
+export interface AnthropicClaudeToolUse {
+  id?: string;
+  input: Record<string, unknown>;
+  name: string;
+  type?: "tool_use";
+}
+
+export interface AnthropicClaudeToolset {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  tools: AnthropicClaudeTool[];
+}
+
+export type BuildAnthropicClaudeToolsOptions = BuildAdapterToolsOptions;
+
+export interface AnthropicClaudeToolNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedAnthropicClaudeToolUse = ParsedAdapterToolCall;
+
+export type ParseAnthropicClaudeToolUseResult = ParseAdapterToolCallResult;
+
+export interface GeminiFunctionDeclaration {
+  description: string;
+  name: string;
+  parameters: JsonObject;
+}
+
+export interface GeminiFunctionCall {
+  args?: Record<string, unknown>;
+  id?: string;
+  name: string;
+}
+
+export interface GeminiFunctionDeclarationSet {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  functionDeclarations: GeminiFunctionDeclaration[];
+}
+
+export type BuildGeminiFunctionDeclarationsOptions = BuildAdapterToolsOptions;
+
+export interface GeminiFunctionNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedGeminiFunctionCall = ParsedAdapterToolCall;
+
+export type ParseGeminiFunctionCallResult = ParseAdapterToolCallResult;
+
+export interface AiSdkTool {
+  description: string;
+  inputSchema: JsonObject;
+  strict: true;
+}
+
+export interface AiSdkToolCall {
+  args?: Record<string, unknown>;
+  input?: Record<string, unknown>;
+  toolCallId?: string;
+  toolName: string;
+}
+
+export interface AiSdkToolset {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  tools: Record<string, AiSdkTool>;
+}
+
+export type BuildAiSdkToolsOptions = BuildAdapterToolsOptions;
+
+export interface AiSdkToolNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedAiSdkToolCall = ParsedAdapterToolCall;
+
+export type ParseAiSdkToolCallResult = ParseAdapterToolCallResult;
+
+export interface McpToolDescriptor {
+  annotations?: {
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+    readOnlyHint?: boolean;
+  };
+  description: string;
+  inputSchema: JsonObject;
+  name: string;
+  outputSchema?: JsonObject;
+  title: string;
+}
+
+export interface McpToolCall {
+  method?: "tools/call";
+  params: {
+    arguments?: Record<string, unknown>;
+    name: string;
+  };
+}
+
+export interface McpToolDescriptorSet {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  tools: McpToolDescriptor[];
+}
+
+export type BuildMcpToolDescriptorsOptions = BuildAdapterToolsOptions;
+
+export interface McpToolNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedMcpToolCall = ParsedAdapterToolCall;
+
+export type ParseMcpToolCallResult = ParseAdapterToolCallResult;
+
+export interface LangChainToolDescriptor {
+  description: string;
+  metadata: {
+    autonomyTier: CapabilityManifest["autonomy_tier"];
+    capabilityId: string;
+    capabilityType: CapabilityManifest["capability_type"];
+    restricted: boolean;
+    riskTier: CapabilityManifest["risk_tier"];
+  };
+  name: string;
+  schema: JsonObject;
+}
+
+export interface LangChainToolCall {
+  args?: Record<string, unknown>;
+  id?: string;
+  name: string;
+}
+
+export interface LangChainToolDescriptorSet {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  tools: LangChainToolDescriptor[];
+}
+
+export type BuildLangChainToolDescriptorsOptions = BuildAdapterToolsOptions;
+
+export interface LangChainToolNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedLangChainToolCall = ParsedAdapterToolCall;
+
+export type ParseLangChainToolCallResult = ParseAdapterToolCallResult;
+
+export interface SemanticKernelFunction {
+  description: string;
+  metadata: {
+    autonomyTier: CapabilityManifest["autonomy_tier"];
+    capabilityId: string;
+    capabilityType: CapabilityManifest["capability_type"];
+    restricted: boolean;
+    riskTier: CapabilityManifest["risk_tier"];
+  };
+  name: string;
+  parameters: JsonObject;
+  pluginName: string;
+}
+
+export interface SemanticKernelFunctionCall {
+  arguments?: Record<string, unknown>;
+  functionName?: string;
+  id?: string;
+  name?: string;
+}
+
+export interface SemanticKernelFunctionSet {
+  bindings: AdapterToolBinding[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  functions: SemanticKernelFunction[];
+}
+
+export type BuildSemanticKernelFunctionsOptions = BuildAdapterToolsOptions;
+
+export interface SemanticKernelFunctionNameOptions {
+  namePrefix?: string;
+}
+
+export type ParsedSemanticKernelFunctionCall = ParsedAdapterToolCall;
+
+export type ParseSemanticKernelFunctionCallResult = ParseAdapterToolCallResult;
 
 export type EvalRunStatus = "passed" | "failed";
 

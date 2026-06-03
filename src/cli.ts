@@ -2,11 +2,17 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildAiSdkTools } from "./ai-sdk.js";
+import { buildAnthropicClaudeTools } from "./anthropic-claude.js";
 import { decideCapability } from "./decision.js";
 import { formatEvalSuiteResult, loadEvalResults, runEvalSuite } from "./eval-runner.js";
+import { buildGeminiFunctionDeclarations } from "./gemini.js";
+import { buildLangChainToolDescriptors } from "./langchain.js";
 import { loadManifests } from "./loader.js";
+import { buildMcpToolDescriptors } from "./mcp.js";
 import { buildOpenAIResponsesTools } from "./openai-responses.js";
 import { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
+import { buildSemanticKernelFunctions } from "./semantic-kernel.js";
 import type { AicfDiagnostic, DecisionRequest } from "./types.js";
 import { validateManifests } from "./validator.js";
 
@@ -19,6 +25,32 @@ export interface CliRunOptions {
   stdout?: WritableLike;
 }
 
+type AdapterCliCommand =
+  | "ai-sdk-tools"
+  | "anthropic-tools"
+  | "gemini-tools"
+  | "langchain-tools"
+  | "mcp-tools"
+  | "openai-tools"
+  | "semantic-kernel-functions";
+
+interface AdapterCliToolset {
+  diagnostics: AicfDiagnostic[];
+  functionDeclarations?: unknown[];
+  functions?: unknown[];
+  tools?: Record<string, unknown> | unknown[];
+}
+
+const adapterCommands = new Set<string>([
+  "ai-sdk-tools",
+  "anthropic-tools",
+  "gemini-tools",
+  "langchain-tools",
+  "mcp-tools",
+  "openai-tools",
+  "semantic-kernel-functions"
+]);
+
 export async function runCli(argv: string[], options: CliRunOptions = {}): Promise<number> {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
@@ -29,7 +61,7 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return command ? 0 : 1;
   }
 
-  if (command !== "validate" && command !== "inspect" && command !== "decide" && command !== "openai-tools" && command !== "eval") {
+  if (command !== "validate" && command !== "inspect" && command !== "decide" && command !== "eval" && !adapterCommands.has(command)) {
     stderr.write(`Unknown command "${command}".\n\n${helpText()}`);
     return 1;
   }
@@ -84,25 +116,25 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return 0;
   }
 
-  if (command === "openai-tools") {
+  if (adapterCommands.has(command)) {
     if (!parsedArgs.contextPath) {
       stderr.write("Missing required --context <context.json>.\n");
       return 1;
     }
 
-    const context = await readOpenAIToolContext(parsedArgs.contextPath);
+    const context = await readToolContext(parsedArgs.contextPath);
     if (!context.ok) {
       stderr.write(`${context.error}\n`);
       return 1;
     }
 
-    const contextError = validateOpenAIToolContextShape(context.value);
+    const contextError = validateToolContextShape(context.value, adapterLabel(command as AdapterCliCommand));
     if (contextError) {
       stderr.write(`${contextError}\n`);
       return 1;
     }
 
-    const toolset = buildOpenAIResponsesTools(registry, {
+    const toolset = buildAdapterCliToolset(command as AdapterCliCommand, registry, {
       context: context.value,
       includeRestricted: parsedArgs.includeRestricted
     });
@@ -115,8 +147,8 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
 
     stdout.write(`${JSON.stringify(toolset, null, 2)}\n`);
 
-    if (toolset.tools.length === 0) {
-      stderr.write("No OpenAI tools were exportable.\n");
+    if (adapterExportedCount(toolset) === 0) {
+      stderr.write(`No ${adapterLabel(command as AdapterCliCommand)} tools were exportable.\n`);
       return 1;
     }
 
@@ -161,7 +193,13 @@ function helpText(): string {
     "Commands:",
     "  decide <path> --request <file>  Evaluate a decision request.",
     "  eval <path> --results <file> [--format text|json]  Run deterministic evals.",
+    "  ai-sdk-tools <path> --context <file>  Export Vercel AI SDK tool descriptors.",
+    "  anthropic-tools <path> --context <file>  Export Anthropic Claude tool definitions.",
+    "  gemini-tools <path> --context <file>  Export Gemini function declarations.",
+    "  langchain-tools <path> --context <file>  Export LangChain/LangGraph tool descriptors.",
+    "  mcp-tools <path> --context <file>  Export Model Context Protocol tool descriptors.",
     "  openai-tools <path> --context <file>  Export OpenAI Responses function tools.",
+    "  semantic-kernel-functions <path> --context <file>  Export Semantic Kernel function metadata.",
     "  validate [path]  Validate AICF manifests. Defaults to examples.",
     "  inspect [path]   Print a registry summary. Defaults to examples.",
     ""
@@ -274,7 +312,7 @@ async function readDecisionRequest(filePath: string): Promise<
   }
 }
 
-async function readOpenAIToolContext(filePath: string): Promise<
+async function readToolContext(filePath: string): Promise<
   | { ok: true; value: DecisionRequest["context"] }
   | { error: string; ok: false }
 > {
@@ -286,7 +324,7 @@ async function readOpenAIToolContext(filePath: string): Promise<
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Unable to read OpenAI tool context.",
+      error: error instanceof Error ? error.message : "Unable to read tool context.",
       ok: false
     };
   }
@@ -320,28 +358,93 @@ function validateDecisionRequestShape(value: DecisionRequest): string | null {
   return null;
 }
 
-function validateOpenAIToolContextShape(value: DecisionRequest["context"]): string | null {
+function validateToolContextShape(value: DecisionRequest["context"], label: string): string | null {
   if (typeof value !== "object" || value === null) {
-    return "OpenAI tool context must be a JSON object.";
+    return `${label} tool context must be a JSON object.`;
   }
 
   if (!Array.isArray(value.permissions) || value.permissions.some((permission) => typeof permission !== "string")) {
-    return "OpenAI tool context.permissions must be an array of strings.";
+    return `${label} tool context.permissions must be an array of strings.`;
   }
 
   if (!["A0", "A1", "A2", "A3", "A4", "A5"].includes(value.autonomyTier)) {
-    return "OpenAI tool context.autonomyTier must be A0, A1, A2, A3, A4, or A5.";
+    return `${label} tool context.autonomyTier must be A0, A1, A2, A3, A4, or A5.`;
   }
 
   if (value.userId !== undefined && typeof value.userId !== "string") {
-    return "OpenAI tool context.userId must be a string when present.";
+    return `${label} tool context.userId must be a string when present.`;
   }
 
   if (value.tenantId !== undefined && typeof value.tenantId !== "string") {
-    return "OpenAI tool context.tenantId must be a string when present.";
+    return `${label} tool context.tenantId must be a string when present.`;
   }
 
   return null;
+}
+
+function buildAdapterCliToolset(
+  command: AdapterCliCommand,
+  registry: ReturnType<typeof buildRegistry>,
+  options: {
+    context: DecisionRequest["context"];
+    includeRestricted?: boolean;
+  }
+): AdapterCliToolset {
+  switch (command) {
+    case "ai-sdk-tools":
+      return buildAiSdkTools(registry, options);
+    case "anthropic-tools":
+      return buildAnthropicClaudeTools(registry, options);
+    case "gemini-tools":
+      return buildGeminiFunctionDeclarations(registry, options);
+    case "langchain-tools":
+      return buildLangChainToolDescriptors(registry, options);
+    case "mcp-tools":
+      return buildMcpToolDescriptors(registry, options);
+    case "semantic-kernel-functions":
+      return buildSemanticKernelFunctions(registry, options);
+    case "openai-tools":
+      return buildOpenAIResponsesTools(registry, options);
+  }
+}
+
+function adapterExportedCount(toolset: AdapterCliToolset): number {
+  if (Array.isArray(toolset.tools)) {
+    return toolset.tools.length;
+  }
+
+  if (toolset.tools && typeof toolset.tools === "object") {
+    return Object.keys(toolset.tools).length;
+  }
+
+  if (toolset.functionDeclarations) {
+    return toolset.functionDeclarations.length;
+  }
+
+  if (toolset.functions) {
+    return toolset.functions.length;
+  }
+
+  return 0;
+}
+
+function adapterLabel(command: AdapterCliCommand): string {
+  switch (command) {
+    case "ai-sdk-tools":
+      return "AI SDK";
+    case "anthropic-tools":
+      return "Anthropic Claude";
+    case "gemini-tools":
+      return "Gemini";
+    case "langchain-tools":
+      return "LangChain";
+    case "mcp-tools":
+      return "MCP";
+    case "openai-tools":
+      return "OpenAI";
+    case "semantic-kernel-functions":
+      return "Semantic Kernel";
+  }
 }
 
 function formatDiagnostics(errors: AicfDiagnostic[]): string {

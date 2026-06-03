@@ -27,5 +27,6 @@ validate and decide whether a capability request is allowed, approval-required,
 or denied, but the runtime must still enforce real auth, produce facts, execute
 or refuse handlers, and persist records.
 
-See [the adapter roadmap](adapter-roadmap.md) for prioritized non-OpenAI
-adapter targets and the common no-execution adapter contract.
+See [the adapter guide](adapters.md) for implemented provider/runtime adapters
+and [the adapter status page](adapter-roadmap.md) for reference links and
+priority rationale.

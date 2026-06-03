@@ -10,8 +10,8 @@ The repository contains:
   private application internals.
 - A TypeScript core library and `aicf` CLI for loading, validating, and
   inspecting manifests.
-- An OpenAI Responses adapter that exports safe function tool definitions
-  without calling models or executing capabilities.
+- Provider and runtime adapters that export safe tool descriptors without
+  calling models or executing capabilities.
 - A deterministic eval runner for scoring public-safe candidate fixtures
   without API keys or live model calls.
 - A normative `1.0` public spec for capability IDs, tiers, lifecycle, and
@@ -59,6 +59,13 @@ npm run build
 node dist/cli.js openai-tools examples --context examples/support/openai/context.support_agent.json
 ```
 
+Export another adapter shape:
+
+```bash
+npm run build
+node dist/cli.js anthropic-tools examples --context examples/support/openai/context.support_agent.json
+```
+
 Run deterministic evals against a public-safe candidate fixture:
 
 ```bash
@@ -98,6 +105,7 @@ scripts/   Local type-generation utilities
 Start with [the 1.0 spec](docs/spec.md), read the
 [API guide](docs/api.md), the [control-plane guide](docs/control-plane.md), the
 [OpenAI Responses adapter](docs/openai-responses.md), the
+[adapter guide](docs/adapters.md), the
 [eval runner guide](docs/eval-runner.md), the
 [host responsibilities guide](docs/host-responsibilities.md), and the
 [interoperability guide](docs/interoperability.md). For future provider and
@@ -161,6 +169,18 @@ AICF exposes a small no-execution TypeScript surface:
 - `buildOpenAIResponsesTools(registry, options)`
 - `parseOpenAIResponsesToolCall(toolset, call)`
 - `toOpenAIResponsesToolName(capabilityId, options)`
+- `buildAnthropicClaudeTools(registry, options)`
+- `parseAnthropicClaudeToolUse(toolset, toolUse)`
+- `buildGeminiFunctionDeclarations(registry, options)`
+- `parseGeminiFunctionCall(functionSet, functionCall)`
+- `buildAiSdkTools(registry, options)`
+- `parseAiSdkToolCall(toolset, toolCall)`
+- `buildMcpToolDescriptors(registry, options)`
+- `parseMcpToolCall(toolset, toolCall)`
+- `buildLangChainToolDescriptors(registry, options)`
+- `parseLangChainToolCall(toolset, toolCall)`
+- `buildSemanticKernelFunctions(registry, options)`
+- `parseSemanticKernelFunctionCall(functionSet, functionCall)`
 - `loadEvalResults(path)`
 - `scoreEvalCase(evalCase, candidate, registry)`
 - `runEvalSuite(registry, candidates, options)`

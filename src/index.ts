@@ -1,15 +1,37 @@
 export { decideCapability, evaluateLifecycle, evaluatePolicy } from "./decision.js";
 export { formatEvalSuiteResult, loadEvalResults, runEvalSuite, scoreEvalCase } from "./eval-runner.js";
+export { buildAiSdkTools, parseAiSdkToolCall, toAiSdkToolName } from "./ai-sdk.js";
+export { buildAnthropicClaudeTools, parseAnthropicClaudeToolUse, toAnthropicClaudeToolName } from "./anthropic-claude.js";
+export { buildGeminiFunctionDeclarations, parseGeminiFunctionCall, toGeminiFunctionName } from "./gemini.js";
+export { buildLangChainToolDescriptors, parseLangChainToolCall, toLangChainToolName } from "./langchain.js";
 export { loadManifests, kindFromPath } from "./loader.js";
+export { buildMcpToolDescriptors, parseMcpToolCall, toMcpToolName } from "./mcp.js";
 export { buildOpenAIResponsesTools, parseOpenAIResponsesToolCall, toOpenAIResponsesToolName } from "./openai-responses.js";
 export { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
 export { runCli } from "./cli.js";
+export { buildSemanticKernelFunctions, parseSemanticKernelFunctionCall, toSemanticKernelFunctionName } from "./semantic-kernel.js";
 export { validateManifests } from "./validator.js";
 export type {
+  AdapterExcludedCapability,
+  AdapterToolBinding,
   AicfDiagnostic,
   AicfErrorCode,
   AicfSchemaDiagnostic,
   AicfWarningCode,
+  AiSdkTool,
+  AiSdkToolCall,
+  AiSdkToolNameOptions,
+  AiSdkToolset,
+  AnthropicClaudeTool,
+  AnthropicClaudeToolNameOptions,
+  AnthropicClaudeToolset,
+  AnthropicClaudeToolUse,
+  BuildAdapterToolsOptions,
+  BuildAiSdkToolsOptions,
+  BuildAnthropicClaudeToolsOptions,
+  BuildGeminiFunctionDeclarationsOptions,
+  BuildLangChainToolDescriptorsOptions,
+  BuildMcpToolDescriptorsOptions,
   CapabilityManifest,
   DecisionAuditPreview,
   DecisionFact,
@@ -27,6 +49,14 @@ export type {
   EvalRunStatus,
   EvalScorerResult,
   EvalSuiteResult,
+  GeminiFunctionCall,
+  GeminiFunctionDeclaration,
+  GeminiFunctionDeclarationSet,
+  GeminiFunctionNameOptions,
+  LangChainToolCall,
+  LangChainToolDescriptor,
+  LangChainToolDescriptorSet,
+  LangChainToolNameOptions,
   LifecycleEvaluation,
   LoadEvalResultsResult,
   LoadedCapabilityManifest,
@@ -37,7 +67,12 @@ export type {
   LoadManifestsResult,
   ManifestKind,
   ManifestRegistry,
+  McpToolCall,
+  McpToolDescriptor,
+  McpToolDescriptorSet,
+  McpToolNameOptions,
   BuildOpenAIResponsesToolsOptions,
+  BuildSemanticKernelFunctionsOptions,
   JsonObject,
   JsonValue,
   OpenAIResponsesExcludedCapability,
@@ -46,11 +81,29 @@ export type {
   OpenAIResponsesToolBinding,
   OpenAIResponsesToolNameOptions,
   OpenAIResponsesToolset,
+  ParsedAdapterToolCall,
+  ParsedAiSdkToolCall,
+  ParsedAnthropicClaudeToolUse,
+  ParsedGeminiFunctionCall,
+  ParsedLangChainToolCall,
+  ParsedMcpToolCall,
   ParsedOpenAIResponsesToolCall,
+  ParsedSemanticKernelFunctionCall,
+  ParseAdapterToolCallResult,
+  ParseAiSdkToolCallResult,
+  ParseAnthropicClaudeToolUseResult,
+  ParseGeminiFunctionCallResult,
+  ParseLangChainToolCallResult,
+  ParseMcpToolCallResult,
   ParseOpenAIResponsesToolCallResult,
+  ParseSemanticKernelFunctionCallResult,
   PolicyEvaluation,
   RegistryInspection,
   RunEvalSuiteOptions,
+  SemanticKernelFunction,
+  SemanticKernelFunctionCall,
+  SemanticKernelFunctionNameOptions,
+  SemanticKernelFunctionSet,
   ValidateManifestsOptions,
   ValidationResult
 } from "./types.js";
