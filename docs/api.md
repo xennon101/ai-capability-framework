@@ -4,6 +4,10 @@ AICF Core exposes a small TypeScript API and the `aicf` CLI. The package is
 public npm release-candidate material, and the exported surface is treated as
 public developer API.
 
+If you are reading AICF for the first time, start with
+[Start here](start-here.md) and the [OpenAI walkthrough](openai-walkthrough.md).
+This page is the reference once the basic flow is familiar.
+
 Import from the package root:
 
 ```ts

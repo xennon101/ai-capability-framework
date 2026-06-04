@@ -7,8 +7,8 @@ distribution.
 
 - Confirm the release branch contains only public framework material.
 - Confirm `CHANGELOG.md` has the target release entry.
-- Confirm README, API docs, spec docs, adapter docs, eval docs, and examples are
-  internally consistent.
+- Confirm README, start-here, OpenAI walkthrough, glossary, API docs, spec docs,
+  adapter docs, eval docs, and examples are internally consistent.
 - Confirm `package.json` is not private and `publishConfig.access` is `public`.
 - Confirm no private drafts, raw prompts, raw traces, provider payloads,
   credentials, generated local docs, or packed tarballs are tracked.
@@ -57,8 +57,9 @@ git status --short --ignored
 git ls-files
 ```
 
-`_private/`, `dist/`, `node_modules/`, traces, prompts, provider payloads,
-generated local docs, and local-only material must remain untracked or ignored.
+Private local draft directories, `dist/`, `node_modules/`, traces, prompts,
+provider payloads, generated local docs, and local-only material must remain
+untracked or ignored.
 
 Confirm root and runtime imports remain provider-SDK-free, and confirm commit
 capabilities are not exported by default from OpenAI, Anthropic, Gemini, AI SDK,
@@ -73,8 +74,8 @@ git archive --format=zip --output ai-framework-source.zip HEAD
 ```
 
 Do not zip the workspace directory. A workspace ZIP can accidentally include
-`.git/`, `node_modules/`, `_private/`, `dist/`, local logs, prompts, traces,
-provider payloads, or packed artifacts.
+`.git/`, `node_modules/`, private local draft directories, `dist/`, local logs,
+prompts, traces, provider payloads, or packed artifacts.
 
 Create the publishable npm artifact with:
 
@@ -90,6 +91,7 @@ raw traces, provider request/response payloads, archives, or credentials.
 The package should include the public `examples/runtime-support-billing/` mock
 runtime flow and `docs/action-lifecycle.md` plus `docs/policy-broker.md`.
 It should also include `examples/providers/` README examples,
+`docs/start-here.md`, `docs/openai-walkthrough.md`, `docs/glossary.md`,
 `docs/providers.md`, and `docs/provider-conformance.md`.
 
 ## Trusted Publishing
@@ -117,7 +119,8 @@ commit is already reachable from `origin/main`. Pre-release versions such as
   examples, plus optional runtime observability and live-eval subpaths.
 - Publish npm pre-release packages with a non-default dist tag such as `next`
   until the final 1.0.0 release is ready.
-- Link to `CHANGELOG.md`, `docs/api.md`, `docs/spec.md`,
+- Link to `CHANGELOG.md`, `docs/start-here.md`,
+  `docs/openai-walkthrough.md`, `docs/glossary.md`, `docs/api.md`, `docs/spec.md`,
   `docs/control-plane.md`, `docs/openai-responses.md`,
   `docs/ai-sdk-runtime.md`, `docs/anthropic-runtime.md`,
   `docs/gemini-runtime.md`, `docs/langchain-runtime.md`,

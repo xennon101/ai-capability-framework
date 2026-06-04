@@ -4,6 +4,9 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+- Added a first-time developer onboarding pass with a simplified README,
+  start-here guide, OpenAI walkthrough, glossary, and clearer eval/runtime
+  navigation.
 - Added the `ai-capability-framework/runtime` subpath for deterministic runtime
   context, redaction, capability routing, policy brokering, handler registry,
   no-model read/prepare execution, host-controlled action lifecycle, in-memory

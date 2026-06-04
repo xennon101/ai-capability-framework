@@ -18,6 +18,11 @@ import {
 The package root and `ai-capability-framework/runtime` imports do not import the
 OpenAI runtime code.
 
+For a first pass through the support/refund example, start with the
+[OpenAI walkthrough](openai-walkthrough.md). This page is the runtime API
+reference for host applications that want to provide a real OpenAI-compatible
+client.
+
 ## Boundary
 
 The runtime loop is non-streaming and Responses-only. It does not expose commit

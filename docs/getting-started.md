@@ -1,51 +1,39 @@
 # Getting Started
 
-AICF describes AI-facing application behavior as public, typed manifests.
+If you are new to AICF, start with [Start here](start-here.md). It uses the
+support/refund example and includes exact commands plus expected output
+excerpts.
 
-Use it when you need to answer these questions:
+Use this page as a short checklist when you are ready to model your own
+capability.
 
-- What can the model select?
-- What input does the application accept?
-- What output can the application return?
-- What side effects can happen?
-- Who is allowed to use the capability?
-- What policy gates or approvals apply?
-- What evals prove the behavior is stable?
+## Checklist
 
-## Basic Workflow
-
-1. Read the [1.0 spec](spec.md).
-2. Identify one application behavior that the model may request.
-3. Write a capability manifest for that behavior.
-4. Define strict input and output JSON Schemas.
-5. Mark side effects explicitly.
-6. Add authorization and policy requirements.
-7. Link synthetic eval cases that test selection, arguments, refusals, and
-   approval boundaries.
+1. Read the [glossary](glossary.md) so the main terms are clear.
+2. Run the public support/refund walkthrough in [Start here](start-here.md).
+3. Read the concrete [OpenAI walkthrough](openai-walkthrough.md), even if your
+   first provider is not OpenAI. It is the baseline mental model for all
+   provider adapters.
+4. Pick one application behavior the model may request.
+5. Write a capability manifest with strict input and output schemas.
+6. Mark risk, side effects, authorization, lifecycle, and approval rules
+   explicitly.
+7. Add synthetic eval cases for selection, arguments, refusal, approval, and
+   no-commit boundaries.
 8. Run `npm run validate`.
+9. Export the relevant provider tools from a routed context.
+10. Keep real auth, side effects, approvals, durable storage, and audit in your
+    host application.
 
-## CLI Workflow
+## Useful Commands
 
-- `npm run validate` builds the CLI and validates the public examples.
-- `npm run inspect` prints a readable registry summary.
-- After building, `node dist/cli.js validate <path>` and
-  `node dist/cli.js inspect <path>` can target another manifest bundle.
-- `node dist/cli.js decide <path> --request <decision.json>` evaluates a
-  deterministic decision request and prints JSON.
-- `node dist/cli.js openai-tools <path> --context <context.json>` exports
-  OpenAI Responses function tools without calling a model.
-- `node dist/cli.js eval <path> --results <results.json>` scores deterministic
-  candidate eval results without calling a model.
+```bash
+npm run validate
+npm run build
+node dist/cli.js inspect examples
+node dist/cli.js openai-tools examples --context examples/support/openai/context.support_agent.json
+node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json
+```
 
-## Design Rules
-
-- Give the model the smallest relevant set of capabilities for a task.
-- Use deterministic application code for validation, permissions, policy,
-  execution, and audit.
-- Do not expose raw databases, unrestricted HTTP clients, shell access, payment
-  tools, or admin tools directly to the model.
-- Treat retrieved content and tool results as untrusted unless your application
-  has explicitly marked them as authoritative.
-- Keep examples synthetic and public-safe.
-- Keep commit capabilities separate from prepare capabilities unless the action
-  is explicitly low-risk and policy allows auto-commit.
+AICF validation and evals are deterministic. They do not call models, execute
+side effects, or require provider credentials.

@@ -451,7 +451,9 @@ describe("AICF release readiness", () => {
       "docs/aws-runtime.md",
       "docs/control-plane.md",
       "docs/eval-runner.md",
+      "docs/glossary.md",
       "docs/gemini-runtime.md",
+      "docs/getting-started.md",
       "docs/langchain-runtime.md",
       "docs/semantic-kernel-runtime.md",
       "docs/host-responsibilities.md",
@@ -460,12 +462,14 @@ describe("AICF release readiness", () => {
       "docs/live-evals.md",
       "docs/mcp-server-runtime.md",
       "docs/observability-runtime.md",
+      "docs/openai-walkthrough.md",
       "docs/openai-responses.md",
       "docs/openai-runtime.md",
       "docs/policy-broker.md",
       "docs/provider-conformance.md",
       "docs/providers.md",
       "docs/runtime.md",
+      "docs/start-here.md",
       "examples/eval-results/public.results.passing.json",
       "examples/providers/ai-sdk-next/README.md",
       "examples/providers/anthropic-claude/README.md",
@@ -551,17 +555,65 @@ describe("AICF release readiness", () => {
 
   it("public docs describe the provider-neutral release boundary", async () => {
     const readme = await readFile("README.md", "utf8");
+    const startHere = await readFile("docs/start-here.md", "utf8");
+    const openaiWalkthrough = await readFile("docs/openai-walkthrough.md", "utf8");
+    const evalRunner = await readFile("docs/eval-runner.md", "utf8");
     const providers = await readFile("docs/providers.md", "utf8");
     const release = await readFile("docs/release.md", "utf8");
 
     const normalizedReadme = readme.replace(/\s+/g, " ");
+    const normalizedStartHere = startHere.replace(/\s+/g, " ");
+    const normalizedOpenaiWalkthrough = openaiWalkthrough.replace(/\s+/g, " ");
+    const normalizedEvalRunner = evalRunner.replace(/\s+/g, " ");
     const normalizedRelease = release.replace(/\s+/g, " ");
     expect(normalizedReadme).toContain("provider-agnostic AI capability framework");
     expect(normalizedReadme).toContain("OpenAI, Anthropic Claude, Google Gemini, Vercel AI SDK, Model Context Protocol, LangChain/LangGraph, and Semantic Kernel");
+    expect(readme).toContain("docs/start-here.md");
+    expect(readme).toContain("docs/openai-walkthrough.md");
+    expect(readme).toContain("docs/glossary.md");
     expect(providers).toContain("OpenAI is one adapter, not the architecture");
     expect(providers).toContain("Live tests are opt-in");
+    expect(normalizedStartHere).toContain("The model can see read and prepare tools, but the commit capability is not exposed");
+    expect(normalizedOpenaiWalkthrough).toContain("The model does not call `support.refund.commit_case`");
+    expect(normalizedOpenaiWalkthrough).toContain("host applications remain responsible for provider credentials, model selection, auth, side effects, approvals, storage, and audit");
+    expect(normalizedEvalRunner).toContain("without calling models");
+    expect(providers).toContain("Provider SDK validation does not replace AICF validation");
     expect(normalizedRelease).toContain("root and runtime imports remain provider-SDK-free");
     expect(normalizedRelease).toContain("commit capabilities are not exported by default");
+  });
+
+  it("public docs and examples do not include private or local-only path markers", () => {
+    const publicFiles = execFileSync(
+      "git",
+      ["ls-files", "--cached", "--others", "--exclude-standard", "README.md", "docs", "examples"],
+      {
+        encoding: "utf8"
+      }
+    )
+      .split(/\r?\n/)
+      .filter(Boolean);
+
+    const forbiddenPathPatterns = [
+      /(^|\/)_private(\/|$)/,
+      /provider-payload/i,
+      /raw-payload/i,
+      /raw_provider/i,
+      /raw-trace/i,
+      /raw_prompt/i,
+      /credential/i,
+      /api-key/i,
+      /apikey/i,
+      /access-token/i,
+      /access_token/i,
+      /\.tgz$/i,
+      /\.zip$/i,
+      /\.pdf$/i,
+      /\.docx$/i
+    ];
+
+    for (const file of publicFiles) {
+      expect(forbiddenPathPatterns.some((pattern) => pattern.test(file))).toBe(false);
+    }
   });
 });
 

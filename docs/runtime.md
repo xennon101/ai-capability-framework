@@ -26,6 +26,10 @@ The optional OpenAI Responses runtime lives in
 runtime contracts to run a bounded non-streaming model/tool loop with
 caller-provided OpenAI-compatible clients.
 
+For a concrete support/refund flow that shows routing, tool export, validation,
+approval-required prepare, and host-controlled commit, read the
+[OpenAI walkthrough](openai-walkthrough.md).
+
 ## Runtime Context
 
 Runtime decisions use an `AicfRuntimeContext` with run and request IDs,

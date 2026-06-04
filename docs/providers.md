@@ -9,6 +9,12 @@ OpenAI is one adapter, not the architecture. The canonical contract is still
 the AICF capability manifest plus runtime policy, lifecycle, and model-safe
 result envelopes.
 
+If you are new to provider adapters, read the
+[OpenAI walkthrough](openai-walkthrough.md) first. The same mental model applies
+to the other provider runtimes and framework bridges: export a routed slice,
+map provider calls back through bindings, validate with AICF, and keep commit
+host-controlled.
+
 ## Provider Types
 
 - Direct model runtimes: OpenAI Responses, Anthropic Claude Messages, and Google
