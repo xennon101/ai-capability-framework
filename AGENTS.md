@@ -45,6 +45,10 @@ the AI Capability Framework.
   by the request.
 - Run `npm run generate:types` when schemas change, then commit the generated
   public manifest types under `src/generated/`.
+- When `package.json` or `package-lock.json` changes, verify the lockfile with
+  the same npm major used by CI. If local npm differs from Actions, use
+  `npx -y npm@<ci-version> ci --dry-run --ignore-scripts --include=optional --os=linux --cpu=x64`
+  from a clean checkout or worktree before handoff.
 - Run `npm run build` and `npm test` when TypeScript core, CLI, or generated
   types change.
 - Run `npm run validate` before handoff when schemas, examples, or validation
