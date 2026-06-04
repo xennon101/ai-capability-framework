@@ -7,6 +7,7 @@ import {
 } from "./adapter-common.js";
 import type {
   BuildGeminiFunctionDeclarationsOptions,
+  CapabilitySlice,
   GeminiFunctionCall,
   GeminiFunctionDeclaration,
   GeminiFunctionDeclarationSet,
@@ -19,7 +20,7 @@ const defaultNamePrefix = "aicf_";
 const maxFunctionNameLength = 64;
 
 export function buildGeminiFunctionDeclarations(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildGeminiFunctionDeclarationsOptions
 ): GeminiFunctionDeclarationSet {
   const built = buildAdapterToolset<GeminiFunctionDeclaration>({
@@ -31,6 +32,10 @@ export function buildGeminiFunctionDeclarations(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxFunctionNameLength,
     namePrefix: options.namePrefix,

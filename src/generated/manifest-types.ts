@@ -2,6 +2,21 @@
  * Generated from schemas/*.schema.json.
  * Do not edit by hand. Run `npm run generate:types`.
  */
+export interface AdapterContextFixture {
+  autonomyTier: "A0" | "A1" | "A2" | "A3" | "A4" | "A5";
+  permissions: string[];
+  tenantId?: string;
+  userId?: string;
+  riskCeiling?: "none" | "low" | "medium" | "high" | "critical";
+  /**
+   * @minItems 1
+   */
+  allowedRiskTiers?: [
+    "none" | "low" | "medium" | "high" | "critical",
+    ...("none" | "low" | "medium" | "high" | "critical")[]
+  ];
+}
+
 export interface CapabilityManifest {
   schema_version: "1.0";
   id: string;
@@ -30,6 +45,7 @@ export interface CapabilityManifest {
   risk_tier: "none" | "low" | "medium" | "high" | "critical";
   when_to_use?: string[];
   when_not_to_use?: string[];
+  tags?: string[];
   input_schema: JsonSchemaObject;
   output_schema: JsonSchemaObject;
   side_effects: {
@@ -101,8 +117,47 @@ export interface PolicyRule {
   rule: string;
   reason: string;
   field?: string;
+  missing_behavior?: "deny" | "approval_required" | "ignore";
   operator?: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in" | "not_in" | "exists";
   value?: unknown;
+}
+
+export interface DecisionRequestFixture {
+  capabilityId: string;
+  operation: "select" | "prepare" | "commit";
+  args?: {};
+  context: AdapterContext;
+  facts?: {
+    [k: string]:
+      | boolean
+      | {
+          value: boolean;
+          reason?: string;
+        };
+  };
+  approval?: {
+    approved: boolean;
+    approvalId?: string;
+  };
+  idempotencyKey?: string;
+}
+/**
+ * This interface was referenced by `DecisionRequestFixture`'s JSON-Schema
+ * via the `definition` "adapter_context".
+ */
+export interface AdapterContext {
+  autonomyTier: "A0" | "A1" | "A2" | "A3" | "A4" | "A5";
+  permissions: string[];
+  tenantId?: string;
+  userId?: string;
+  riskCeiling?: "none" | "low" | "medium" | "high" | "critical";
+  /**
+   * @minItems 1
+   */
+  allowedRiskTiers?: [
+    "none" | "low" | "medium" | "high" | "critical",
+    ...("none" | "low" | "medium" | "high" | "critical")[]
+  ];
 }
 
 export interface EntityManifest {
@@ -180,7 +235,13 @@ export interface ExpectedBehavior {
   tool_calls?: {
     capability_id: string;
     args_match?: {};
+    args_exact?: {};
+    allowed_fields?: string[];
   }[];
+  forbidden_tool_calls?: {
+    capability_id: string;
+  }[];
+  tool_call_sequence?: string[];
   policy_decision?: "allowed" | "approval_required" | "denied";
   action_state?: "none" | "prepared" | "approval_required" | "committed" | "denied" | "refused";
   no_commit?: boolean;
@@ -221,4 +282,50 @@ export interface EvalCandidateResult {
     text?: string;
   };
   extensions?: {};
+}
+
+export interface ToolResultEnvelopeFixture {
+  schema_version: "1.0";
+  capability_id: string;
+  capability_version: string;
+  status: "ok" | "unavailable" | "denied" | "approval_required" | "error";
+  data?: unknown;
+  evidence?: EvidenceRef[];
+  policy?: PolicyDecisionSummary;
+  action?: PreparedActionSummary;
+  user_message?: string;
+  private_diagnostics?: unknown;
+}
+/**
+ * This interface was referenced by `ToolResultEnvelopeFixture`'s JSON-Schema
+ * via the `definition` "evidence_ref".
+ */
+export interface EvidenceRef {
+  source_id: string;
+  source_type?: string;
+  span_id?: string;
+  quote?: string;
+  confidence?: "low" | "medium" | "high";
+}
+/**
+ * This interface was referenced by `ToolResultEnvelopeFixture`'s JSON-Schema
+ * via the `definition` "policy_decision_summary".
+ */
+export interface PolicyDecisionSummary {
+  status: "allowed" | "approval_required" | "denied";
+  reasons?: {
+    code: string;
+    message: string;
+    rule?: string;
+  }[];
+}
+/**
+ * This interface was referenced by `ToolResultEnvelopeFixture`'s JSON-Schema
+ * via the `definition` "prepared_action_summary".
+ */
+export interface PreparedActionSummary {
+  prepared_action_id?: string;
+  action_state: "none" | "prepared" | "approval_required" | "committed" | "denied" | "refused";
+  preview?: unknown;
+  approval_required?: boolean;
 }

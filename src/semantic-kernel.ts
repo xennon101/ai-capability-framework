@@ -7,6 +7,7 @@ import {
 } from "./adapter-common.js";
 import type {
   BuildSemanticKernelFunctionsOptions,
+  CapabilitySlice,
   ManifestRegistry,
   ParseSemanticKernelFunctionCallResult,
   SemanticKernelFunction,
@@ -20,7 +21,7 @@ const maxFunctionNameLength = 64;
 const pluginName = "aicf";
 
 export function buildSemanticKernelFunctions(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildSemanticKernelFunctionsOptions
 ): SemanticKernelFunctionSet {
   const built = buildAdapterToolset<SemanticKernelFunction>({
@@ -40,6 +41,10 @@ export function buildSemanticKernelFunctions(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxFunctionNameLength,
     namePrefix: options.namePrefix,

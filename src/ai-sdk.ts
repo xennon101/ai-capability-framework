@@ -11,6 +11,7 @@ import type {
   AiSdkToolNameOptions,
   AiSdkToolset,
   BuildAiSdkToolsOptions,
+  CapabilitySlice,
   ManifestRegistry,
   ParseAiSdkToolCallResult
 } from "./types.js";
@@ -19,7 +20,7 @@ const defaultNamePrefix = "aicf_";
 const maxToolNameLength = 64;
 
 export function buildAiSdkTools(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildAiSdkToolsOptions
 ): AiSdkToolset {
   const built = buildAdapterToolset<AiSdkTool>({
@@ -31,6 +32,10 @@ export function buildAiSdkTools(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,

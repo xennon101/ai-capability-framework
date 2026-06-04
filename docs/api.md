@@ -1,8 +1,8 @@
 # API
 
-AICF exposes a small TypeScript API and the `aicf` CLI. The package is public
-npm release-candidate material, and the exported surface is treated as public
-developer API.
+AICF Core exposes a small TypeScript API and the `aicf` CLI. The package is
+public npm release-candidate material, and the exported surface is treated as
+public developer API.
 
 Import from the package root:
 
@@ -23,9 +23,13 @@ side effects. Host applications own runtime execution and storage.
 
 ## Core Manifest APIs
 
-- `loadManifests(options)` reads YAML and JSON manifests from convention paths.
+- `loadManifests(options)` reads YAML and JSON manifests from convention paths
+  and parses public non-manifest fixtures.
 - `validateManifests(manifests, options)` validates schemas, duplicate IDs, and
-  manifest cross-references.
+  manifest cross-references, embedded capability schemas, and semantic
+  invariants.
+- `validatePublicFixtures(fixtures)` validates decision requests, adapter
+  contexts, and eval-result fixtures discovered by `loadManifests`.
 - `buildRegistry(manifests)` returns lookup maps and grouped manifest arrays.
 - `inspectRegistry(registry)` returns counts, capability groupings, eval
   coverage, and warnings.
@@ -35,13 +39,25 @@ Diagnostics use `AicfDiagnostic` with `code`, `path`, optional `kind`, optional
 
 ## Decision APIs
 
-- `decideCapability(registry, request)` evaluates select, prepare, or commit
-  status for one capability.
+- `decideCapability(registry, request, options?)` evaluates select, prepare, or
+  commit status for one capability.
 - `evaluatePolicy(capability, request)` evaluates deterministic policy metadata.
 - `evaluateLifecycle(capability, request)` evaluates lifecycle availability.
 
-Decision results return `status`, `reasons`, `requiredApprovals`, `policy`,
-`lifecycle`, and an audit preview. The audit preview is not persisted.
+Decision results return `status`, `reasons`, `requiredApprovals`, `diagnostics`,
+`policy`, `lifecycle`, and an audit preview. The audit preview is not persisted.
+
+The decision path validates prepare/commit args against `input_schema`, denies
+missing required `userId` or `tenantId`, enforces active status by default, and
+honors `riskCeiling` and `allowedRiskTiers` in request context.
+
+## Capability Slices
+
+- `selectCapabilitySlice(input)` filters a registry deterministically by
+  capability IDs, domains, entities, tags, capability types, risk, permissions,
+  autonomy, status, restricted side effects, and max count.
+
+Adapter builders accept either a full registry or a selected slice.
 
 ## Provider And Runtime Adapters
 
@@ -75,6 +91,11 @@ Decision results return `status`, `reasons`, `requiredApprovals`, `policy`,
 Adapters emit descriptor JSON only. They do not call providers or execute tool
 handlers. See [the adapter guide](adapters.md) for output shapes and CLI usage.
 
+Adapter builders exclude disabled, deprecated, draft, and experimental
+capabilities by default. Use explicit include options only for compatibility,
+development, or test contexts. Restricted side-effect capabilities still require
+`includeRestricted: true` and a successful select decision.
+
 ## Eval Runner APIs
 
 - `loadEvalResults(path)` reads and validates a public-safe eval result fixture.
@@ -85,6 +106,29 @@ handlers. See [the adapter guide](adapters.md) for output shapes and CLI usage.
 
 Eval runner output includes suite status, per-eval status, scorer results, and
 diagnostics. It scores summarized behavior only, not raw model traces.
+
+## Tool Result Envelope
+
+- `okToolResult(input)`
+- `deniedToolResult(input)`
+- `approvalRequiredToolResult(input)`
+- `unavailableToolResult(input)`
+- `errorToolResult(input)`
+- `toModelFacingToolResult(envelope)`
+
+These helpers build a standard result wrapper for host applications. They do not
+execute tools. `toModelFacingToolResult` strips `private_diagnostics`.
+
+## Schema Subpaths
+
+The package exports stable schema subpaths, including:
+
+```ts
+import capabilitySchema from "ai-capability-framework/schemas/capability-manifest.schema.json";
+```
+
+Bundlers and runtimes may require JSON import assertions. The same files are
+also included under `schemas/` in the npm package.
 
 ## CLI
 
@@ -104,6 +148,10 @@ aicf eval <path> --results <results.json> [--format text|json]
 
 Denied decisions exit `0` when the decision was evaluated successfully. Eval
 runs exit `0` only when all targeted evals pass.
+
+Adapter commands also accept `--include-deprecated`, `--include-draft`, and
+`--include-experimental`. `--include-disabled-for-tests` is intentionally
+reserved for test contexts.
 
 ## Versioning
 

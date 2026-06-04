@@ -7,19 +7,20 @@ import {
 } from "./adapter-common.js";
 import type {
   BuildOpenAIResponsesToolsOptions,
+  CapabilitySlice,
+  ManifestRegistry,
   OpenAIResponsesFunctionCall,
   OpenAIResponsesFunctionTool,
   OpenAIResponsesToolNameOptions,
   OpenAIResponsesToolset,
   ParseOpenAIResponsesToolCallResult
 } from "./types.js";
-import type { ManifestRegistry } from "./types.js";
 
 const defaultNamePrefix = "aicf_";
 const maxOpenAIToolNameLength = 64;
 
 export function buildOpenAIResponsesTools(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildOpenAIResponsesToolsOptions
 ): OpenAIResponsesToolset {
   return buildAdapterToolset<OpenAIResponsesFunctionTool>({
@@ -33,6 +34,10 @@ export function buildOpenAIResponsesTools(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxOpenAIToolNameLength,
     namePrefix: options.namePrefix,

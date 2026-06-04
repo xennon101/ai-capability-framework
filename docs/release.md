@@ -18,13 +18,19 @@ distribution.
 Run:
 
 ```bash
+npm ci
 npm run generate:types
 npm run check:generated
 npm run build
 npm test
 npm run validate
 npm run check:package
+npm run check:package-public
+npm run check:workspace-public
+npm run check:release-install
 npm run check
+npm pack --dry-run --json
+npm pack
 ```
 
 Then inspect:
@@ -36,6 +42,29 @@ git ls-files
 
 `_private/`, `dist/`, `node_modules/`, traces, prompts, provider payloads,
 generated local docs, and local-only material must remain untracked or ignored.
+
+## Release Artifacts
+
+Create source review archives from Git, not from the working directory:
+
+```bash
+git archive --format=zip --output ai-framework-source.zip HEAD
+```
+
+Do not zip the workspace directory. A workspace ZIP can accidentally include
+`.git/`, `node_modules/`, `_private/`, `dist/`, local logs, prompts, traces,
+provider payloads, or packed artifacts.
+
+Create the publishable npm artifact with:
+
+```bash
+npm pack
+```
+
+The npm package may include `dist/`, `schemas/`, `examples/`, `conformance/`,
+`docs/`, README, license, changelog, contributing, and security docs. It must
+not include private/local material, source-only tests, scripts, raw prompts,
+raw traces, provider request/response payloads, archives, or credentials.
 
 ## Trusted Publishing
 

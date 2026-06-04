@@ -1,6 +1,6 @@
 # Adapter Status And Roadmap
 
-AICF is provider-neutral. Adapters export tool metadata, bindings, parsers, and
+AICF Core is provider-neutral. Adapters export tool metadata, bindings, parsers, and
 diagnostics, but do not call models, execute handlers, persist actions, collect
 approvals, or perform side effects.
 

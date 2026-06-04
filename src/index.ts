@@ -1,4 +1,5 @@
 export { decideCapability, evaluateLifecycle, evaluatePolicy } from "./decision.js";
+export { selectCapabilitySlice } from "./capability-slice.js";
 export { formatEvalSuiteResult, loadEvalResults, runEvalSuite, scoreEvalCase } from "./eval-runner.js";
 export { buildAiSdkTools, parseAiSdkToolCall, toAiSdkToolName } from "./ai-sdk.js";
 export { buildAnthropicClaudeTools, parseAnthropicClaudeToolUse, toAnthropicClaudeToolName } from "./anthropic-claude.js";
@@ -10,13 +11,25 @@ export { buildOpenAIResponsesTools, parseOpenAIResponsesToolCall, toOpenAIRespon
 export { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
 export { runCli } from "./cli.js";
 export { buildSemanticKernelFunctions, parseSemanticKernelFunctionCall, toSemanticKernelFunctionName } from "./semantic-kernel.js";
-export { validateManifests } from "./validator.js";
+export {
+  approvalRequiredToolResult,
+  deniedToolResult,
+  errorToolResult,
+  okToolResult,
+  toModelFacingToolResult,
+  unavailableToolResult
+} from "./tool-result.js";
+export { validateCapabilityInvariants, validateManifests, validatePublicFixtures } from "./validator.js";
 export type {
   AdapterExcludedCapability,
   AdapterToolBinding,
+  AicfEvidenceRef,
   AicfDiagnostic,
   AicfErrorCode,
+  AicfPolicyDecisionSummary,
+  AicfPreparedActionSummary,
   AicfSchemaDiagnostic,
+  AicfToolResultEnvelope,
   AicfWarningCode,
   AiSdkTool,
   AiSdkToolCall,
@@ -32,7 +45,9 @@ export type {
   BuildGeminiFunctionDeclarationsOptions,
   BuildLangChainToolDescriptorsOptions,
   BuildMcpToolDescriptorsOptions,
+  CapabilitySlice,
   CapabilityManifest,
+  DecisionOptions,
   DecisionAuditPreview,
   DecisionFact,
   DecisionOperation,
@@ -49,6 +64,7 @@ export type {
   EvalRunStatus,
   EvalScorerResult,
   EvalSuiteResult,
+  FixtureKind,
   GeminiFunctionCall,
   GeminiFunctionDeclaration,
   GeminiFunctionDeclarationSet,
@@ -63,6 +79,7 @@ export type {
   LoadedEntityManifest,
   LoadedEvalCase,
   LoadedManifest,
+  LoadedFixture,
   LoadManifestsOptions,
   LoadManifestsResult,
   ManifestKind,
@@ -99,7 +116,9 @@ export type {
   ParseSemanticKernelFunctionCallResult,
   PolicyEvaluation,
   RegistryInspection,
+  RiskTier,
   RunEvalSuiteOptions,
+  SelectCapabilitySliceInput,
   SemanticKernelFunction,
   SemanticKernelFunctionCall,
   SemanticKernelFunctionNameOptions,

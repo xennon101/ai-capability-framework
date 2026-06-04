@@ -7,6 +7,7 @@ import {
 } from "./adapter-common.js";
 import type {
   BuildLangChainToolDescriptorsOptions,
+  CapabilitySlice,
   LangChainToolCall,
   LangChainToolDescriptor,
   LangChainToolDescriptorSet,
@@ -19,7 +20,7 @@ const defaultNamePrefix = "aicf_";
 const maxToolNameLength = 64;
 
 export function buildLangChainToolDescriptors(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildLangChainToolDescriptorsOptions
 ): LangChainToolDescriptorSet {
   return buildAdapterToolset<LangChainToolDescriptor>({
@@ -38,6 +39,10 @@ export function buildLangChainToolDescriptors(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,

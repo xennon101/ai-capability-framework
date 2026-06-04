@@ -1,7 +1,10 @@
+import Ajv2020 from "ajv/dist/2020.js";
 import type { CapabilityManifest } from "./generated/manifest-types.js";
 import type {
+  AicfDiagnostic,
   DecisionAuditPreview,
   DecisionFact,
+  DecisionOptions,
   DecisionReason,
   DecisionRequest,
   DecisionResult,
@@ -12,6 +15,8 @@ import type {
   PolicyEvaluation
 } from "./types.js";
 
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+
 const autonomyRank = {
   A0: 0,
   A1: 1,
@@ -21,9 +26,18 @@ const autonomyRank = {
   A5: 5
 } as const;
 
+const riskRank = {
+  none: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4
+} as const;
+
 export function decideCapability(
   registry: ManifestRegistry,
-  request: DecisionRequest
+  request: DecisionRequest,
+  options: DecisionOptions = {}
 ): DecisionResult {
   const loadedCapability = registry.capabilityById.get(request.capabilityId);
 
@@ -33,6 +47,7 @@ export function decideCapability(
       message: `Capability "${request.capabilityId}" was not found.`
     }] satisfies DecisionReason[];
     return buildDecisionResult(request, "denied", {
+      diagnostics: [],
       reasons,
       requiredApprovals: [],
       status: "denied"
@@ -42,7 +57,7 @@ export function decideCapability(
     });
   }
 
-  const policy = evaluatePolicy(loadedCapability, request);
+  const policy = evaluatePolicy(loadedCapability, request, options);
   const lifecycle = evaluateLifecycle(loadedCapability, request);
   const status = combineStatuses(policy.status, lifecycle.status);
 
@@ -51,11 +66,32 @@ export function decideCapability(
 
 export function evaluatePolicy(
   capability: LoadedCapabilityManifest | CapabilityManifest,
-  request: DecisionRequest
+  request: DecisionRequest,
+  options: DecisionOptions = {}
 ): PolicyEvaluation {
   const manifest = unwrapCapability(capability);
   const reasons: DecisionReason[] = [];
   const requiredApprovals: DecisionReason[] = [];
+  const diagnostics: AicfDiagnostic[] = [];
+
+  const statusReason = statusDecisionReason(manifest, options);
+  if (statusReason) {
+    reasons.push(statusReason);
+  }
+
+  if (manifest.authorization.requires_user_context && !hasText(request.context.userId)) {
+    reasons.push({
+      code: "missing_user_context",
+      message: "Capability requires request.context.userId."
+    });
+  }
+
+  if (manifest.authorization.tenant_scoped && !hasText(request.context.tenantId)) {
+    reasons.push({
+      code: "missing_tenant_context",
+      message: "Capability requires request.context.tenantId."
+    });
+  }
 
   for (const permission of manifest.authorization.permissions) {
     if (!request.context.permissions.includes(permission)) {
@@ -81,10 +117,47 @@ export function evaluatePolicy(
     });
   }
 
+  if (request.context.riskCeiling && riskRank[manifest.risk_tier] > riskRank[request.context.riskCeiling]) {
+    reasons.push({
+      code: "risk_tier_exceeded",
+      message: `Capability risk tier ${manifest.risk_tier} exceeds context risk ceiling ${request.context.riskCeiling}.`
+    });
+  }
+
+  if (request.context.allowedRiskTiers && !request.context.allowedRiskTiers.includes(manifest.risk_tier)) {
+    reasons.push({
+      code: "risk_tier_not_allowed",
+      message: `Capability risk tier ${manifest.risk_tier} is not allowed by context.allowedRiskTiers.`
+    });
+  }
+
+  const argsValidation = validateArgs(manifest, request);
+  reasons.push(...argsValidation.reasons);
+  diagnostics.push(...argsValidation.diagnostics);
+
   if (request.operation !== "select") {
     for (const rule of manifest.policy.deny_if ?? []) {
       const fact = readFact(request.facts?.[rule.rule]);
       if (!fact.known) {
+        const missingBehavior = rule.missing_behavior ?? "deny";
+        if (missingBehavior === "ignore") {
+          continue;
+        }
+
+        if (missingBehavior === "approval_required") {
+          const approvalReason = {
+            code: "approval_required",
+            message: `Deny rule "${rule.rule}" could not be evaluated and requires approval.`,
+            rule: rule.rule
+          } satisfies DecisionReason;
+          if (request.operation === "commit" && !isApproved(request)) {
+            reasons.push(approvalReason);
+          } else {
+            requiredApprovals.push(approvalReason);
+          }
+          continue;
+        }
+
         reasons.push({
           code: "missing_fact",
           message: `Deny rule "${rule.rule}" could not be evaluated and failed closed.`,
@@ -103,18 +176,35 @@ export function evaluatePolicy(
     }
 
     for (const rule of manifest.policy.approval_required_if ?? []) {
-      if (doesRuleMatch(rule, request.args ?? {})) {
-        const approvalReason = {
-          code: "approval_required",
-          message: rule.reason,
-          rule: rule.rule
-        } satisfies DecisionReason;
-
-        if (request.operation === "commit" && !isApproved(request)) {
-          reasons.push(approvalReason);
-        } else {
-          requiredApprovals.push(approvalReason);
+      const ruleMatch = doesRuleMatch(rule, request.args ?? {});
+      if (!ruleMatch.matched && ruleMatch.missing) {
+        const missingBehavior = rule.missing_behavior ?? defaultApprovalMissingBehavior(manifest);
+        if (missingBehavior === "deny") {
+          reasons.push({
+            code: "schema_validation_failed",
+            message: `Approval rule "${rule.rule}" field "${rule.field}" is missing and failed closed.`,
+            rule: rule.rule
+          });
+          continue;
         }
+
+        if (missingBehavior === "ignore") {
+          continue;
+        }
+      } else if (!ruleMatch.matched) {
+        continue;
+      }
+
+      const approvalReason = {
+        code: "approval_required",
+        message: rule.reason,
+        rule: rule.rule
+      } satisfies DecisionReason;
+
+      if (request.operation === "commit" && !isApproved(request)) {
+        reasons.push(approvalReason);
+      } else {
+        requiredApprovals.push(approvalReason);
       }
     }
   }
@@ -135,6 +225,7 @@ export function evaluatePolicy(
 
   if (reasons.length > 0) {
     return {
+      diagnostics,
       reasons,
       requiredApprovals,
       status: "denied"
@@ -143,6 +234,7 @@ export function evaluatePolicy(
 
   if (requiredApprovals.length > 0 && !isApproved(request)) {
     return {
+      diagnostics,
       reasons,
       requiredApprovals,
       status: "approval_required"
@@ -150,6 +242,7 @@ export function evaluatePolicy(
   }
 
   return {
+    diagnostics,
     reasons,
     requiredApprovals,
     status: "allowed"
@@ -211,7 +304,7 @@ function buildDecisionResult(
   return {
     audit,
     capabilityId: request.capabilityId,
-    diagnostics: [],
+    diagnostics: policy.diagnostics,
     lifecycle,
     operation: request.operation,
     policy,
@@ -219,6 +312,95 @@ function buildDecisionResult(
     requiredApprovals: policy.requiredApprovals,
     status
   };
+}
+
+function validateArgs(
+  capability: CapabilityManifest,
+  request: DecisionRequest
+): {
+  diagnostics: AicfDiagnostic[];
+  reasons: DecisionReason[];
+} {
+  if (request.operation === "select" && request.args === undefined) {
+    return {
+      diagnostics: [],
+      reasons: []
+    };
+  }
+
+  if ((request.operation === "prepare" || request.operation === "commit") && request.args === undefined) {
+    return {
+      diagnostics: [],
+      reasons: [{
+        code: "missing_args",
+        message: "Capability prepare/commit requires args."
+      }]
+    };
+  }
+
+  if (!isRecord(request.args)) {
+    return {
+      diagnostics: [],
+      reasons: [{
+        code: "schema_validation_failed",
+        message: "Capability input did not match input_schema."
+      }]
+    };
+  }
+
+  const validate = ajv.compile(capability.input_schema);
+  const valid = validate(request.args);
+  if (valid) {
+    return {
+      diagnostics: [],
+      reasons: []
+    };
+  }
+
+  return {
+    diagnostics: (validate.errors ?? []).map((error) => ({
+      code: "schema_validation_failed",
+      details: error,
+      id: capability.id,
+      kind: "capability",
+      message: `${error.instancePath || "/"}: ${error.message ?? "schema validation failed"}`,
+      path: capability.id
+    })),
+    reasons: [{
+      code: "schema_validation_failed",
+      message: "Capability input did not match input_schema."
+    }]
+  };
+}
+
+function statusDecisionReason(
+  capability: CapabilityManifest,
+  options: DecisionOptions
+): DecisionReason | undefined {
+  switch (capability.status) {
+    case "active":
+      return undefined;
+    case "disabled":
+      return options.includeDisabledForTests ? undefined : {
+        code: "status_disabled",
+        message: `Capability "${capability.id}" is disabled.`
+      };
+    case "deprecated":
+      return options.includeDeprecated ? undefined : {
+        code: "status_deprecated",
+        message: `Capability "${capability.id}" is deprecated and requires explicit inclusion.`
+      };
+    case "draft":
+      return options.includeDraft ? undefined : {
+        code: "status_draft",
+        message: `Capability "${capability.id}" is draft and requires explicit inclusion.`
+      };
+    case "experimental":
+      return options.includeExperimental ? undefined : {
+        code: "status_experimental",
+        message: `Capability "${capability.id}" is experimental and requires explicit inclusion.`
+      };
+  }
 }
 
 function combineStatuses(...statuses: DecisionStatus[]): DecisionStatus {
@@ -256,33 +438,46 @@ function readFact(fact: DecisionFact | undefined): { known: boolean; reason?: st
 function doesRuleMatch(
   rule: NonNullable<CapabilityManifest["policy"]["approval_required_if"]>[number],
   args: Record<string, unknown>
-): boolean {
+): { matched: boolean; missing: boolean } {
   if (!rule.field || !rule.operator) {
-    return false;
+    return {
+      matched: false,
+      missing: false
+    };
   }
 
   const value = getFieldValue(rule.field, args);
+  if (value === undefined) {
+    return {
+      matched: false,
+      missing: true
+    };
+  }
 
   switch (rule.operator) {
     case "eq":
-      return value === rule.value;
+      return { matched: value === rule.value, missing: false };
     case "neq":
-      return value !== rule.value;
+      return { matched: value !== rule.value, missing: false };
     case "gt":
-      return typeof value === "number" && typeof rule.value === "number" && value > rule.value;
+      return { matched: typeof value === "number" && typeof rule.value === "number" && value > rule.value, missing: false };
     case "gte":
-      return typeof value === "number" && typeof rule.value === "number" && value >= rule.value;
+      return { matched: typeof value === "number" && typeof rule.value === "number" && value >= rule.value, missing: false };
     case "lt":
-      return typeof value === "number" && typeof rule.value === "number" && value < rule.value;
+      return { matched: typeof value === "number" && typeof rule.value === "number" && value < rule.value, missing: false };
     case "lte":
-      return typeof value === "number" && typeof rule.value === "number" && value <= rule.value;
+      return { matched: typeof value === "number" && typeof rule.value === "number" && value <= rule.value, missing: false };
     case "in":
-      return Array.isArray(rule.value) && rule.value.includes(value);
+      return { matched: Array.isArray(rule.value) && rule.value.includes(value), missing: false };
     case "not_in":
-      return Array.isArray(rule.value) && !rule.value.includes(value);
+      return { matched: Array.isArray(rule.value) && !rule.value.includes(value), missing: false };
     case "exists":
-      return value !== undefined;
+      return { matched: true, missing: false };
   }
+}
+
+function defaultApprovalMissingBehavior(capability: CapabilityManifest): "approval_required" | "ignore" {
+  return riskRank[capability.risk_tier] >= riskRank.medium ? "approval_required" : "ignore";
 }
 
 function getFieldValue(field: string, args: Record<string, unknown>): unknown {
@@ -298,4 +493,12 @@ function getFieldValue(field: string, args: Record<string, unknown>): unknown {
 
 function isApproved(request: DecisionRequest): boolean {
   return request.approval?.approved === true && Boolean(request.approval.approvalId);
+}
+
+function hasText(value: string | undefined): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

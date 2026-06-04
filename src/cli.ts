@@ -14,7 +14,7 @@ import { buildOpenAIResponsesTools } from "./openai-responses.js";
 import { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
 import { buildSemanticKernelFunctions } from "./semantic-kernel.js";
 import type { AicfDiagnostic, DecisionRequest } from "./types.js";
-import { validateManifests } from "./validator.js";
+import { validateManifests, validatePublicFixtures } from "./validator.js";
 
 interface WritableLike {
   write(message: string): unknown;
@@ -75,7 +75,8 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
   const targetPath = parsedArgs.targetPath ?? "examples";
   const loadResult = await loadManifests({ path: targetPath });
   const validation = validateManifests(loadResult.manifests);
-  const errors = [...loadResult.errors, ...validation.errors];
+  const fixtureValidation = validatePublicFixtures(loadResult.fixtures);
+  const errors = [...loadResult.errors, ...validation.errors, ...fixtureValidation.errors];
 
   if (errors.length > 0) {
     stderr.write(formatDiagnostics(errors));
@@ -85,7 +86,7 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
   const registry = buildRegistry(loadResult.manifests);
 
   if (command === "validate") {
-    stdout.write(`Validated ${loadResult.manifests.length} manifest(s).\n`);
+    stdout.write(`Validated ${loadResult.manifests.length} manifest(s) and ${loadResult.fixtures.length} fixture(s).\n`);
     return 0;
   }
 
@@ -136,6 +137,10 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
 
     const toolset = buildAdapterCliToolset(command as AdapterCliCommand, registry, {
       context: context.value,
+      includeDeprecated: parsedArgs.includeDeprecated,
+      includeDisabledForTests: parsedArgs.includeDisabledForTests,
+      includeDraft: parsedArgs.includeDraft,
+      includeExperimental: parsedArgs.includeExperimental,
       includeRestricted: parsedArgs.includeRestricted
     });
     const fatalDiagnostics = toolset.diagnostics.filter((diagnostic) => diagnostic.code === "tool_name_collision");
@@ -202,6 +207,8 @@ function helpText(): string {
     "  semantic-kernel-functions <path> --context <file>  Export Semantic Kernel function metadata.",
     "  validate [path]  Validate AICF manifests. Defaults to examples.",
     "  inspect [path]   Print a registry summary. Defaults to examples.",
+    "",
+    "Adapter options: --include-restricted --include-deprecated --include-draft --include-experimental",
     ""
   ].join("\n");
 }
@@ -210,6 +217,10 @@ function parseCommandArgs(args: string[]): {
   contextPath?: string;
   error?: string;
   format?: "json" | "text" | string;
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
   includeRestricted?: boolean;
   requestPath?: string;
   resultsPath?: string;
@@ -217,6 +228,10 @@ function parseCommandArgs(args: string[]): {
 } {
   let contextPath: string | undefined;
   let format = "text";
+  let includeDeprecated = false;
+  let includeDisabledForTests = false;
+  let includeDraft = false;
+  let includeExperimental = false;
   let includeRestricted = false;
   let requestPath: string | undefined;
   let resultsPath: string | undefined;
@@ -273,6 +288,26 @@ function parseCommandArgs(args: string[]): {
       continue;
     }
 
+    if (arg === "--include-deprecated") {
+      includeDeprecated = true;
+      continue;
+    }
+
+    if (arg === "--include-draft") {
+      includeDraft = true;
+      continue;
+    }
+
+    if (arg === "--include-experimental") {
+      includeExperimental = true;
+      continue;
+    }
+
+    if (arg === "--include-disabled-for-tests") {
+      includeDisabledForTests = true;
+      continue;
+    }
+
     if (arg?.startsWith("--")) {
       return { error: `Unknown option "${arg}".` };
     }
@@ -287,6 +322,10 @@ function parseCommandArgs(args: string[]): {
   return {
     contextPath,
     format,
+    includeDeprecated,
+    includeDisabledForTests,
+    includeDraft,
+    includeExperimental,
     includeRestricted,
     requestPath,
     resultsPath,
@@ -351,6 +390,18 @@ function validateDecisionRequestShape(value: DecisionRequest): string | null {
     return "Decision request context.permissions must be an array of strings.";
   }
 
+  if (value.context.riskCeiling !== undefined && !["none", "low", "medium", "high", "critical"].includes(value.context.riskCeiling)) {
+    return "Decision request context.riskCeiling must be none, low, medium, high, or critical when present.";
+  }
+
+  if (
+    value.context.allowedRiskTiers !== undefined
+    && (!Array.isArray(value.context.allowedRiskTiers)
+      || value.context.allowedRiskTiers.some((riskTier) => !["none", "low", "medium", "high", "critical"].includes(riskTier)))
+  ) {
+    return "Decision request context.allowedRiskTiers must be an array of risk tiers when present.";
+  }
+
   if (!["A0", "A1", "A2", "A3", "A4", "A5"].includes(value.context.autonomyTier)) {
     return "Decision request context.autonomyTier must be A0, A1, A2, A3, A4, or A5.";
   }
@@ -379,6 +430,18 @@ function validateToolContextShape(value: DecisionRequest["context"], label: stri
     return `${label} tool context.tenantId must be a string when present.`;
   }
 
+  if (value.riskCeiling !== undefined && !["none", "low", "medium", "high", "critical"].includes(value.riskCeiling)) {
+    return `${label} tool context.riskCeiling must be none, low, medium, high, or critical when present.`;
+  }
+
+  if (
+    value.allowedRiskTiers !== undefined
+    && (!Array.isArray(value.allowedRiskTiers)
+      || value.allowedRiskTiers.some((riskTier) => !["none", "low", "medium", "high", "critical"].includes(riskTier)))
+  ) {
+    return `${label} tool context.allowedRiskTiers must be an array of risk tiers when present.`;
+  }
+
   return null;
 }
 
@@ -387,6 +450,10 @@ function buildAdapterCliToolset(
   registry: ReturnType<typeof buildRegistry>,
   options: {
     context: DecisionRequest["context"];
+    includeDeprecated?: boolean;
+    includeDisabledForTests?: boolean;
+    includeDraft?: boolean;
+    includeExperimental?: boolean;
     includeRestricted?: boolean;
   }
 ): AdapterCliToolset {

@@ -7,10 +7,13 @@ export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 export const outputPath = path.join(repoRoot, "src/generated/manifest-types.ts");
 
 const schemas = [
+  ["schemas/adapter-context.schema.json", "AdapterContextFixture"],
   ["schemas/capability-manifest.schema.json", "CapabilityManifest"],
+  ["schemas/decision-request.schema.json", "DecisionRequestFixture"],
   ["schemas/entity-manifest.schema.json", "EntityManifest"],
   ["schemas/eval-case.schema.json", "EvalCase"],
-  ["schemas/eval-result.schema.json", "EvalResultFixture"]
+  ["schemas/eval-result.schema.json", "EvalResultFixture"],
+  ["schemas/tool-result-envelope.schema.json", "ToolResultEnvelopeFixture"]
 ];
 
 const banner = [

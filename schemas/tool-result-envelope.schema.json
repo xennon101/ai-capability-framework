@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/tool-result-envelope.schema.json",
+  "title": "AICF Tool Result Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "capability_id", "capability_version", "status"],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "capability_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "capability_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["ok", "unavailable", "denied", "approval_required", "error"]
+    },
+    "data": {},
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_ref" }
+    },
+    "policy": {
+      "$ref": "#/$defs/policy_decision_summary"
+    },
+    "action": {
+      "$ref": "#/$defs/prepared_action_summary"
+    },
+    "user_message": {
+      "type": "string"
+    },
+    "private_diagnostics": {}
+  },
+  "$defs": {
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "source_type": { "type": "string" },
+        "span_id": { "type": "string" },
+        "quote": { "type": "string" },
+        "confidence": {
+          "enum": ["low", "medium", "high"]
+        }
+      }
+    },
+    "policy_decision_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["allowed", "approval_required", "denied"]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string", "minLength": 1 },
+              "message": { "type": "string", "minLength": 1 },
+              "rule": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "prepared_action_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_state"],
+      "properties": {
+        "prepared_action_id": { "type": "string" },
+        "action_state": {
+          "enum": ["none", "prepared", "approval_required", "committed", "denied", "refused"]
+        },
+        "preview": {},
+        "approval_required": { "type": "boolean" }
+      }
+    }
+  }
+}

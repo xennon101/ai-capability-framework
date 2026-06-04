@@ -17,21 +17,36 @@ export type {
 
 export type ManifestKind = "capability" | "entity" | "eval";
 
+export type FixtureKind = "adapter_context" | "decision_request" | "eval_result" | "unknown";
+
 export type AicfErrorCode =
   | "duplicate_id"
   | "invalid_context"
+  | "invalid_capability_lifecycle"
+  | "invalid_fixture"
   | "invalid_eval_result"
+  | "invalid_input_schema"
+  | "invalid_output_schema"
+  | "invalid_read_side_effects"
+  | "invalid_risk_tier"
   | "invalid_tool_call"
   | "missing_candidate"
+  | "missing_required_audit"
+  | "missing_required_idempotency"
   | "missing_reference"
   | "parse"
   | "schema"
+  | "schema_validation_failed"
   | "tool_name_collision"
+  | "unknown_capability_in_tool_call"
+  | "unknown_committed_capability"
+  | "unknown_eval_result"
   | "unknown_scorer"
   | "unsupported";
 
 export type AicfWarningCode =
   | "capability_excluded"
+  | "missing_required_approval_policy"
   | "schema_normalization"
   | "unknown_allowed_action"
   | "unknown_capability_under_test";
@@ -66,6 +81,13 @@ export type LoadedManifest =
   | LoadedEntityManifest
   | LoadedEvalCase;
 
+export interface LoadedFixture {
+  absolutePath: string;
+  fixture: unknown;
+  kind: FixtureKind;
+  path: string;
+}
+
 export interface LoadManifestsOptions {
   path?: string;
   root?: string;
@@ -74,6 +96,7 @@ export interface LoadManifestsOptions {
 export interface LoadManifestsResult {
   basePath: string;
   errors: AicfDiagnostic[];
+  fixtures: LoadedFixture[];
   manifests: LoadedManifest[];
   root: string;
 }
@@ -81,6 +104,7 @@ export interface LoadManifestsResult {
 export interface ValidationResult {
   errors: AicfDiagnostic[];
   valid: boolean;
+  warnings: AicfDiagnostic[];
 }
 
 export interface ValidateManifestsOptions {
@@ -116,6 +140,7 @@ export interface RegistryInspection {
 }
 
 export type AutonomyTier = "A0" | "A1" | "A2" | "A3" | "A4" | "A5";
+export type RiskTier = CapabilityManifest["risk_tier"];
 
 export type DecisionOperation = "select" | "prepare" | "commit";
 
@@ -129,7 +154,17 @@ export type DecisionReasonCode =
   | "idempotency_required"
   | "lifecycle_not_supported"
   | "missing_fact"
-  | "missing_permission";
+  | "missing_args"
+  | "missing_permission"
+  | "missing_tenant_context"
+  | "missing_user_context"
+  | "risk_tier_exceeded"
+  | "risk_tier_not_allowed"
+  | "schema_validation_failed"
+  | "status_deprecated"
+  | "status_disabled"
+  | "status_draft"
+  | "status_experimental";
 
 export interface DecisionReason {
   code: DecisionReasonCode;
@@ -151,13 +186,22 @@ export interface DecisionRequest {
   capabilityId: string;
   context: {
     autonomyTier: AutonomyTier;
+    allowedRiskTiers?: RiskTier[];
     permissions: string[];
+    riskCeiling?: RiskTier;
     tenantId?: string;
     userId?: string;
   };
   facts?: Record<string, DecisionFact>;
   idempotencyKey?: string;
   operation: DecisionOperation;
+}
+
+export interface DecisionOptions {
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
 }
 
 export interface DecisionAuditPreview {
@@ -181,6 +225,7 @@ export interface DecisionResult {
 }
 
 export interface PolicyEvaluation {
+  diagnostics: AicfDiagnostic[];
   reasons: DecisionReason[];
   requiredApprovals: DecisionReason[];
   status: DecisionStatus;
@@ -225,7 +270,17 @@ export interface AdapterExcludedCapability {
   capabilityId: string;
   diagnostics: AicfDiagnostic[];
   path: string;
-  reason: "decision_denied" | "restricted" | "tool_name_collision" | "unsupported_schema";
+  reason:
+    | "decision_denied"
+    | "restricted"
+    | "risk_tier_exceeded"
+    | "risk_tier_not_allowed"
+    | "status_deprecated"
+    | "status_disabled"
+    | "status_draft"
+    | "status_experimental"
+    | "tool_name_collision"
+    | "unsupported_schema";
 }
 
 export type OpenAIResponsesToolBinding = AdapterToolBinding;
@@ -241,12 +296,20 @@ export interface OpenAIResponsesToolset {
 
 export interface BuildOpenAIResponsesToolsOptions {
   context: DecisionRequest["context"];
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
   includeRestricted?: boolean;
   namePrefix?: string;
 }
 
 export interface BuildAdapterToolsOptions {
   context: DecisionRequest["context"];
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
   includeRestricted?: boolean;
   namePrefix?: string;
 }
@@ -526,4 +589,66 @@ export interface EvalSuiteResult {
 
 export interface RunEvalSuiteOptions {
   evalIds?: string[];
+}
+
+export interface SelectCapabilitySliceInput {
+  allowedCapabilityTypes?: CapabilityManifest["capability_type"][];
+  allowedRiskTiers?: RiskTier[];
+  capabilityIds?: string[];
+  context: DecisionRequest["context"];
+  domains?: string[];
+  entities?: string[];
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
+  includeRestricted?: boolean;
+  maxCapabilities?: number;
+  registry: ManifestRegistry;
+  riskCeiling?: RiskTier;
+  tags?: string[];
+}
+
+export interface CapabilitySlice {
+  capabilities: LoadedCapabilityManifest[];
+  diagnostics: AicfDiagnostic[];
+  excluded: AdapterExcludedCapability[];
+  registry: ManifestRegistry;
+}
+
+export interface AicfEvidenceRef {
+  confidence?: "low" | "medium" | "high";
+  quote?: string;
+  source_id: string;
+  source_type?: string;
+  span_id?: string;
+}
+
+export interface AicfPolicyDecisionSummary {
+  reasons?: Array<{
+    code: string;
+    message: string;
+    rule?: string;
+  }>;
+  status: DecisionStatus;
+}
+
+export interface AicfPreparedActionSummary {
+  action_state: "none" | "prepared" | "approval_required" | "committed" | "denied" | "refused";
+  approval_required?: boolean;
+  prepared_action_id?: string;
+  preview?: unknown;
+}
+
+export interface AicfToolResultEnvelope<TData = unknown> {
+  action?: AicfPreparedActionSummary;
+  capability_id: string;
+  capability_version: string;
+  data?: TData;
+  evidence?: AicfEvidenceRef[];
+  policy?: AicfPolicyDecisionSummary;
+  private_diagnostics?: unknown;
+  schema_version: "1.0";
+  status: "ok" | "unavailable" | "denied" | "approval_required" | "error";
+  user_message?: string;
 }

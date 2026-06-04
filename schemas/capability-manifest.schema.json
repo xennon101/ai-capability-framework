@@ -90,6 +90,10 @@
       "type": "array",
       "items": { "type": "string", "minLength": 1 }
     },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
     "input_schema": { "$ref": "#/$defs/json_schema_object" },
     "output_schema": { "$ref": "#/$defs/json_schema_object" },
     "side_effects": {
@@ -240,6 +244,9 @@
         "rule": { "type": "string", "minLength": 1 },
         "reason": { "type": "string", "minLength": 1 },
         "field": { "type": "string" },
+        "missing_behavior": {
+          "enum": ["deny", "approval_required", "ignore"]
+        },
         "operator": {
           "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "in", "not_in", "exists"]
         },

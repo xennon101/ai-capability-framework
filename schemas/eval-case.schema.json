@@ -91,9 +91,29 @@
             "required": ["capability_id"],
             "properties": {
               "capability_id": { "type": "string", "minLength": 1 },
-              "args_match": { "type": "object" }
+              "args_match": { "type": "object" },
+              "args_exact": { "type": "object" },
+              "allowed_fields": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
+        },
+        "forbidden_tool_calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability_id"],
+            "properties": {
+              "capability_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "tool_call_sequence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
         },
         "policy_decision": {
           "enum": ["allowed", "approval_required", "denied"]

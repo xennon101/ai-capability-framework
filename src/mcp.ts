@@ -9,6 +9,7 @@ import {
 import type {
   BuildMcpToolDescriptorsOptions,
   CapabilityManifest,
+  CapabilitySlice,
   ManifestRegistry,
   McpToolCall,
   McpToolDescriptor,
@@ -21,7 +22,7 @@ const defaultNamePrefix = "aicf_";
 const maxToolNameLength = 64;
 
 export function buildMcpToolDescriptors(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildMcpToolDescriptorsOptions
 ): McpToolDescriptorSet {
   return buildAdapterToolset<McpToolDescriptor>({
@@ -36,6 +37,10 @@ export function buildMcpToolDescriptors(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,

@@ -11,6 +11,7 @@ import type {
   AnthropicClaudeToolset,
   AnthropicClaudeToolUse,
   BuildAnthropicClaudeToolsOptions,
+  CapabilitySlice,
   ManifestRegistry,
   ParseAnthropicClaudeToolUseResult
 } from "./types.js";
@@ -19,7 +20,7 @@ const defaultNamePrefix = "aicf_";
 const maxToolNameLength = 64;
 
 export function buildAnthropicClaudeTools(
-  registry: ManifestRegistry,
+  registry: ManifestRegistry | CapabilitySlice,
   options: BuildAnthropicClaudeToolsOptions
 ): AnthropicClaudeToolset {
   return buildAdapterToolset<AnthropicClaudeTool>({
@@ -32,6 +33,10 @@ export function buildAnthropicClaudeTools(
     }),
     context: options.context,
     defaultNamePrefix,
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental,
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,

@@ -1,18 +1,20 @@
 # AI Capability Framework
 
-AI Capability Framework (AICF) is a small public framework for describing what an
-AI-enabled application is allowed to know, decide, and do.
+AI Capability Framework Core (AICF Core) is a small public framework for
+describing what an AI-enabled application is allowed to know, decide, and expose
+to model or agent runtimes.
 
 The repository contains:
 
 - JSON Schema contracts for capability, entity, and eval manifests.
 - Synthetic examples that show how to describe a capability without exposing
   private application internals.
-- A TypeScript core library and `aicf` CLI for loading, validating, and
-  inspecting manifests.
+- A TypeScript core library and `aicf` CLI for loading, validating, inspecting,
+  and slicing manifests.
 - Provider and runtime adapters that export safe tool descriptors without
   calling models or executing capabilities.
-- A deterministic eval runner for scoring public-safe candidate fixtures
+- A standard tool result envelope and deterministic eval runner for scoring
+  public-safe candidate fixtures
   without API keys or live model calls.
 - A normative `1.0` public spec for capability IDs, tiers, lifecycle, and
   public-safe examples.
@@ -21,12 +23,15 @@ The repository contains:
 
 AI products are easier to govern when model-facing behavior is represented as
 explicit application capabilities instead of broad tool lists or hidden prompts.
-AICF separates semantic interpretation from deterministic application control:
+AICF Core separates semantic interpretation from deterministic application
+control:
 
 - Models interpret the user goal and select from a small set of relevant
   capabilities.
-- Application code validates inputs, checks authorization, enforces policy,
-  executes side effects, and records audit evidence.
+- AICF Core validates contracts, preflights metadata, exports descriptors, and
+  scores eval fixtures.
+- Application code enforces real authorization, executes side effects, stores
+  approvals/idempotency/audit data, and owns runtime behavior.
 - Evals verify that capability selection, tool arguments, approval boundaries,
   and safety behavior remain stable.
 
@@ -143,29 +148,36 @@ use simpler flows when policy allows it.
 
 ## Validation
 
-`npm run validate` parses all schema files, then validates every YAML/JSON
-example under:
+`npm run validate` parses every public YAML/JSON file under `examples/`, then
+validates known fixture directories and manifests:
 
 - `examples/**/capabilities/`
 - `examples/**/entities/`
 - `examples/**/evals/`
+- `examples/**/eval-results/`
+- `examples/**/decisions/`
+- `examples/**/openai/context*.json`
 
-The script fails on malformed examples or schema violations.
+The script fails on malformed examples, unknown public fixture types, schema
+violations, invalid embedded capability input/output schemas, unsafe semantic
+manifest invariants, duplicate IDs, and missing eval references.
 
 GitHub Actions runs type generation, generated-type freshness checks, build,
 tests, and validation on pushes and pull requests.
 
 ## TypeScript API
 
-AICF exposes a small no-execution TypeScript surface:
+AICF Core exposes a small no-execution TypeScript surface:
 
 - `loadManifests(options)`
 - `validateManifests(manifests, options)`
+- `validatePublicFixtures(fixtures)`
 - `buildRegistry(manifests)`
 - `inspectRegistry(registry)`
 - `decideCapability(registry, request)`
 - `evaluatePolicy(capability, request)`
 - `evaluateLifecycle(capability, request)`
+- `selectCapabilitySlice(input)`
 - `buildOpenAIResponsesTools(registry, options)`
 - `parseOpenAIResponsesToolCall(toolset, call)`
 - `toOpenAIResponsesToolName(capabilityId, options)`
@@ -184,6 +196,12 @@ AICF exposes a small no-execution TypeScript surface:
 - `loadEvalResults(path)`
 - `scoreEvalCase(evalCase, candidate, registry)`
 - `runEvalSuite(registry, candidates, options)`
+- `okToolResult(input)`
+- `deniedToolResult(input)`
+- `approvalRequiredToolResult(input)`
+- `unavailableToolResult(input)`
+- `errorToolResult(input)`
+- `toModelFacingToolResult(envelope)`
 
 Generated public types include `CapabilityManifest`, `EntityManifest`, and
 `EvalCase`. Decision types include `DecisionRequest`, `DecisionResult`,

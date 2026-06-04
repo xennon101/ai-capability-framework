@@ -6,6 +6,8 @@ import type {
   AdapterToolBinding,
   AicfDiagnostic,
   CapabilityManifest,
+  CapabilitySlice,
+  DecisionOptions,
   DecisionReason,
   DecisionRequest,
   JsonObject,
@@ -54,6 +56,10 @@ export interface BuildAdapterToolsetOptions<TTool, TBinding extends AdapterToolB
   context: DecisionRequest["context"];
   defaultNamePrefix: string;
   includeRestricted?: boolean;
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
   maxToolNameLength?: number;
   namePrefix?: string;
   toBinding?(binding: AdapterToolBinding, input: {
@@ -62,7 +68,7 @@ export interface BuildAdapterToolsetOptions<TTool, TBinding extends AdapterToolB
     restricted: boolean;
     toolName: string;
   }): TBinding;
-  registry: ManifestRegistry;
+  registry: ManifestRegistry | CapabilitySlice;
   unsupportedSchemaKeywords?: string[];
 }
 
@@ -95,10 +101,39 @@ export function buildAdapterToolset<TTool, TBinding extends AdapterToolBinding =
   const bindings: TBinding[] = [];
   const tools: TTool[] = [];
   const toolNameOwners = new Map<string, string>();
+  const registry = isCapabilitySlice(options.registry) ? options.registry.registry : options.registry;
+  const capabilities = isCapabilitySlice(options.registry) ? options.registry.capabilities : options.registry.capabilities;
 
-  for (const loadedCapability of options.registry.capabilities) {
+  if (isCapabilitySlice(options.registry)) {
+    diagnostics.push(...options.registry.diagnostics);
+    excluded.push(...options.registry.excluded);
+  }
+
+  for (const loadedCapability of capabilities) {
     const capability = loadedCapability.manifest;
     const restricted = isRestrictedCapability(capability);
+    const statusReason = excludedStatusReason(capability, options);
+
+    if (statusReason) {
+      const capabilityDiagnostics = [{
+        code: "capability_excluded",
+        details: {
+          status: capability.status
+        },
+        id: capability.id,
+        kind: "capability",
+        message: `Capability "${capability.id}" has status "${capability.status}" and was not exported to ${options.adapterName} tools.`,
+        path: loadedCapability.path
+      }] satisfies AicfDiagnostic[];
+      diagnostics.push(...capabilityDiagnostics);
+      excluded.push({
+        capabilityId: capability.id,
+        diagnostics: capabilityDiagnostics,
+        path: loadedCapability.path,
+        reason: statusReason
+      });
+      continue;
+    }
 
     if (restricted && !options.includeRestricted) {
       const capabilityDiagnostics = [{
@@ -121,11 +156,11 @@ export function buildAdapterToolset<TTool, TBinding extends AdapterToolBinding =
       continue;
     }
 
-    const selectDecision = decideCapability(options.registry, {
+    const selectDecision = decideCapability(registry, {
       capabilityId: capability.id,
       context: selectContextForCapability(capability, options.context),
       operation: "select"
-    });
+    }, adapterDecisionOptions(options));
 
     if (selectDecision.status !== "allowed") {
       const capabilityDiagnostics = decisionDiagnostics(
@@ -138,7 +173,7 @@ export function buildAdapterToolset<TTool, TBinding extends AdapterToolBinding =
         capabilityId: capability.id,
         diagnostics: capabilityDiagnostics,
         path: loadedCapability.path,
-        reason: "decision_denied"
+        reason: excludedReasonFromDecision(selectDecision.reasons)
       });
       continue;
     }
@@ -210,6 +245,10 @@ export function buildAdapterToolset<TTool, TBinding extends AdapterToolBinding =
   };
 }
 
+function isCapabilitySlice(value: ManifestRegistry | CapabilitySlice): value is CapabilitySlice {
+  return "registry" in value && Array.isArray(value.capabilities);
+}
+
 export function selectContextForCapability(
   capability: CapabilityManifest,
   context: DecisionRequest["context"]
@@ -232,6 +271,7 @@ export function isRestrictedCapability(capability: CapabilityManifest): boolean 
     || capability.side_effects.charges_money
     || capability.side_effects.refunds_money
     || capability.side_effects.changes_permissions
+    || capability.side_effects.deletes_records
     || capability.side_effects.triggers_external_workflow
     || capability.side_effects.irreversible
     || capability.side_effects.sends_external_messages;
@@ -357,7 +397,7 @@ export function parseAdapterToolCall(input: {
     return invalidToolCall(binding, input.argumentsPath, `Tool call arguments for "${input.toolName}" must be a JSON object.`);
   }
 
-  const validate = ajv.compile(binding.inputSchema);
+  const validate = ajv.compile(binding.normalizedInputSchema);
   const valid = validate(args);
   if (!valid) {
     return {
@@ -375,7 +415,7 @@ export function parseAdapterToolCall(input: {
   return {
     diagnostics: [],
     parsed: {
-      args,
+      args: denormalizeToolArgs(binding.inputSchema, args),
       callId: input.callId,
       capabilityId: binding.capabilityId,
       id: input.id,
@@ -383,6 +423,103 @@ export function parseAdapterToolCall(input: {
     } satisfies ParsedAdapterToolCall,
     valid: true
   };
+}
+
+function adapterDecisionOptions(options: {
+  includeDeprecated?: boolean;
+  includeDisabledForTests?: boolean;
+  includeDraft?: boolean;
+  includeExperimental?: boolean;
+}): DecisionOptions {
+  return {
+    includeDeprecated: options.includeDeprecated,
+    includeDisabledForTests: options.includeDisabledForTests,
+    includeDraft: options.includeDraft,
+    includeExperimental: options.includeExperimental
+  };
+}
+
+function excludedStatusReason(
+  capability: CapabilityManifest,
+  options: {
+    includeDeprecated?: boolean;
+    includeDisabledForTests?: boolean;
+    includeDraft?: boolean;
+    includeExperimental?: boolean;
+  }
+): AdapterExcludedCapability["reason"] | null {
+  switch (capability.status) {
+    case "active":
+      return null;
+    case "disabled":
+      return options.includeDisabledForTests ? null : "status_disabled";
+    case "deprecated":
+      return options.includeDeprecated ? null : "status_deprecated";
+    case "draft":
+      return options.includeDraft ? null : "status_draft";
+    case "experimental":
+      return options.includeExperimental ? null : "status_experimental";
+  }
+}
+
+function excludedReasonFromDecision(reasons: DecisionReason[]): AdapterExcludedCapability["reason"] {
+  const statusReason = reasons.find((reason) => reason.code.startsWith("status_"));
+  if (statusReason?.code === "status_disabled") return "status_disabled";
+  if (statusReason?.code === "status_deprecated") return "status_deprecated";
+  if (statusReason?.code === "status_draft") return "status_draft";
+  if (statusReason?.code === "status_experimental") return "status_experimental";
+  if (reasons.some((reason) => reason.code === "risk_tier_exceeded")) return "risk_tier_exceeded";
+  if (reasons.some((reason) => reason.code === "risk_tier_not_allowed")) return "risk_tier_not_allowed";
+  return "decision_denied";
+}
+
+function denormalizeToolArgs(originalSchema: JsonObject, args: Record<string, unknown>): Record<string, unknown> {
+  return denormalizeValue(originalSchema, args, false) as Record<string, unknown>;
+}
+
+function denormalizeValue(originalSchema: JsonObject, value: unknown, optional: boolean): unknown {
+  if (value === null) {
+    return optional && !schemaAllowsNull(originalSchema) ? undefined : null;
+  }
+
+  const types = schemaTypes(originalSchema.type);
+  if (types.includes("object") && isRecord(value)) {
+    const properties = isRecord(originalSchema.properties) ? originalSchema.properties : {};
+    const required = Array.isArray(originalSchema.required)
+      ? new Set(originalSchema.required.filter((entry): entry is string => typeof entry === "string"))
+      : new Set<string>();
+    const denormalized: Record<string, unknown> = {};
+
+    for (const [key, propertyValue] of Object.entries(value)) {
+      const propertySchema = properties[key];
+      if (!isRecord(propertySchema)) {
+        denormalized[key] = propertyValue;
+        continue;
+      }
+
+      const nextValue = denormalizeValue(
+        propertySchema as JsonObject,
+        propertyValue,
+        !required.has(key)
+      );
+      if (nextValue !== undefined) {
+        denormalized[key] = nextValue;
+      }
+    }
+
+    return denormalized;
+  }
+
+  if (types.includes("array") && Array.isArray(value) && isRecord(originalSchema.items)) {
+    return value.map((item) => denormalizeValue(originalSchema.items as JsonObject, item, false));
+  }
+
+  return value;
+}
+
+function schemaAllowsNull(schema: JsonObject): boolean {
+  return schemaTypes(schema.type).includes("null")
+    || (Array.isArray(schema.enum) && schema.enum.includes(null));
 }
 
 export function validateAdapterContext(context: DecisionRequest["context"], adapterName: string): string | null {
@@ -404,6 +541,18 @@ export function validateAdapterContext(context: DecisionRequest["context"], adap
 
   if (context.tenantId !== undefined && typeof context.tenantId !== "string") {
     return `${adapterName} tool export context.tenantId must be a string when present.`;
+  }
+
+  if (context.riskCeiling !== undefined && !["none", "low", "medium", "high", "critical"].includes(context.riskCeiling)) {
+    return `${adapterName} tool export context.riskCeiling must be none, low, medium, high, or critical when present.`;
+  }
+
+  if (
+    context.allowedRiskTiers !== undefined
+    && (!Array.isArray(context.allowedRiskTiers)
+      || context.allowedRiskTiers.some((riskTier) => !["none", "low", "medium", "high", "critical"].includes(riskTier)))
+  ) {
+    return `${adapterName} tool export context.allowedRiskTiers must be an array of risk tiers when present.`;
   }
 
   return null;

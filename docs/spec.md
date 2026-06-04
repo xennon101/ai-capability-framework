@@ -1,9 +1,9 @@
 # AICF 1.0 Spec
 
 This page defines the normative public contract for AI Capability Framework
-(AICF) 1.0 manifests and deterministic framework behavior.
+Core (AICF Core) 1.0 manifests and deterministic framework behavior.
 
-AICF is a no-execution framework. It describes capabilities, validates public
+AICF Core is a no-execution framework. It describes capabilities, validates public
 contracts, builds registries, evaluates deterministic policy/lifecycle decisions,
 exports adapter metadata, and scores deterministic eval fixtures. It does not
 call models, execute handlers, verify real host authorization, collect
@@ -58,8 +58,8 @@ the capability autonomy tier or the capability policy max autonomy tier.
   consequential state.
 - `critical`: Irreversible, regulated, privileged, or safety-critical behavior.
 
-Risk tiers are descriptive metadata. Host applications remain responsible for
-real enforcement.
+Risk tiers are manifest metadata used by AICF Core filters and diagnostics.
+Host applications remain responsible for real enforcement.
 
 ## Capability Types
 
@@ -86,7 +86,16 @@ lifecycle flags, observability expectations, and optional eval links.
 
 Schemas are strict by default with `additionalProperties: false`. The embedded
 `input_schema` and `output_schema` fields are JSON Schema objects owned by the
-capability author. Authors SHOULD keep those schemas strict as well.
+capability author. AICF Core validators MUST compile these embedded schemas and
+SHOULD fail object-incompatible callable input schemas.
+
+Capability `status` controls default selection:
+
+- `active`: selectable when policy, lifecycle, risk, context, and adapter
+  filters allow it.
+- `disabled`: denied and never exported by default.
+- `deprecated`, `draft`, and `experimental`: excluded by default and selectable
+  only with explicit compatibility, development, or test options.
 
 `authorization.permissions` declares deterministic permission strings required
 by the control plane. AICF checks that the request context includes them; host
@@ -127,10 +136,23 @@ The deterministic control plane evaluates policy from manifest metadata plus a
 request context.
 
 - Missing required permissions MUST deny.
+- If `authorization.requires_user_context` is true, missing `context.userId`
+  MUST deny.
+- If `authorization.tenant_scoped` is true, missing `context.tenantId` MUST
+  deny.
 - Requested autonomy above capability or policy max MUST deny.
+- Context `riskCeiling` and `allowedRiskTiers` MUST deny capabilities outside
+  the requested risk boundary.
+- `prepare` and `commit` requests MUST include args that validate against the
+  capability `input_schema`. `select` MAY omit args, but supplied select args
+  MUST validate.
 - `deny_if` checks `facts[rule]`. A true fact MUST deny, a false fact allows
-  evaluation to continue, and a missing fact MUST fail closed by denying.
-- `approval_required_if` evaluates field paths against request args.
+  evaluation to continue, and a missing fact MUST fail closed by denying unless
+  a rule explicitly sets `missing_behavior: ignore` or
+  `missing_behavior: approval_required`.
+- `approval_required_if` evaluates field paths against request args. Missing
+  fields on medium, high, or critical capabilities MUST fail closed to approval
+  required unless the rule explicitly overrides `missing_behavior`.
 - `policy.approval_required` MAY produce an approval-required prepare decision,
   and MUST block commit unless approval is present.
 - Required idempotency MUST block commit unless `idempotencyKey` is present.
@@ -178,6 +200,23 @@ By default, the adapter MUST include only capabilities whose `select` decision i
 allowed for the supplied context and SHOULD exclude restricted side-effect
 capabilities. Restricted export requires an explicit option and is still gated
 by deterministic selection.
+
+Provider adapters MUST validate tool-call args against the provider-normalized
+strict schema and return args denormalized to the original capability
+`input_schema`.
+
+## Public Fixture Validation
+
+Public validation MUST parse every `.json`, `.yaml`, and `.yml` file under the
+validated examples or conformance path. Known fixture directories MUST validate
+against public schemas:
+
+- `decisions/`: decision request schema.
+- `eval-results/`: eval result schema.
+- `openai/context*.json`: adapter context schema.
+
+Unknown public structured fixture paths MUST fail validation unless they are
+explicitly added to the public contract.
 
 ## Extensions
 

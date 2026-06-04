@@ -4,6 +4,7 @@ import YAML from "yaml";
 import type {
   AicfDiagnostic,
   LoadedManifest,
+  LoadedFixture,
   LoadManifestsOptions,
   LoadManifestsResult,
   ManifestKind
@@ -15,6 +16,7 @@ const ignoredDirectories = new Set([".git", "_private", "node_modules"]);
 export async function loadManifests(options: LoadManifestsOptions = {}): Promise<LoadManifestsResult> {
   const root = path.resolve(options.root ?? process.cwd());
   const basePath = path.resolve(root, options.path ?? "examples");
+  const fixtures: LoadedFixture[] = [];
   const manifests: LoadedManifest[] = [];
   const errors: AicfDiagnostic[] = [];
   let files: string[];
@@ -29,6 +31,7 @@ export async function loadManifests(options: LoadManifestsOptions = {}): Promise
         message: error instanceof Error ? error.message : "Unable to read manifest path.",
         path: toRelativePath(root, basePath)
       }],
+      fixtures,
       manifests,
       root
     };
@@ -36,23 +39,29 @@ export async function loadManifests(options: LoadManifestsOptions = {}): Promise
 
   for (const absolutePath of files) {
     const kind = kindFromPath(absolutePath);
-    if (!kind) {
-      continue;
-    }
-
     const relativePath = toRelativePath(root, absolutePath);
+
     try {
-      const manifest = await readStructuredFile(absolutePath);
-      manifests.push({
-        absolutePath,
-        kind,
-        manifest,
-        path: relativePath
-      } as LoadedManifest);
+      const parsed = await readStructuredFile(absolutePath);
+      if (kind) {
+        manifests.push({
+          absolutePath,
+          kind,
+          manifest: parsed,
+          path: relativePath
+        } as LoadedManifest);
+      } else {
+        fixtures.push({
+          absolutePath,
+          fixture: parsed,
+          kind: fixtureKindFromPath(absolutePath),
+          path: relativePath
+        });
+      }
     } catch (error) {
       errors.push({
         code: "parse",
-        kind,
+        kind: kind ?? undefined,
         message: error instanceof Error ? error.message : "Unable to parse manifest.",
         path: relativePath
       });
@@ -62,6 +71,7 @@ export async function loadManifests(options: LoadManifestsOptions = {}): Promise
   return {
     basePath,
     errors,
+    fixtures,
     manifests,
     root
   };
@@ -75,6 +85,20 @@ export function kindFromPath(filePath: string): ManifestKind | null {
   if (parts.includes("evals")) return "eval";
 
   return null;
+}
+
+export function fixtureKindFromPath(filePath: string): LoadedFixture["kind"] {
+  const normalized = filePath.replaceAll("\\", "/");
+  const parts = normalized.split("/");
+  const fileName = parts.at(-1) ?? "";
+
+  if (parts.includes("eval-results")) return "eval_result";
+  if (parts.includes("decisions")) return "decision_request";
+  if (parts.includes("openai") && fileName.startsWith("context.") && fileName.endsWith(".json")) {
+    return "adapter_context";
+  }
+
+  return "unknown";
 }
 
 async function listStructuredFiles(directory: string): Promise<string[]> {

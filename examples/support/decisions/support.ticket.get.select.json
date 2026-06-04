@@ -5,9 +5,9 @@
     "ticket_id": "TCK-1001"
   },
   "context": {
-    "permissions": ["ticket.read"],
     "autonomyTier": "A1",
-    "userId": "user_example_support_agent",
-    "tenantId": "tenant_example"
+    "permissions": ["ticket.read"],
+    "tenantId": "tenant_example_support",
+    "userId": "user_example_support_agent"
   }
 }

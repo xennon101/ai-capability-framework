@@ -13,10 +13,12 @@ import {
   buildRegistry,
   buildSemanticKernelFunctions,
   decideCapability,
+  deniedToolResult,
   formatInspection,
   loadEvalResults,
   inspectRegistry,
   loadManifests,
+  okToolResult,
   parseAiSdkToolCall,
   parseAnthropicClaudeToolUse,
   parseGeminiFunctionCall,
@@ -27,6 +29,8 @@ import {
   runEvalSuite,
   runCli,
   scoreEvalCase,
+  selectCapabilitySlice,
+  toModelFacingToolResult,
   toAiSdkToolName,
   toAnthropicClaudeToolName,
   toGeminiFunctionName,
@@ -35,6 +39,8 @@ import {
   toOpenAIResponsesToolName,
   toSemanticKernelFunctionName,
   validateManifests,
+  validatePublicFixtures,
+  type AicfToolResultEnvelope,
   type CapabilityManifest,
   type DecisionRequest,
   type EvalCandidateResult,
@@ -162,7 +168,7 @@ describe("AICF CLI", () => {
     const exitCode = await runCli(["validate", "examples"], { stderr, stdout });
 
     expect(exitCode).toBe(0);
-    expect(stdout.value).toContain("Validated 16 manifest(s).");
+    expect(stdout.value).toContain("Validated 16 manifest(s) and 13 fixture(s).");
     expect(stderr.value).toBe("");
   });
 
@@ -330,14 +336,18 @@ describe("AICF release readiness", () => {
       "buildRegistry",
       "buildSemanticKernelFunctions",
       "decideCapability",
+      "deniedToolResult",
+      "approvalRequiredToolResult",
       "evaluateLifecycle",
       "evaluatePolicy",
+      "errorToolResult",
       "formatEvalSuiteResult",
       "formatInspection",
       "inspectRegistry",
       "kindFromPath",
       "loadEvalResults",
       "loadManifests",
+      "okToolResult",
       "parseAiSdkToolCall",
       "parseAnthropicClaudeToolUse",
       "parseGeminiFunctionCall",
@@ -348,6 +358,8 @@ describe("AICF release readiness", () => {
       "runCli",
       "runEvalSuite",
       "scoreEvalCase",
+      "selectCapabilitySlice",
+      "toModelFacingToolResult",
       "toAiSdkToolName",
       "toAnthropicClaudeToolName",
       "toGeminiFunctionName",
@@ -355,7 +367,10 @@ describe("AICF release readiness", () => {
       "toMcpToolName",
       "toOpenAIResponsesToolName",
       "toSemanticKernelFunctionName",
-      "validateManifests"
+      "unavailableToolResult",
+      "validateCapabilityInvariants",
+      "validateManifests",
+      "validatePublicFixtures"
     ];
 
     for (const exportName of expectedExports) {
@@ -417,10 +432,15 @@ describe("AICF release readiness", () => {
       "examples/eval-results/public.results.passing.json",
       "examples/scheduling/capabilities/scheduling.invite.prepare.yaml",
       "examples/support/capabilities/support.ticket.get.yaml",
-      "examples/support/eval-results/support.results.passing.json",
-      "schemas/capability-manifest.schema.json",
-      "schemas/eval-result.schema.json"
-    ];
+        "examples/support/eval-results/support.results.passing.json",
+        "schemas/adapter-context.schema.json",
+        "schemas/capability-manifest.schema.json",
+        "schemas/decision-request.schema.json",
+        "schemas/entity-manifest.schema.json",
+        "schemas/eval-case.schema.json",
+        "schemas/eval-result.schema.json",
+        "schemas/tool-result-envelope.schema.json"
+      ];
 
     for (const file of requiredFiles) {
       expect(files).toContain(file);
@@ -448,7 +468,9 @@ describe("AICF decision control plane", () => {
       },
       context: {
         autonomyTier: "A1",
-        permissions: ["ticket.read"]
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -468,7 +490,9 @@ describe("AICF decision control plane", () => {
       operation: "select",
       context: {
         autonomyTier: "A2",
-        permissions: ["refund.case.create", "ticket.read"]
+        permissions: ["refund.case.create", "ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -483,7 +507,9 @@ describe("AICF decision control plane", () => {
       operation: "select",
       context: {
         autonomyTier: "A1",
-        permissions: []
+        permissions: [],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -500,7 +526,9 @@ describe("AICF decision control plane", () => {
       operation: "select",
       context: {
         autonomyTier: "A2",
-        permissions: ["ticket.read"]
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -535,7 +563,9 @@ describe("AICF decision control plane", () => {
       },
       context: {
         autonomyTier: "A2",
-        permissions: ["refund.case.create", "ticket.read"]
+        permissions: ["refund.case.create", "ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       },
       facts: {
         "refund.order_not_refundable": {
@@ -564,7 +594,9 @@ describe("AICF decision control plane", () => {
       },
       context: {
         autonomyTier: "A2",
-        permissions: ["refund.case.create", "ticket.read"]
+        permissions: ["refund.case.create", "ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -586,7 +618,9 @@ describe("AICF decision control plane", () => {
       },
       context: {
         autonomyTier: "A0",
-        permissions: ["refund.case.commit"]
+        permissions: ["refund.case.commit"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_lead"
       },
       facts: {
         "refund.approval_missing_or_invalid": false
@@ -615,7 +649,9 @@ describe("AICF decision control plane", () => {
       },
       context: {
         autonomyTier: "A0",
-        permissions: ["refund.case.commit"]
+        permissions: ["refund.case.commit"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_lead"
       },
       facts: {
         "refund.approval_missing_or_invalid": false
@@ -949,14 +985,18 @@ describe("OpenAI Responses adapter", () => {
     const allowedToolset = buildOpenAIResponsesTools(registry, {
       context: {
         autonomyTier: "A0",
-        permissions: ["refund.case.commit"]
+        permissions: ["refund.case.commit"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_lead"
       },
       includeRestricted: true
     });
     const deniedToolset = buildOpenAIResponsesTools(registry, {
       context: {
         autonomyTier: "A0",
-        permissions: []
+        permissions: [],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_lead"
       },
       includeRestricted: true
     });
@@ -995,7 +1035,9 @@ describe("OpenAI Responses adapter", () => {
     const collisionToolset = buildOpenAIResponsesTools(collisionRegistry, {
       context: {
         autonomyTier: "A1",
-        permissions: ["ticket.read"]
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -1059,7 +1101,9 @@ describe("OpenAI Responses adapter", () => {
     const toolset = buildOpenAIResponsesTools(unsupportedRegistry, {
       context: {
         autonomyTier: "A1",
-        permissions: ["ticket.read"]
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
       }
     });
 
@@ -1160,14 +1204,18 @@ describe("Non-OpenAI adapter exports", () => {
       const allowedToolset = adapter.build(registry, {
         context: {
           autonomyTier: "A0",
-          permissions: ["refund.case.commit"]
+          permissions: ["refund.case.commit"],
+          tenantId: "tenant_example_support",
+          userId: "user_example_support_lead"
         },
         includeRestricted: true
       });
       const deniedToolset = adapter.build(registry, {
         context: {
           autonomyTier: "A0",
-          permissions: []
+          permissions: [],
+          tenantId: "tenant_example_support",
+          userId: "user_example_support_lead"
         },
         includeRestricted: true
       });
@@ -1206,7 +1254,9 @@ describe("Non-OpenAI adapter exports", () => {
       const collisionToolset = adapter.build(collisionRegistry, {
         context: {
           autonomyTier: "A1",
-          permissions: ["ticket.read"]
+          permissions: ["ticket.read"],
+          tenantId: "tenant_example_support",
+          userId: "user_example_support_agent"
         }
       });
 
@@ -1256,7 +1306,9 @@ describe("Non-OpenAI adapter exports", () => {
       const unsupportedToolset = adapter.build(unsupportedRegistry, {
         context: {
           autonomyTier: "A1",
-          permissions: ["ticket.read"]
+          permissions: ["ticket.read"],
+          tenantId: "tenant_example_support",
+          userId: "user_example_support_agent"
         }
       });
 
@@ -1309,6 +1361,428 @@ describe("Non-OpenAI adapter exports", () => {
       }));
     });
   }
+});
+
+describe("AICF core repair hardening", () => {
+  it("loads and validates all public non-manifest fixtures", async () => {
+    const loaded = await loadManifests({ path: "examples" });
+    const fixtureValidation = validatePublicFixtures(loaded.fixtures);
+
+    expect(loaded.errors).toEqual([]);
+    expect(loaded.fixtures).toHaveLength(13);
+    expect(fixtureValidation.errors).toEqual([]);
+    expect(fixtureValidation.valid).toBe(true);
+  });
+
+  it("fails malformed and unknown public structured fixtures", async () => {
+    const malformedDirectory = await mkdtemp(path.join(tmpdir(), "aicf-fixture-malformed-"));
+    const unknownDirectory = await mkdtemp(path.join(tmpdir(), "aicf-fixture-unknown-"));
+    await writeFile(path.join(malformedDirectory, "bad.json"), "{", "utf8");
+    await writeFile(path.join(unknownDirectory, "notes.json"), "{\"ok\":true}", "utf8");
+
+    const malformed = await loadManifests({ path: malformedDirectory });
+    const unknown = await loadManifests({ path: unknownDirectory });
+    const unknownValidation = validatePublicFixtures(unknown.fixtures);
+
+    expect(malformed.errors).toContainEqual(expect.objectContaining({ code: "parse" }));
+    expect(unknownValidation.errors).toContainEqual(expect.objectContaining({ code: "invalid_fixture" }));
+  });
+
+  it("denies prepare and commit requests with missing or invalid args", async () => {
+    const registry = await loadValidRegistry();
+    const baseRequest = {
+      capabilityId: "support.refund.prepare_case",
+      context: {
+        autonomyTier: "A2" as const,
+        permissions: ["refund.case.create", "ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      },
+      facts: {
+        "refund.order_not_refundable": false
+      },
+      operation: "prepare" as const
+    };
+    const missingArgs = decideCapability(registry, baseRequest);
+    const invalidArgs = decideCapability(registry, {
+      ...baseRequest,
+      args: {
+        ticket_id: "TCK-1002"
+      }
+    });
+    const invalidCommitArgs = decideCapability(registry, {
+      capabilityId: "support.refund.commit_case",
+      operation: "commit",
+      args: {
+        prepared_action_id: ""
+      },
+      approval: {
+        approvalId: "approval_example_1",
+        approved: true
+      },
+      context: {
+        autonomyTier: "A0",
+        permissions: ["refund.case.commit"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_lead"
+      },
+      facts: {
+        "refund.approval_missing_or_invalid": false
+      },
+      idempotencyKey: "idem_example_refund_commit_1"
+    });
+
+    expect(missingArgs.reasons).toContainEqual(expect.objectContaining({ code: "missing_args" }));
+    expect(invalidArgs.reasons).toContainEqual(expect.objectContaining({ code: "schema_validation_failed" }));
+    expect(invalidArgs.diagnostics).toContainEqual(expect.objectContaining({ code: "schema_validation_failed" }));
+    expect(invalidCommitArgs.reasons).toContainEqual(expect.objectContaining({ code: "schema_validation_failed" }));
+  });
+
+  it("denies missing required tenant/user context and risk ceiling violations", async () => {
+    const registry = await loadValidRegistry();
+    const missingContext = decideCapability(registry, {
+      capabilityId: "support.ticket.get",
+      operation: "select",
+      args: {
+        ticket_id: "TCK-1001"
+      },
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"]
+      }
+    });
+    const riskExceeded = decideCapability(registry, {
+      capabilityId: "support.refund.prepare_case",
+      operation: "select",
+      context: {
+        autonomyTier: "A2",
+        permissions: ["refund.case.create", "ticket.read"],
+        riskCeiling: "low",
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      }
+    });
+
+    expect(missingContext.reasons).toContainEqual(expect.objectContaining({ code: "missing_user_context" }));
+    expect(missingContext.reasons).toContainEqual(expect.objectContaining({ code: "missing_tenant_context" }));
+    expect(riskExceeded.reasons).toContainEqual(expect.objectContaining({ code: "risk_tier_exceeded" }));
+  });
+
+  it("enforces capability status for decisions and adapter exports", async () => {
+    const registry = await loadValidRegistry();
+    const baseCapability = registry.capabilityById.get("support.ticket.get");
+    if (!baseCapability) throw new Error("Expected support.ticket.get.");
+
+    const disabledRegistry = buildRegistry([
+      loadedCapability("examples/status/capabilities/support.ticket.get.yaml", {
+        ...cloneManifest(baseCapability.manifest),
+        status: "disabled"
+      })
+    ]);
+    const decision = decideCapability(disabledRegistry, {
+      capabilityId: "support.ticket.get",
+      operation: "select",
+      args: {
+        ticket_id: "TCK-1001"
+      },
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      }
+    });
+    const toolset = buildOpenAIResponsesTools(disabledRegistry, {
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      }
+    });
+
+    expect(decision.reasons).toContainEqual(expect.objectContaining({ code: "status_disabled" }));
+    expect(toolset.excluded).toContainEqual(expect.objectContaining({
+      capabilityId: "support.ticket.get",
+      reason: "status_disabled"
+    }));
+  });
+
+  it("treats delete capabilities as restricted by default", async () => {
+    const registry = await loadValidRegistry();
+    const baseCapability = registry.capabilityById.get("support.ticket.get");
+    if (!baseCapability) throw new Error("Expected support.ticket.get.");
+
+    const deleteRegistry = buildRegistry([
+      loadedCapability("examples/delete/capabilities/support.ticket.get.yaml", {
+        ...cloneManifest(baseCapability.manifest),
+        side_effects: {
+          ...cloneManifest(baseCapability.manifest.side_effects),
+          deletes_records: true
+        }
+      })
+    ]);
+    const context = {
+      autonomyTier: "A1" as const,
+      permissions: ["ticket.read"],
+      tenantId: "tenant_example_support",
+      userId: "user_example_support_agent"
+    };
+    const defaultToolset = buildOpenAIResponsesTools(deleteRegistry, { context });
+    const includedToolset = buildOpenAIResponsesTools(deleteRegistry, {
+      context,
+      includeRestricted: true
+    });
+
+    expect(defaultToolset.excluded).toContainEqual(expect.objectContaining({
+      capabilityId: "support.ticket.get",
+      reason: "restricted"
+    }));
+    expect(includedToolset.bindings).toContainEqual(expect.objectContaining({
+      capabilityId: "support.ticket.get",
+      restricted: true
+    }));
+  });
+
+  it("parses normalized optional nulls and denormalizes to original args", async () => {
+    const registry = await loadValidRegistry();
+    const baseCapability = registry.capabilityById.get("support.ticket.get");
+    if (!baseCapability) throw new Error("Expected support.ticket.get.");
+
+    const optionalRegistry = buildRegistry([
+      loadedCapability("examples/optional/capabilities/support.ticket.get.yaml", {
+        ...cloneManifest(baseCapability.manifest),
+        input_schema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["ticket_id"],
+          properties: {
+            ticket_id: {
+              type: "string",
+              pattern: "^TCK-[0-9]+$"
+            },
+            note: {
+              type: "string"
+            },
+            nullable_note: {
+              type: ["string", "null"]
+            }
+          }
+        }
+      })
+    ]);
+    const toolset = buildOpenAIResponsesTools(optionalRegistry, {
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      }
+    });
+    const parsed = parseOpenAIResponsesToolCall(toolset, {
+      arguments: "{\"ticket_id\":\"TCK-1001\",\"note\":null,\"nullable_note\":null}",
+      name: "aicf_support_ticket_get",
+      type: "function_call"
+    });
+
+    expect(parsed.valid).toBe(true);
+    expect(parsed.parsed?.args).toEqual({
+      nullable_note: null,
+      ticket_id: "TCK-1001"
+    });
+  });
+
+  it("validates embedded JSON Schemas and semantic capability invariants", async () => {
+    const registry = await loadValidRegistry();
+    const baseCapability = registry.capabilityById.get("support.ticket.get");
+    if (!baseCapability) throw new Error("Expected support.ticket.get.");
+
+    const invalidSchema = loadedCapability("examples/invalid/capabilities/schema.yaml", {
+      ...cloneManifest(baseCapability.manifest),
+      input_schema: {
+        type: "not_a_json_schema_type"
+      }
+    });
+    const invalidInvariant = loadedCapability("examples/invalid/capabilities/invariant.yaml", {
+      ...cloneManifest(baseCapability.manifest),
+      id: "support.ticket.bad_read",
+      side_effects: {
+        ...cloneManifest(baseCapability.manifest.side_effects),
+        writes_data: true
+      }
+    });
+    const validation = validateManifests([invalidSchema, invalidInvariant]);
+
+    expect(validation.errors).toContainEqual(expect.objectContaining({ code: "invalid_input_schema" }));
+    expect(validation.errors).toContainEqual(expect.objectContaining({ code: "invalid_read_side_effects" }));
+  });
+
+  it("scores action state, duplicate candidates, unknown evals, exact args, and forbidden calls", async () => {
+    const registry = await loadValidRegistry();
+    const evalCase = loadedEval(registry, "support.refund.prepare_case.valid");
+    const wrongState = scoreEvalCase(evalCase, candidateForEval("support.refund.prepare_case.valid", {
+      action_state: "denied",
+      selected_capabilities: ["support.refund.prepare_case"],
+      tool_calls: [{
+        capability_id: "support.refund.prepare_case",
+        args: {
+          order_id: "ORD-2003",
+          reason_code: "damaged_item",
+          ticket_id: "TCK-1002"
+        }
+      }]
+    }), registry);
+    const exactEval = {
+      ...evalCase,
+      manifest: {
+        ...cloneManifest(evalCase.manifest),
+        expected: {
+          ...cloneManifest(evalCase.manifest.expected),
+          forbidden_tool_calls: [{ capability_id: "support.refund.commit_case" }],
+          tool_calls: [{
+            capability_id: "support.refund.prepare_case",
+            args_exact: {
+              order_id: "ORD-2003",
+              reason_code: "damaged_item",
+              ticket_id: "TCK-1002"
+            }
+          }]
+        },
+        scorers: [
+          { type: "tool_input_exact_json" },
+          { type: "no_forbidden_tool_call" }
+        ]
+      }
+    } satisfies LoadedEvalCase;
+    const strictResult = scoreEvalCase(exactEval, candidateForEval("support.refund.prepare_case.valid", {
+      selected_capabilities: ["support.refund.prepare_case"],
+      tool_calls: [
+        {
+          capability_id: "support.refund.prepare_case",
+          args: {
+            extra: true,
+            order_id: "ORD-2003",
+            reason_code: "damaged_item",
+            ticket_id: "TCK-1002"
+          }
+        },
+        {
+          capability_id: "support.refund.commit_case",
+          args: {}
+        }
+      ]
+    }), registry);
+    const unknownCapabilityResult = scoreEvalCase(evalCase, candidateForEval("support.refund.prepare_case.valid", {
+      selected_capabilities: ["support.refund.prepare_case"],
+      tool_calls: [{
+        capability_id: "support.unknown.capability",
+        args: {}
+      }]
+    }), registry);
+    const unknownCommittedResult = scoreEvalCase(evalCase, candidateForEval("support.refund.prepare_case.valid", {
+      committed_capabilities: ["support.unknown.commit"],
+      selected_capabilities: ["support.refund.prepare_case"]
+    }), registry);
+    const suite = runEvalSuite(registry, [
+      candidateForEval("support.refund.prepare_case.valid", {}),
+      candidateForEval("support.refund.prepare_case.valid", {}),
+      candidateForEval("support.unknown.eval", {})
+    ], {
+      evalIds: ["support.refund.prepare_case.valid"]
+    });
+
+    expect(wrongState.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "action_state_matches"
+    }));
+    expect(strictResult.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "tool_input_exact_json"
+    }));
+    expect(strictResult.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "no_forbidden_tool_call"
+    }));
+    expect(unknownCapabilityResult.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "known_tool_call_capabilities"
+    }));
+    expect(unknownCommittedResult.scorers).toContainEqual(expect.objectContaining({
+      passed: false,
+      scorer: "known_committed_capabilities"
+    }));
+    expect(suite.diagnostics).toContainEqual(expect.objectContaining({ code: "invalid_eval_result" }));
+    expect(suite.diagnostics).toContainEqual(expect.objectContaining({ code: "unknown_eval_result" }));
+  });
+
+  it("selects deterministic capability slices and builds adapters from a slice", async () => {
+    const registry = await loadValidRegistry();
+    const slice = selectCapabilitySlice({
+      domains: ["support"],
+      context: {
+        autonomyTier: "A2",
+        permissions: ["ticket.read", "refund.case.create"],
+        riskCeiling: "medium",
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      },
+      registry
+    });
+    const ticketOnly = selectCapabilitySlice({
+      capabilityIds: ["support.ticket.get"],
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      },
+      registry
+    });
+    const toolset = buildOpenAIResponsesTools(ticketOnly, {
+      context: {
+        autonomyTier: "A1",
+        permissions: ["ticket.read"],
+        tenantId: "tenant_example_support",
+        userId: "user_example_support_agent"
+      }
+    });
+
+    expect(slice.capabilities.map((capability) => capability.manifest.id)).toEqual([
+      "support.refund.prepare_case",
+      "support.ticket.get"
+    ]);
+    expect(slice.excluded).toContainEqual(expect.objectContaining({
+      capabilityId: "support.refund.commit_case",
+      reason: "restricted"
+    }));
+    expect(toolset.bindings.map((binding) => binding.capabilityId)).toEqual(["support.ticket.get"]);
+  });
+
+  it("builds model-facing tool result envelopes without private diagnostics", () => {
+    const ok = okToolResult({
+      capability_id: "support.ticket.get",
+      capability_version: "1.0.0",
+      data: {
+        ticket_id: "TCK-1001"
+      },
+      private_diagnostics: {
+        internal: true
+      }
+    });
+    const denied = deniedToolResult({
+      capability_id: "support.ticket.get",
+      capability_version: "1.0.0",
+      policy: {
+        reasons: [{ code: "missing_permission", message: "Missing permission." }],
+        status: "denied"
+      }
+    });
+    const publicOk = toModelFacingToolResult(ok) as AicfToolResultEnvelope;
+
+    expect(ok.status).toBe("ok");
+    expect(denied.status).toBe("denied");
+    expect(publicOk.private_diagnostics).toBeUndefined();
+  });
 });
 
 describe("AICF public conformance fixtures", () => {

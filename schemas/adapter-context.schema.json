@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/adapter-context.schema.json",
+  "title": "AICF Adapter Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["autonomyTier", "permissions"],
+  "properties": {
+    "autonomyTier": {
+      "enum": ["A0", "A1", "A2", "A3", "A4", "A5"]
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tenantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "userId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "riskCeiling": {
+      "enum": ["none", "low", "medium", "high", "critical"]
+    },
+    "allowedRiskTiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["none", "low", "medium", "high", "critical"]
+      }
+    }
+  }
+}
