@@ -30,8 +30,84 @@ try {
     stdio: "pipe"
   });
   execFileSync(process.execPath, [
+    "--input-type=module",
     "-e",
-    "import('ai-capability-framework').then((m) => { if (!m.loadManifests || !m.decideCapability) throw new Error('Missing expected exports'); })"
+    `
+      const root = await import("ai-capability-framework");
+      if (!root.loadManifests || !root.decideCapability) throw new Error("Missing expected root exports.");
+
+      const subpaths = [
+        ["runtime", "ai-capability-framework/runtime", "DefaultCapabilityRouter"],
+        ["openai", "ai-capability-framework/openai", "runOpenAIResponses"],
+        ["observability", "ai-capability-framework/observability", "CollectingTraceSink"],
+        ["langfuse", "ai-capability-framework/langfuse", "LangfuseTraceSink"],
+        ["evals-live", "ai-capability-framework/evals-live", "runLiveEvalSuite"],
+        ["promptfoo", "ai-capability-framework/promptfoo", "exportPromptfooSuite"],
+        ["aws", "ai-capability-framework/aws", "DynamoDbPreparedActionStore"],
+        ["mcp-server", "ai-capability-framework/mcp-server", "AicfMcpServer"],
+        ["providers", "ai-capability-framework/providers", "createProviderToolNameMap"],
+        ["providers/ai-sdk", "ai-capability-framework/providers/ai-sdk", "buildAiSdkTools"],
+        ["providers/anthropic", "ai-capability-framework/providers/anthropic", "runAnthropicMessages"],
+        ["providers/conformance", "ai-capability-framework/providers/conformance", "runProviderConformanceSuite"],
+        ["providers/gemini", "ai-capability-framework/providers/gemini", "runGeminiGenerateContent"],
+        ["providers/langchain", "ai-capability-framework/providers/langchain", "buildLangChainTools"],
+        ["providers/mcp", "ai-capability-framework/providers/mcp", "buildMcpProviderToolDescriptors"],
+        ["providers/semantic-kernel", "ai-capability-framework/providers/semantic-kernel", "exportSemanticKernelOpenApiPlugin"]
+      ];
+
+      for (const [label, specifier, exportName] of subpaths) {
+        const imported = await import(specifier);
+        if (!imported[exportName]) {
+          throw new Error(\`Missing expected \${label} export: \${exportName}\`);
+        }
+      }
+
+      const openai = await import("ai-capability-framework/openai");
+      try {
+        await openai.createDefaultOpenAIResponsesClient();
+        throw new Error("Expected missing OpenAI SDK error.");
+      } catch (error) {
+        if (error?.code !== "missing_openai_sdk") throw error;
+      }
+      try {
+        await openai.createDefaultAgentsSdkBridgeFactory();
+        throw new Error("Expected missing Agents SDK error.");
+      } catch (error) {
+        if (error?.code !== "missing_agents_sdk") throw error;
+      }
+
+      const anthropic = await import("ai-capability-framework/providers/anthropic");
+      try {
+        await anthropic.createDefaultAnthropicMessagesClient();
+        throw new Error("Expected missing Anthropic SDK error.");
+      } catch (error) {
+        if (error?.code !== "provider_dependency_missing") throw error;
+      }
+
+      const gemini = await import("ai-capability-framework/providers/gemini");
+      try {
+        await gemini.createDefaultGeminiClient();
+        throw new Error("Expected missing Google GenAI SDK error.");
+      } catch (error) {
+        if (error?.code !== "provider_dependency_missing") throw error;
+      }
+
+      const aiSdk = await import("ai-capability-framework/providers/ai-sdk");
+      try {
+        await aiSdk.createDefaultAiSdkToolFactories();
+        throw new Error("Expected missing AI SDK error.");
+      } catch (error) {
+        if (error?.code !== "provider_dependency_missing") throw error;
+      }
+
+      const langchain = await import("ai-capability-framework/providers/langchain");
+      try {
+        await langchain.createDefaultLangChainToolFactory();
+        throw new Error("Expected missing LangChain SDK error.");
+      } catch (error) {
+        if (error?.code !== "provider_dependency_missing") throw error;
+      }
+    `
   ], {
     cwd: tempDirectory,
     stdio: "pipe"

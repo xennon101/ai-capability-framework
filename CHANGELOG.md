@@ -2,6 +2,54 @@
 
 All notable public changes to AI Capability Framework are documented here.
 
+## Unreleased
+
+- Added the `ai-capability-framework/runtime` subpath for deterministic runtime
+  context, redaction, capability routing, policy brokering, handler registry,
+  no-model read/prepare execution, host-controlled action lifecycle, in-memory
+  reference stores, audit events, and runtime result envelopes.
+- Added the optional `ai-capability-framework/openai` subpath for a bounded
+  non-streaming OpenAI Responses loop with caller-provided clients, routed
+  read/prepare tools, R2 executor integration, and model-safe tool envelopes.
+- Added optional observability, Langfuse, live eval, and Promptfoo export
+  subpaths with metadata-only tracing defaults and mock-driven tests.
+- Added the optional `ai-capability-framework/aws` subpath for DynamoDB runtime
+  stores, Step Functions approval handoff, EventBridge publishing, and fake AWS
+  test clients.
+- Added the optional `ai-capability-framework/mcp-server` subpath and OpenAI
+  Agents SDK bridge for executor-backed read/prepare interoperability.
+- Added a public runtime support/billing mock example plus action lifecycle,
+  policy broker, and release-hardening docs and scripts.
+- Added the `ai-capability-framework/providers` shared foundation for
+  provider-neutral tool naming, schema normalization, call parsing, safe result
+  formatting, optional dependency loading, and executor-backed read/prepare
+  calls.
+- Added the optional `ai-capability-framework/providers/anthropic` subpath for a
+  bounded Claude Messages tool-use loop with caller-provided clients and
+  AICF-backed read/prepare execution.
+- Added the optional `ai-capability-framework/providers/gemini` subpath for a
+  bounded Gemini GenerateContent function-calling loop with caller-provided
+  clients and AICF-backed read/prepare execution.
+- Added the optional `ai-capability-framework/providers/ai-sdk` subpath for a
+  Vercel AI SDK tool bridge and host-supplied `generateText`/`streamText`
+  wrappers with AICF-backed read/prepare execution.
+- Added the optional `ai-capability-framework/providers/langchain` subpath for
+  LangChain tools and a host-supplied LangGraph `ToolNode` bridge with
+  AICF-backed read/prepare execution.
+- Added the optional `ai-capability-framework/providers/mcp` subpath for
+  hardened MCP descriptors, annotations, security summaries, and tool-call
+  parsing from routed AICF capability slices.
+- Added the optional `ai-capability-framework/providers/conformance` subpath and
+  `aicf providers` CLI group for descriptor-only cross-provider conformance
+  checks.
+- Added grouped public provider examples, provider release scripts, and
+  provider package-readiness assertions for multi-vendor release review.
+- Added the optional `ai-capability-framework/providers/semantic-kernel`
+  subpath for MCP guidance plus OpenAPI/plugin metadata exports for
+  Semantic Kernel-compatible hosts.
+- Kept provider/model calls, production storage, and model-exposed commit out of
+  the Core/runtime boundary except for the optional OpenAI subpath.
+
 ## 1.0.0-rc.1 - 2026-06-03
 
 1.0 spec-complete release candidate.

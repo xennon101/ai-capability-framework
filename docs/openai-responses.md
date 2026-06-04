@@ -8,6 +8,10 @@ The adapter does not call OpenAI, execute handlers, persist action state, verify
 real authorization, collect approvals, commit side effects, or write audit logs.
 Host applications own those runtime responsibilities.
 
+For the optional live Responses tool loop, see
+[OpenAI Responses runtime](openai-runtime.md). The adapter on this page exports
+descriptor JSON only.
+
 ## Tool Export
 
 Use `buildOpenAIResponsesTools(registry, options)` with a validated registry and

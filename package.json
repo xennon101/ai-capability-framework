@@ -2,7 +2,7 @@
   "name": "ai-capability-framework",
   "version": "1.0.0-rc.1",
   "private": false,
-  "description": "Public schemas, examples, and guidance for AI capability manifests.",
+  "description": "Provider-agnostic AI capability contracts, runtime controls, evals, and model/provider adapters.",
   "license": "MIT",
   "keywords": [
     "ai",
@@ -10,7 +10,9 @@
     "evals",
     "json-schema",
     "tool-calling",
-    "governance"
+    "governance",
+    "providers",
+    "runtime"
   ],
   "homepage": "https://github.com/xennon101/ai-capability-framework#readme",
   "bugs": {
@@ -31,6 +33,70 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./openai": {
+      "types": "./dist/openai/index.d.ts",
+      "import": "./dist/openai/index.js"
+    },
+    "./observability": {
+      "types": "./dist/observability/index.d.ts",
+      "import": "./dist/observability/index.js"
+    },
+    "./langfuse": {
+      "types": "./dist/langfuse/index.d.ts",
+      "import": "./dist/langfuse/index.js"
+    },
+    "./evals-live": {
+      "types": "./dist/evals-live/index.d.ts",
+      "import": "./dist/evals-live/index.js"
+    },
+    "./promptfoo": {
+      "types": "./dist/promptfoo/index.d.ts",
+      "import": "./dist/promptfoo/index.js"
+    },
+    "./aws": {
+      "types": "./dist/aws/index.d.ts",
+      "import": "./dist/aws/index.js"
+    },
+    "./mcp-server": {
+      "types": "./dist/mcp-server/index.d.ts",
+      "import": "./dist/mcp-server/index.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/index.d.ts",
+      "import": "./dist/providers/index.js"
+    },
+    "./providers/ai-sdk": {
+      "types": "./dist/providers/ai-sdk/index.d.ts",
+      "import": "./dist/providers/ai-sdk/index.js"
+    },
+    "./providers/anthropic": {
+      "types": "./dist/providers/anthropic/index.d.ts",
+      "import": "./dist/providers/anthropic/index.js"
+    },
+    "./providers/conformance": {
+      "types": "./dist/providers/conformance/index.d.ts",
+      "import": "./dist/providers/conformance/index.js"
+    },
+    "./providers/gemini": {
+      "types": "./dist/providers/gemini/index.d.ts",
+      "import": "./dist/providers/gemini/index.js"
+    },
+    "./providers/langchain": {
+      "types": "./dist/providers/langchain/index.d.ts",
+      "import": "./dist/providers/langchain/index.js"
+    },
+    "./providers/mcp": {
+      "types": "./dist/providers/mcp/index.d.ts",
+      "import": "./dist/providers/mcp/index.js"
+    },
+    "./providers/semantic-kernel": {
+      "types": "./dist/providers/semantic-kernel/index.d.ts",
+      "import": "./dist/providers/semantic-kernel/index.js"
     },
     "./schemas/adapter-context.schema.json": "./schemas/adapter-context.schema.json",
     "./schemas/capability-manifest.schema.json": "./schemas/capability-manifest.schema.json",
@@ -62,11 +128,32 @@
     "check:generated": "node scripts/check-generated.mjs",
     "check:package": "node scripts/check-package.mjs",
     "check:package-public": "node scripts/check-package-public.mjs",
+    "check:optional": "vitest run src/__tests__/aws src/__tests__/mcp-server src/__tests__/promptfoo src/__tests__/langfuse src/__tests__/openai-agents src/__tests__/providers/anthropic src/__tests__/providers/gemini src/__tests__/providers/ai-sdk src/__tests__/providers/langchain src/__tests__/providers/mcp src/__tests__/providers/semantic-kernel src/__tests__/providers/conformance",
+    "check:providers": "vitest run src/__tests__/providers",
+    "check:providers:live": "npm run test:anthropic:live && npm run test:gemini:live && npm run test:ai-sdk:live && npm run test:langchain:live",
+    "check:providers:mock": "npm run test:anthropic:mock && npm run test:gemini:mock && npm run test:ai-sdk:mock && npm run test:langchain:mock && npm run test:semantic-kernel && npm run test:mcp-provider && npm run test:providers:conformance",
+    "check:release": "npm run check && npm run check:optional && npm pack --dry-run --json",
+    "check:release:providers": "npm run check && npm run check:providers:mock && npm run check:release-install && npm pack --dry-run --json",
     "check:release-install": "node scripts/check-release-install.mjs",
+    "check:runtime": "vitest run src/__tests__/runtime src/__tests__/openai src/__tests__/observability src/__tests__/evals-live src/__tests__/examples",
     "check:workspace-public": "node scripts/check-workspace-public.mjs",
     "generate:types": "node scripts/generate-types.mjs",
     "inspect": "npm run build --silent && node dist/cli.js inspect examples",
     "test": "vitest run",
+    "test:openai:live": "vitest run src/__tests__/openai-live",
+    "test:openai:mock": "vitest run src/__tests__/openai/openai-runtime.test.ts",
+    "test:anthropic:live": "vitest run src/__tests__/providers/anthropic-live",
+    "test:anthropic:mock": "vitest run src/__tests__/providers/anthropic",
+    "test:gemini:live": "vitest run src/__tests__/providers/gemini-live",
+    "test:ai-sdk:live": "vitest run src/__tests__/providers/ai-sdk-live",
+    "test:ai-sdk:mock": "vitest run src/__tests__/providers/ai-sdk",
+    "test:langchain:live": "vitest run src/__tests__/providers/langchain-live",
+    "test:langchain:mock": "vitest run src/__tests__/providers/langchain",
+    "test:mcp-provider": "vitest run src/__tests__/providers/mcp",
+    "test:mcp-server": "vitest run src/__tests__/mcp-server",
+    "test:providers:conformance": "vitest run src/__tests__/providers/conformance",
+    "test:semantic-kernel": "vitest run src/__tests__/providers/semantic-kernel",
+    "test:gemini:mock": "vitest run src/__tests__/providers/gemini",
     "validate": "npm run build --silent && node dist/cli.js validate examples"
   },
   "engines": {
@@ -76,10 +163,81 @@
     "ajv": "^8.17.1",
     "yaml": "^2.8.0"
   },
+  "peerDependencies": {
+    "@aws-sdk/client-dynamodb": ">=3.1061.0",
+    "@aws-sdk/client-eventbridge": ">=3.1061.0",
+    "@aws-sdk/client-sfn": ">=3.1061.0",
+    "@aws-sdk/lib-dynamodb": ">=3.1061.0",
+    "@anthropic-ai/sdk": ">=0.100.1",
+    "@google/genai": ">=2.8.0",
+    "@langfuse/client": ">=5.4.1",
+    "@langchain/core": ">=1.1.0 <2",
+    "@modelcontextprotocol/sdk": ">=1.29.0",
+    "@opentelemetry/api": ">=1.9.1",
+    "@openai/agents": ">=0.11.6",
+    "ai": ">=6.0.0",
+    "langchain": ">=1.4.0 <2",
+    "openai": ">=4.0.0",
+    "zod": ">=4.4.3"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-dynamodb": {
+      "optional": true
+    },
+    "@aws-sdk/client-eventbridge": {
+      "optional": true
+    },
+    "@aws-sdk/client-sfn": {
+      "optional": true
+    },
+    "@aws-sdk/lib-dynamodb": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "@google/genai": {
+      "optional": true
+    },
+    "@langfuse/client": {
+      "optional": true
+    },
+    "@langchain/core": {
+      "optional": true
+    },
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@openai/agents": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "langchain": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1061.0",
+    "@aws-sdk/client-eventbridge": "^3.1061.0",
+    "@aws-sdk/client-sfn": "^3.1061.0",
+    "@aws-sdk/lib-dynamodb": "^3.1061.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@openai/agents": "^0.11.6",
     "@types/node": "^24.12.4",
     "json-schema-to-typescript": "^15.0.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "zod": "^4.4.3"
   }
 }

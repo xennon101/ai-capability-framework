@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildAiSdkTools } from "./ai-sdk.js";
@@ -10,10 +10,33 @@ import { buildGeminiFunctionDeclarations } from "./gemini.js";
 import { buildLangChainToolDescriptors } from "./langchain.js";
 import { loadManifests } from "./loader.js";
 import { buildMcpToolDescriptors } from "./mcp.js";
+import { createDefaultOpenAIResponsesClient } from "./openai/index.js";
 import { buildOpenAIResponsesTools } from "./openai-responses.js";
+import { exportPromptfooSuite } from "./promptfoo/index.js";
+import {
+  exportProviderTools,
+  formatProviderConformanceReport,
+  isProviderConformanceTarget,
+  listProviderTargets,
+  runProviderConformanceSuite,
+  type ProviderConformanceTarget
+} from "./providers/conformance/index.js";
 import { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
+import {
+  AicfActionLifecycleManager,
+  AicfHandlerRegistry,
+  AicfToolExecutor,
+  DefaultCapabilityRouter,
+  DefaultContextBuilder,
+  DefaultPolicyBroker,
+  InMemoryApprovalStore,
+  InMemoryAuditSink,
+  InMemoryIdempotencyStore,
+  InMemoryPreparedActionStore
+} from "./runtime/index.js";
+import { evaluateGate, runLiveEvalSuite, type AicfLiveEvalCaseInput } from "./evals-live/index.js";
 import { buildSemanticKernelFunctions } from "./semantic-kernel.js";
-import type { AicfDiagnostic, DecisionRequest } from "./types.js";
+import type { AicfDiagnostic, DecisionRequest, EvalCase } from "./types.js";
 import { validateManifests, validatePublicFixtures } from "./validator.js";
 
 interface WritableLike {
@@ -61,12 +84,24 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return command ? 0 : 1;
   }
 
-  if (command !== "validate" && command !== "inspect" && command !== "decide" && command !== "eval" && !adapterCommands.has(command)) {
+  if (command === "providers") {
+    return runProvidersCli(argv.slice(1), { stderr, stdout });
+  }
+
+  if (
+    command !== "validate"
+    && command !== "inspect"
+    && command !== "decide"
+    && command !== "eval"
+    && command !== "eval-live"
+    && command !== "export"
+    && !adapterCommands.has(command)
+  ) {
     stderr.write(`Unknown command "${command}".\n\n${helpText()}`);
     return 1;
   }
 
-  const parsedArgs = parseCommandArgs(argv.slice(1));
+  const parsedArgs = parseCommandArgs(command === "export" && argv[1] === "promptfoo" ? argv.slice(2) : argv.slice(1));
   if (parsedArgs.error) {
     stderr.write(`${parsedArgs.error}\n\n${helpText()}`);
     return 1;
@@ -84,6 +119,33 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
   }
 
   const registry = buildRegistry(loadResult.manifests);
+
+  if (command === "export") {
+    if (argv[1] !== "promptfoo") {
+      stderr.write("Usage: aicf export promptfoo <path> --out <dir> [--provider <provider>] [--include-red-team-defaults]\n");
+      return 1;
+    }
+
+    if (!parsedArgs.outPath) {
+      stderr.write("Missing required --out <dir>.\n");
+      return 1;
+    }
+
+    const suite = exportPromptfooSuite({
+      evalCases: registry.evals.map((evalCase) => evalCase.manifest),
+      includeRedTeamDefaults: parsedArgs.includeRedTeamDefaults,
+      providerName: parsedArgs.providerName
+    });
+    for (const file of suite.files) {
+      const destination = path.join(parsedArgs.outPath, file.path);
+      await mkdir(path.dirname(destination), { recursive: true });
+      await writeFile(destination, file.content, "utf8");
+    }
+    stdout.write(`${JSON.stringify({
+      files: suite.files.map((file) => path.join(parsedArgs.outPath ?? "", file.path).replaceAll("\\", "/"))
+    }, null, 2)}\n`);
+    return 0;
+  }
 
   if (command === "validate") {
     stdout.write(`Validated ${loadResult.manifests.length} manifest(s) and ${loadResult.fixtures.length} fixture(s).\n`);
@@ -187,6 +249,65 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
     return suite.passed ? 0 : 1;
   }
 
+  if (command === "eval-live") {
+    if (!parsedArgs.casesPath) {
+      stderr.write("Missing required --cases <cases.json>.\n");
+      return 1;
+    }
+
+    if (!parsedArgs.model) {
+      stderr.write("Missing required --model <model> for live evals.\n");
+      return 1;
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      stderr.write("OPENAI_API_KEY is required for eval-live. Use the TypeScript API with a mock client for API-key-free tests.\n");
+      return 1;
+    }
+
+    const cases = await readLiveEvalCases(parsedArgs.casesPath);
+    if (!cases.ok) {
+      stderr.write(`${cases.error}\n`);
+      return 1;
+    }
+
+    const handlers = new AicfHandlerRegistry({ registry });
+    const auditSink = new InMemoryAuditSink();
+    const policyBroker = new DefaultPolicyBroker();
+    const lifecycle = new AicfActionLifecycleManager({
+      approvalStore: new InMemoryApprovalStore(),
+      auditSink,
+      handlers,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+      policyBroker,
+      preparedActionStore: new InMemoryPreparedActionStore(),
+      registry
+    });
+    const executor = new AicfToolExecutor({
+      actionLifecycle: lifecycle,
+      auditSink,
+      handlers,
+      policyBroker,
+      registry
+    });
+    const results = await runLiveEvalSuite({
+      cases: cases.value,
+      contextBuilderFactory: () => new DefaultContextBuilder(),
+      executor,
+      model: parsedArgs.model,
+      openAIClient: await createDefaultOpenAIResponsesClient(),
+      registry,
+      router: new DefaultCapabilityRouter()
+    });
+    const gate = evaluateGate(results);
+    const output = {
+      gate,
+      results
+    };
+    stdout.write(`${parsedArgs.format === "text" ? formatLiveEvalResults(results, gate) : JSON.stringify(output, null, 2)}\n`);
+    return gate.passed ? 0 : 1;
+  }
+
   stdout.write(formatInspection(inspectRegistry(registry)));
   return 0;
 }
@@ -198,6 +319,12 @@ function helpText(): string {
     "Commands:",
     "  decide <path> --request <file>  Evaluate a decision request.",
     "  eval <path> --results <file> [--format text|json]  Run deterministic evals.",
+    "  eval-live <path> --cases <file> --model <model> [--format text|json]  Run opt-in live evals.",
+    "  export promptfoo <path> --out <dir> [--provider <provider>]  Generate Promptfoo suite files.",
+    "  providers list  List provider conformance targets.",
+    "  providers conformance <path> [--format text|json]  Run provider conformance checks.",
+    "  providers export-tools <path> --provider <provider> --context <file>  Export provider tools.",
+    "  providers export-semantic-kernel-openapi <path> --context <file> --server-url <url>  Export Semantic Kernel OpenAPI.",
     "  ai-sdk-tools <path> --context <file>  Export Vercel AI SDK tool descriptors.",
     "  anthropic-tools <path> --context <file>  Export Anthropic Claude tool definitions.",
     "  gemini-tools <path> --context <file>  Export Gemini function declarations.",
@@ -215,26 +342,40 @@ function helpText(): string {
 
 function parseCommandArgs(args: string[]): {
   contextPath?: string;
+  casesPath?: string;
   error?: string;
   format?: "json" | "text" | string;
   includeDeprecated?: boolean;
   includeDisabledForTests?: boolean;
   includeDraft?: boolean;
   includeExperimental?: boolean;
+  includeRedTeamDefaults?: boolean;
+  includeDiagnostics?: boolean;
   includeRestricted?: boolean;
+  model?: string;
+  outPath?: string;
+  providerName?: string;
   requestPath?: string;
   resultsPath?: string;
+  serverUrl?: string;
   targetPath?: string;
 } {
   let contextPath: string | undefined;
+  let casesPath: string | undefined;
   let format = "text";
   let includeDeprecated = false;
   let includeDisabledForTests = false;
   let includeDraft = false;
   let includeExperimental = false;
+  let includeRedTeamDefaults = false;
+  let includeDiagnostics = false;
   let includeRestricted = false;
+  let model: string | undefined;
+  let outPath: string | undefined;
+  let providerName: string | undefined;
   let requestPath: string | undefined;
   let resultsPath: string | undefined;
+  let serverUrl: string | undefined;
   let targetPath: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
@@ -257,6 +398,61 @@ function parseCommandArgs(args: string[]): {
       }
 
       resultsPath = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--cases") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --cases." };
+      }
+
+      casesPath = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--model") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --model." };
+      }
+
+      model = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--out") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --out." };
+      }
+
+      outPath = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--provider") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --provider." };
+      }
+
+      providerName = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--server-url") {
+      const nextArg = args[index + 1];
+      if (!nextArg) {
+        return { error: "Missing value for --server-url." };
+      }
+
+      serverUrl = nextArg;
       index += 1;
       continue;
     }
@@ -308,6 +504,16 @@ function parseCommandArgs(args: string[]): {
       continue;
     }
 
+    if (arg === "--include-red-team-defaults") {
+      includeRedTeamDefaults = true;
+      continue;
+    }
+
+    if (arg === "--include-diagnostics") {
+      includeDiagnostics = true;
+      continue;
+    }
+
     if (arg?.startsWith("--")) {
       return { error: `Unknown option "${arg}".` };
     }
@@ -320,17 +526,220 @@ function parseCommandArgs(args: string[]): {
   }
 
   return {
+    casesPath,
     contextPath,
     format,
     includeDeprecated,
     includeDisabledForTests,
     includeDraft,
     includeExperimental,
+    includeDiagnostics,
+    includeRedTeamDefaults,
     includeRestricted,
+    model,
+    outPath,
+    providerName,
     requestPath,
     resultsPath,
+    serverUrl,
     targetPath
   };
+}
+
+async function runProvidersCli(argv: string[], options: CliRunOptions): Promise<number> {
+  const stdout = options.stdout ?? process.stdout;
+  const stderr = options.stderr ?? process.stderr;
+  const [subcommand] = argv;
+
+  if (!subcommand || subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+    stdout.write(providerHelpText());
+    return subcommand ? 0 : 1;
+  }
+
+  if (subcommand === "list") {
+    stdout.write(`${JSON.stringify(listProviderTargets(), null, 2)}\n`);
+    return 0;
+  }
+
+  if (!["conformance", "export-tools", "export-semantic-kernel-openapi"].includes(subcommand)) {
+    stderr.write(`Unknown providers command "${subcommand}".\n\n${providerHelpText()}`);
+    return 1;
+  }
+
+  const parsedArgs = parseCommandArgs(argv.slice(1));
+  if (parsedArgs.error) {
+    stderr.write(`${parsedArgs.error}\n\n${providerHelpText()}`);
+    return 1;
+  }
+
+  const loaded = await loadValidatedRegistry(parsedArgs.targetPath ?? "examples");
+  if (!loaded.ok) {
+    stderr.write(formatDiagnostics(loaded.errors));
+    return 1;
+  }
+
+  if (subcommand === "conformance") {
+    if (parsedArgs.format !== "text" && parsedArgs.format !== "json") {
+      stderr.write("Provider conformance format must be text or json.\n");
+      return 1;
+    }
+
+    const report = runProviderConformanceSuite({
+      registry: loaded.registry,
+      serverUrl: parsedArgs.serverUrl
+    });
+    stdout.write(formatProviderConformanceReport(report, parsedArgs.format));
+    return report.passed ? 0 : 1;
+  }
+
+  if (subcommand === "export-tools") {
+    if (!parsedArgs.providerName || !isProviderConformanceTarget(parsedArgs.providerName)) {
+      stderr.write("Missing or invalid --provider. Use one of: openai, anthropic, gemini, ai-sdk, langchain, mcp.\n");
+      return 1;
+    }
+
+    if (parsedArgs.providerName === "semantic-kernel") {
+      stderr.write("Use providers export-semantic-kernel-openapi for Semantic Kernel exports.\n");
+      return 1;
+    }
+
+    if (!parsedArgs.contextPath) {
+      stderr.write("Missing required --context <context.json>.\n");
+      return 1;
+    }
+
+    const context = await readToolContext(parsedArgs.contextPath);
+    if (!context.ok) {
+      stderr.write(`${context.error}\n`);
+      return 1;
+    }
+
+    const contextError = validateToolContextShape(context.value, "Provider");
+    if (contextError) {
+      stderr.write(`${contextError}\n`);
+      return 1;
+    }
+
+    const exportResult = exportProviderTools({
+      context: context.value,
+      includeDiagnostics: parsedArgs.includeDiagnostics,
+      includeRestricted: parsedArgs.includeRestricted,
+      provider: parsedArgs.providerName as Exclude<ProviderConformanceTarget, "semantic-kernel">,
+      registry: loaded.registry
+    });
+    return writeProviderExportResult(exportResult, parsedArgs.includeDiagnostics, stdout, stderr);
+  }
+
+  if (!parsedArgs.contextPath) {
+    stderr.write("Missing required --context <context.json>.\n");
+    return 1;
+  }
+
+  if (!parsedArgs.serverUrl) {
+    stderr.write("Missing required --server-url <url>.\n");
+    return 1;
+  }
+
+  const context = await readToolContext(parsedArgs.contextPath);
+  if (!context.ok) {
+    stderr.write(`${context.error}\n`);
+    return 1;
+  }
+
+  const contextError = validateToolContextShape(context.value, "Semantic Kernel");
+  if (contextError) {
+    stderr.write(`${contextError}\n`);
+    return 1;
+  }
+
+  const exportResult = exportProviderTools({
+    context: context.value,
+    includeDiagnostics: parsedArgs.includeDiagnostics,
+    provider: "semantic-kernel",
+    registry: loaded.registry,
+    serverUrl: parsedArgs.serverUrl
+  });
+  return writeProviderExportResult(exportResult, parsedArgs.includeDiagnostics, stdout, stderr);
+}
+
+async function loadValidatedRegistry(targetPath: string): Promise<
+  | { ok: true; registry: ReturnType<typeof buildRegistry> }
+  | { errors: AicfDiagnostic[]; ok: false }
+> {
+  const loadResult = await loadManifests({ path: targetPath });
+  const validation = validateManifests(loadResult.manifests);
+  const fixtureValidation = validatePublicFixtures(loadResult.fixtures);
+  const errors = [...loadResult.errors, ...validation.errors, ...fixtureValidation.errors];
+  if (errors.length > 0) {
+    return {
+      errors,
+      ok: false
+    };
+  }
+
+  return {
+    ok: true,
+    registry: buildRegistry(loadResult.manifests)
+  };
+}
+
+function writeProviderExportResult(
+  exportResult: ReturnType<typeof exportProviderTools>,
+  includeDiagnostics: boolean | undefined,
+  stdout: WritableLike,
+  stderr: WritableLike
+): number {
+  const fatalDiagnostics = exportResult.diagnostics.filter(isFatalProviderExportDiagnostic);
+  const warnings = exportResult.diagnostics.filter((diagnostic) => !isFatalProviderExportDiagnostic(diagnostic));
+  if (!includeDiagnostics && warnings.length > 0) {
+    stderr.write(formatDiagnostics(warnings));
+  }
+
+  if (fatalDiagnostics.length > 0) {
+    stderr.write(formatDiagnostics(fatalDiagnostics));
+    return 1;
+  }
+
+  if (exportResult.exportedCount === 0) {
+    stderr.write(`No ${exportResult.provider} provider tools were exportable.\n`);
+    return 1;
+  }
+
+  const output = includeDiagnostics
+    ? exportResult
+    : {
+      artifact: exportResult.artifact,
+      bindings: exportResult.bindings,
+      exportedCount: exportResult.exportedCount,
+      provider: exportResult.provider,
+      providerToolNames: exportResult.providerToolNames
+    };
+  stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+  return 0;
+}
+
+function isFatalProviderExportDiagnostic(diagnostic: AicfDiagnostic): boolean {
+  return [
+    "invalid_context",
+    "provider_schema_unsupported",
+    "provider_tool_name_collision",
+    "schema",
+    "tool_name_collision",
+    "unsupported"
+  ].includes(diagnostic.code);
+}
+
+function providerHelpText(): string {
+  return [
+    "Usage: aicf providers <command> [path]",
+    "",
+    "Commands:",
+    "  providers list",
+    "  providers conformance <path> [--format text|json]",
+    "  providers export-tools <path> --provider <provider> --context <context.json> [--include-diagnostics]",
+    "  providers export-semantic-kernel-openapi <path> --context <context.json> --server-url <url> [--include-diagnostics]",
+    ""
+  ].join("\n");
 }
 
 async function readDecisionRequest(filePath: string): Promise<
@@ -364,6 +773,38 @@ async function readToolContext(filePath: string): Promise<
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unable to read tool context.",
+      ok: false
+    };
+  }
+}
+
+async function readLiveEvalCases(filePath: string): Promise<
+  | { ok: true; value: AicfLiveEvalCaseInput[] }
+  | { error: string; ok: false }
+> {
+  try {
+    const content = await readFile(filePath, "utf8");
+    const parsed = JSON.parse(content) as unknown;
+    const cases = Array.isArray(parsed)
+      ? parsed
+      : typeof parsed === "object" && parsed !== null && Array.isArray((parsed as { cases?: unknown }).cases)
+        ? (parsed as { cases: unknown[] }).cases
+        : null;
+
+    if (!cases) {
+      return {
+        error: "Live eval cases file must be a JSON array or an object with cases[].",
+        ok: false
+      };
+    }
+
+    return {
+      ok: true,
+      value: cases as AicfLiveEvalCaseInput[]
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unable to read live eval cases.",
       ok: false
     };
   }
@@ -523,6 +964,20 @@ function formatDiagnostics(errors: AicfDiagnostic[]): string {
     })
     .join("\n")
     .concat("\n");
+}
+
+function formatLiveEvalResults(
+  results: Array<{ evalId: string; status: string }>,
+  gate: { averageScore: number; status: string }
+): string {
+  const lines = [
+    `Live eval gate ${gate.status}: average score ${gate.averageScore.toFixed(3)}.`
+  ];
+  for (const result of results) {
+    lines.push(`- ${result.status}: ${result.evalId}`);
+  }
+
+  return `${lines.join("\n")}\n`;
 }
 
 if (isDirectCliRun()) {

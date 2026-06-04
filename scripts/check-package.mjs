@@ -16,6 +16,23 @@ const requiredExact = [
   "LICENSE",
   "README.md",
   "SECURITY.md",
+  "docs/ai-sdk-runtime.md",
+  "docs/anthropic-runtime.md",
+  "docs/gemini-runtime.md",
+  "docs/langchain-runtime.md",
+  "docs/mcp-server-runtime.md",
+  "docs/provider-conformance.md",
+  "docs/providers.md",
+  "docs/semantic-kernel-runtime.md",
+  "examples/providers/ai-sdk-next/README.md",
+  "examples/providers/anthropic-claude/README.md",
+  "examples/providers/gemini/README.md",
+  "examples/providers/langchain-agent/README.md",
+  "examples/providers/langgraph-tool-node/README.md",
+  "examples/providers/mcp/README.md",
+  "examples/providers/provider-conformance/README.md",
+  "examples/providers/semantic-kernel-mcp/README.md",
+  "examples/providers/semantic-kernel-openapi/README.md",
   "package.json"
 ];
 const requiredPrefixes = [
@@ -79,6 +96,16 @@ for (const file of files) {
   const lowerFile = file.toLowerCase();
   if (lowerFile.includes("provider-payload") || lowerFile.includes("raw-payload")) {
     failures.push(`Provider payload-looking path included: ${file}`);
+  }
+
+  if (
+    lowerFile.includes("credential")
+    || lowerFile.includes("api-key")
+    || lowerFile.includes("apikey")
+    || lowerFile.includes("access-token")
+    || lowerFile.includes("access_token")
+  ) {
+    failures.push(`Credential-looking package path included: ${file}`);
   }
 }
 

@@ -42,11 +42,24 @@ export type AicfErrorCode =
   | "unknown_committed_capability"
   | "unknown_eval_result"
   | "unknown_scorer"
+  | "provider_dependency_missing"
+  | "provider_loop_max_iterations"
+  | "provider_loop_max_tool_calls"
+  | "provider_response_unrecognized"
+  | "provider_schema_normalization_failed"
+  | "provider_schema_unsupported"
+  | "provider_sdk_error"
+  | "provider_tool_call_id_missing"
+  | "provider_tool_call_parse_failed"
+  | "provider_tool_name_collision"
+  | "provider_tool_name_invalid"
+  | "provider_tool_result_format_failed"
   | "unsupported";
 
 export type AicfWarningCode =
   | "capability_excluded"
   | "missing_required_approval_policy"
+  | "provider_schema_normalization_warning"
   | "schema_normalization"
   | "unknown_allowed_action"
   | "unknown_capability_under_test";

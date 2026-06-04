@@ -73,10 +73,23 @@ export function publicArtifactFailures(files, options = {}) {
       lowerFile.includes("provider-payload")
       || lowerFile.includes("raw-payload")
       || lowerFile.includes("raw_provider")
-      || lowerFile.includes("trace")
-      || lowerFile.includes("prompt")
+      || lowerFile.includes("raw-prompt")
+      || lowerFile.includes("raw_prompt")
+      || lowerFile.includes("raw-trace")
+      || lowerFile.includes("raw_trace")
+      || lowerFile.includes("provider_payload")
     ) {
       failures.push(`Private or provider payload-looking path included: ${file}`);
+    }
+
+    if (
+      lowerFile.includes("credential")
+      || lowerFile.includes("api-key")
+      || lowerFile.includes("apikey")
+      || lowerFile.includes("access-token")
+      || lowerFile.includes("access_token")
+    ) {
+      failures.push(`Credential-looking path included: ${file}`);
     }
   }
 

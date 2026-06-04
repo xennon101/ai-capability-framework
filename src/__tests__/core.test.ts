@@ -403,7 +403,13 @@ describe("AICF release readiness", () => {
       "mcp-tools",
       "langchain-tools",
       "semantic-kernel-functions",
-      "eval"
+      "providers list",
+      "providers conformance",
+      "providers export-tools",
+      "providers export-semantic-kernel-openapi",
+      "eval",
+      "eval-live",
+      "export promptfoo"
     ]) {
       expect(stdout.value).toContain(command);
     }
@@ -421,26 +427,71 @@ describe("AICF release readiness", () => {
       "conformance/invalid/schema/capabilities/conformance.invalid.missing_required.yaml",
       "dist/index.js",
       "dist/cli.js",
+      "dist/aws/index.js",
+      "dist/evals-live/index.js",
+      "dist/langfuse/index.js",
+      "dist/mcp-server/index.js",
+      "dist/observability/index.js",
+      "dist/openai/index.js",
+      "dist/promptfoo/index.js",
+      "dist/providers/ai-sdk/index.js",
+      "dist/providers/index.js",
+      "dist/providers/anthropic/index.js",
+      "dist/providers/conformance/index.js",
+      "dist/providers/gemini/index.js",
+      "dist/providers/langchain/index.js",
+      "dist/providers/mcp/index.js",
+      "dist/providers/semantic-kernel/index.js",
+      "dist/runtime/index.js",
+      "docs/action-lifecycle.md",
       "docs/adapters.md",
+      "docs/ai-sdk-runtime.md",
       "docs/api.md",
+      "docs/anthropic-runtime.md",
+      "docs/aws-runtime.md",
       "docs/control-plane.md",
       "docs/eval-runner.md",
+      "docs/gemini-runtime.md",
+      "docs/langchain-runtime.md",
+      "docs/semantic-kernel-runtime.md",
       "docs/host-responsibilities.md",
       "docs/interoperability.md",
       "docs/migration-0.1-to-1.0.md",
+      "docs/live-evals.md",
+      "docs/mcp-server-runtime.md",
+      "docs/observability-runtime.md",
       "docs/openai-responses.md",
+      "docs/openai-runtime.md",
+      "docs/policy-broker.md",
+      "docs/provider-conformance.md",
+      "docs/providers.md",
+      "docs/runtime.md",
       "examples/eval-results/public.results.passing.json",
+      "examples/providers/ai-sdk-next/README.md",
+      "examples/providers/anthropic-claude/README.md",
+      "examples/providers/gemini/README.md",
+      "examples/providers/langchain-agent/README.md",
+      "examples/providers/langgraph-tool-node/README.md",
+      "examples/providers/mcp/README.md",
+      "examples/providers/provider-conformance/README.md",
+      "examples/providers/semantic-kernel-mcp/README.md",
+      "examples/providers/semantic-kernel-openapi/README.md",
+      "examples/runtime-support-billing/README.md",
+      "examples/runtime-support-billing/run-mock.mjs",
+      "examples/runtime-support-billing/support-billing-runtime.mjs",
+      "examples/semantic-kernel-mcp/README.md",
+      "examples/semantic-kernel-openapi/README.md",
       "examples/scheduling/capabilities/scheduling.invite.prepare.yaml",
       "examples/support/capabilities/support.ticket.get.yaml",
-        "examples/support/eval-results/support.results.passing.json",
-        "schemas/adapter-context.schema.json",
-        "schemas/capability-manifest.schema.json",
-        "schemas/decision-request.schema.json",
-        "schemas/entity-manifest.schema.json",
-        "schemas/eval-case.schema.json",
-        "schemas/eval-result.schema.json",
-        "schemas/tool-result-envelope.schema.json"
-      ];
+      "examples/support/eval-results/support.results.passing.json",
+      "schemas/adapter-context.schema.json",
+      "schemas/capability-manifest.schema.json",
+      "schemas/decision-request.schema.json",
+      "schemas/entity-manifest.schema.json",
+      "schemas/eval-case.schema.json",
+      "schemas/eval-result.schema.json",
+      "schemas/tool-result-envelope.schema.json"
+    ];
 
     for (const file of requiredFiles) {
       expect(files).toContain(file);
@@ -454,6 +505,63 @@ describe("AICF release readiness", () => {
     expect(files.some((file) => file.startsWith("prompts/"))).toBe(false);
     expect(files.some((file) => file.endsWith(".tgz"))).toBe(false);
     expect(files.some((file) => file.toLowerCase().includes("provider-payload"))).toBe(false);
+    expect(files.some((file) => file.toLowerCase().includes("credential"))).toBe(false);
+  });
+
+  it("package scripts include runtime, optional, and release gates", async () => {
+    const packageJson = JSON.parse(await readFile("package.json", "utf8")) as {
+      scripts: Record<string, string>;
+    };
+
+    expect(packageJson.scripts["check:runtime"]).toContain("src/__tests__/runtime");
+    expect(packageJson.scripts["check:runtime"]).toContain("src/__tests__/examples");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/aws");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/openai-agents");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/anthropic");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/gemini");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/ai-sdk");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/langchain");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/mcp");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/semantic-kernel");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/conformance");
+    expect(packageJson.scripts["check:providers"]).toBe("vitest run src/__tests__/providers");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:anthropic:mock");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:gemini:mock");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:ai-sdk:mock");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:langchain:mock");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:semantic-kernel");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:mcp-provider");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:providers:conformance");
+    expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:anthropic:live");
+    expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:gemini:live");
+    expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:ai-sdk:live");
+    expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:langchain:live");
+    expect(packageJson.scripts["check:release:providers"]).toContain("npm run check:providers:mock");
+    expect(packageJson.scripts["check:release:providers"]).toContain("npm run check:release-install");
+    expect(packageJson.scripts["test:anthropic:mock"]).toContain("src/__tests__/providers/anthropic");
+    expect(packageJson.scripts["test:gemini:mock"]).toContain("src/__tests__/providers/gemini");
+    expect(packageJson.scripts["test:ai-sdk:mock"]).toContain("src/__tests__/providers/ai-sdk");
+    expect(packageJson.scripts["test:langchain:mock"]).toContain("src/__tests__/providers/langchain");
+    expect(packageJson.scripts["test:mcp-provider"]).toContain("src/__tests__/providers/mcp");
+    expect(packageJson.scripts["test:mcp-server"]).toContain("src/__tests__/mcp-server");
+    expect(packageJson.scripts["test:providers:conformance"]).toContain("src/__tests__/providers/conformance");
+    expect(packageJson.scripts["test:semantic-kernel"]).toContain("src/__tests__/providers/semantic-kernel");
+    expect(packageJson.scripts["check:release"]).toBe("npm run check && npm run check:optional && npm pack --dry-run --json");
+  });
+
+  it("public docs describe the provider-neutral release boundary", async () => {
+    const readme = await readFile("README.md", "utf8");
+    const providers = await readFile("docs/providers.md", "utf8");
+    const release = await readFile("docs/release.md", "utf8");
+
+    const normalizedReadme = readme.replace(/\s+/g, " ");
+    const normalizedRelease = release.replace(/\s+/g, " ");
+    expect(normalizedReadme).toContain("provider-agnostic AI capability framework");
+    expect(normalizedReadme).toContain("OpenAI, Anthropic Claude, Google Gemini, Vercel AI SDK, Model Context Protocol, LangChain/LangGraph, and Semantic Kernel");
+    expect(providers).toContain("OpenAI is one adapter, not the architecture");
+    expect(providers).toContain("Live tests are opt-in");
+    expect(normalizedRelease).toContain("root and runtime imports remain provider-SDK-free");
+    expect(normalizedRelease).toContain("commit capabilities are not exported by default");
   });
 });
 

@@ -29,6 +29,23 @@ npm run check:package-public
 npm run check:workspace-public
 npm run check:release-install
 npm run check
+npm run check:runtime
+npm run check:optional
+npm run check:providers:mock
+npm run check:release
+npm run check:release:providers
+npm run test:anthropic:mock
+npm run test:gemini:mock
+npm run test:ai-sdk:mock
+npm run test:langchain:mock
+npm run test:mcp-provider
+npm run test:mcp-server
+npm run test:providers:conformance
+npm run test:semantic-kernel
+npm run check:providers:live # optional; requires provider-specific live env vars
+npm test -- observability evals-live promptfoo langfuse
+npm test -- aws
+npm test -- openai-agents
 npm pack --dry-run --json
 npm pack
 ```
@@ -42,6 +59,10 @@ git ls-files
 
 `_private/`, `dist/`, `node_modules/`, traces, prompts, provider payloads,
 generated local docs, and local-only material must remain untracked or ignored.
+
+Confirm root and runtime imports remain provider-SDK-free, and confirm commit
+capabilities are not exported by default from OpenAI, Anthropic, Gemini, AI SDK,
+LangChain, MCP, or Semantic Kernel compatibility paths.
 
 ## Release Artifacts
 
@@ -66,6 +87,11 @@ The npm package may include `dist/`, `schemas/`, `examples/`, `conformance/`,
 not include private/local material, source-only tests, scripts, raw prompts,
 raw traces, provider request/response payloads, archives, or credentials.
 
+The package should include the public `examples/runtime-support-billing/` mock
+runtime flow and `docs/action-lifecycle.md` plus `docs/policy-broker.md`.
+It should also include `examples/providers/` README examples,
+`docs/providers.md`, and `docs/provider-conformance.md`.
+
 ## Trusted Publishing
 
 Before relying on GitHub Actions publishing, configure the npm package trusted
@@ -88,13 +114,23 @@ commit is already reachable from `origin/main`. Pre-release versions such as
 - Use release title `AI Capability Framework v1.0.0-rc.1`.
 - Summarize the framework as schemas, TypeScript core, CLI, deterministic
   control plane, OpenAI Responses adapter, eval runner, docs, and public
-  examples.
+  examples, plus optional runtime observability and live-eval subpaths.
 - Publish npm pre-release packages with a non-default dist tag such as `next`
   until the final 1.0.0 release is ready.
 - Link to `CHANGELOG.md`, `docs/api.md`, `docs/spec.md`,
   `docs/control-plane.md`, `docs/openai-responses.md`,
-  `docs/eval-runner.md`, `docs/host-responsibilities.md`,
-  `docs/interoperability.md`, and `docs/migration-0.1-to-1.0.md`.
+  `docs/ai-sdk-runtime.md`, `docs/anthropic-runtime.md`,
+  `docs/gemini-runtime.md`, `docs/langchain-runtime.md`,
+  `docs/semantic-kernel-runtime.md`,
+  `docs/openai-runtime.md`, `docs/observability-runtime.md`,
+  `docs/live-evals.md`, `docs/aws-runtime.md`,
+  `docs/mcp-server-runtime.md`, `docs/action-lifecycle.md`,
+  `docs/policy-broker.md`, `docs/providers.md`,
+  `docs/provider-conformance.md`, `docs/eval-runner.md`,
+  `docs/host-responsibilities.md`, `docs/interoperability.md`, and
+  `docs/migration-0.1-to-1.0.md`.
+- Mention that provider live tests are opt-in and normal release checks use
+  mock clients, descriptor exports, and synthetic fixtures.
 
 ## Post-Release
 
