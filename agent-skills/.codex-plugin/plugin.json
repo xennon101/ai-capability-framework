@@ -1,6 +1,6 @@
 {
   "name": "aicf-agent-skills",
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0-rc.5",
   "description": "Reusable Agent Skills for building, auditing, testing, migrating, and releasing AI Capability Framework projects.",
   "author": {
     "name": "AICF Contributors",

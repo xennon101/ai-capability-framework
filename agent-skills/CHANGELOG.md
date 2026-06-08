@@ -2,10 +2,10 @@
 
 All notable public changes to the AICF Agent Skills package are documented here.
 
-## 1.0.0-rc.4 - Unreleased
+## 1.0.0-rc.5 - Unreleased
 
 - Aligned the skills package, Codex plugin manifest, and all real skill metadata with
-  the AICF `1.0.0-rc.4` release candidate.
+  the AICF `1.0.0-rc.5` release candidate.
 - Added public publish metadata for `@aicf/agent-skills` and documented the
   same-version, same-tag release process with the root package.
 - Added S6 release hardening: stale index checks, release-readiness assertions, stricter

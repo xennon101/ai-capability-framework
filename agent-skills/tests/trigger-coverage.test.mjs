@@ -72,7 +72,7 @@ description: Author a sample AICF skill. Use when testing trigger coverage.
 license: MIT
 compatibility: Codex and Agent Skills-compatible coding agents.
 metadata:
-  aicf.skill.version: "1.0.0-rc.4"
+  aicf.skill.version: "1.0.0-rc.5"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "test"
   aicf.skill.scope: "builder"

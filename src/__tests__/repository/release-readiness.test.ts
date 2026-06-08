@@ -151,10 +151,10 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0-rc.4 version --json": npm404(),
+        "view ai-capability-framework@1.0.0-rc.5 version --json": npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.4 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
       })
     });
 
@@ -169,18 +169,18 @@ describe("public repository release readiness", () => {
         "whoami": "aicf-maintainer\n",
         "view ai-capability-framework name version dist-tags --json": {
           name: "ai-capability-framework",
-          version: "1.0.0-rc.4",
-          "dist-tags": { next: "1.0.0-rc.4" }
+          version: "1.0.0-rc.5",
+          "dist-tags": { next: "1.0.0-rc.5" }
         },
-        "view ai-capability-framework@1.0.0-rc.4 version --json": "\"1.0.0-rc.4\"",
+        "view ai-capability-framework@1.0.0-rc.5 version --json": "\"1.0.0-rc.5\"",
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.4 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
       })
     });
 
     expect(alreadyPublished.ok).toBe(false);
-    expect(alreadyPublished.failures.join("\n")).toContain("ai-capability-framework@1.0.0-rc.4 is already published");
+    expect(alreadyPublished.failures.join("\n")).toContain("ai-capability-framework@1.0.0-rc.5 is already published");
 
     const strictFirstPublish = runNpmReleasePreflight({
       strict: true,
@@ -191,10 +191,10 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0-rc.4 version --json": npm404(),
+        "view ai-capability-framework@1.0.0-rc.5 version --json": npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.4 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
       })
     });
 
@@ -207,11 +207,11 @@ describe("public repository release readiness", () => {
     await mkdir(path.join(root, "agent-skills"), { recursive: true });
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ name: "wrong-name", version: "1.0.0-rc.4", private: false, publishConfig: { access: "public" } })
+      JSON.stringify({ name: "wrong-name", version: "1.0.0-rc.5", private: false, publishConfig: { access: "public" } })
     );
     await writeFile(
       path.join(root, "agent-skills", "package.json"),
-      JSON.stringify({ name: "@aicf/agent-skills", version: "1.0.0-rc.5", private: false, publishConfig: { access: "public" } })
+      JSON.stringify({ name: "@aicf/agent-skills", version: "1.0.0-rc.4", private: false, publishConfig: { access: "public" } })
     );
 
     const report = runNpmReleasePreflight({ root, exec: mockNpmExec({ whoami: npm404() }) });

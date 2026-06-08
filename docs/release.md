@@ -233,10 +233,10 @@ account before the first real publish, and npm trusted publishing must be config
 that scoped package too.
 
 The workflow publishes only when a `v*` tag is pushed and only if the tagged commit is
-already reachable from `origin/main`. Pre-release versions such as `1.0.0-rc.4` publish
+already reachable from `origin/main`. Pre-release versions such as `1.0.0-rc.5` publish
 with the `next` dist tag. Stable versions publish with the `latest` dist tag. Root and
-agent-skills releases use the same version and tag; for package version `1.0.0-rc.4`,
-push tag `v1.0.0-rc.4`.
+agent-skills releases use the same version and tag; for package version `1.0.0-rc.5`,
+push tag `v1.0.0-rc.5`.
 
 ## GitHub Release
 

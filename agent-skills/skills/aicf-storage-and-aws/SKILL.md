@@ -9,7 +9,7 @@ compatibility:
   Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
   migrating to AICF. AWS work must remain optional and subpath-isolated.
 metadata:
-  aicf.skill.version: "1.0.0-rc.4"
+  aicf.skill.version: "1.0.0-rc.5"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "storage-aws"
   aicf.skill.scope: "builder"

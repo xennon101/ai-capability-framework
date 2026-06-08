@@ -87,7 +87,7 @@ both package dry-runs with public access:
 npm run release:publish:dry
 ```
 
-Prereleases such as `1.0.0-rc.4` use `next`. Stable releases use `latest`. This command
+Prereleases such as `1.0.0-rc.5` use `next`. Stable releases use `latest`. This command
 does not publish.
 
 ## Manual Acceptance

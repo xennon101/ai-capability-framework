@@ -280,7 +280,7 @@ npm run check:source-archive
 
 Release tags publish two npm artifacts from the same commit and version:
 `ai-capability-framework` and `@aicf/agent-skills`. For example, package version
-`1.0.0-rc.4` uses tag `v1.0.0-rc.4` and the `next` dist tag for both packages.
+`1.0.0-rc.5` uses tag `v1.0.0-rc.5` and the `next` dist tag for both packages.
 
 Use `npm pack` for npm package review and `npm run archive:source` for public source
 review. Do not zip the working directory manually; raw workspace archives can include
