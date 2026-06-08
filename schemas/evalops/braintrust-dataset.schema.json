@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/evalops/braintrust-dataset.schema.json",
+  "title": "AICF Braintrust Dataset Export",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "schemaVersion", "source"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "input", "metadata"],
+        "properties": {
+          "expected": { "type": "object" },
+          "id": { "type": "string", "minLength": 1 },
+          "input": { "type": "object" },
+          "metadata": { "type": "object" }
+        }
+      }
+    },
+    "schemaVersion": { "const": "1.0" },
+    "source": { "const": "aicf" }
+  }
+}

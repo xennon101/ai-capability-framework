@@ -1,6 +1,9 @@
 import Ajv2020 from "ajv/dist/2020.js";
+import { controlDecisionToPolicyReasons } from "../controls/index.js";
 import { createToolEnvelope, runtimeErrorToEnvelopeError } from "./envelope.js";
 import { writeAuditEvent } from "./audit.js";
+import { resultRefFromValue } from "../audit/records.js";
+import type { ActionRecord } from "../audit/types.js";
 import type {
   AicfPolicyDecision,
   AicfRuntimeToolResultEnvelope,
@@ -46,6 +49,23 @@ export class AicfToolExecutor {
       return this.unavailable(request, request.capabilityId, request.operation, "Capability was not found.");
     }
 
+    const controlsDecision = this.options.controls?.evaluate({
+      capability,
+      capabilityId: capability.manifest.id,
+      domain: capability.manifest.domain,
+      operation: request.operation,
+      registry: this.options.registry,
+      riskTier: capability.manifest.risk_tier,
+      runtimeContext: request.runtimeContext
+    });
+    if (controlsDecision?.status === "denied") {
+      return this.denied(request, capability.manifest.id, request.operation, {
+        reasons: controlDecisionToPolicyReasons(controlsDecision),
+        requiredApprovals: [],
+        status: "denied"
+      }, capability.manifest.version);
+    }
+
     const lifecycleError = lifecycleErrorFor(capability, request.operation);
     if (lifecycleError) {
       return this.denied(request, capability.manifest.id, request.operation, {
@@ -59,6 +79,12 @@ export class AicfToolExecutor {
         status: "denied"
       }, capability.manifest.version);
     }
+    const proposedAction = await writeLedger(this.options.ledger, () => this.options.ledger?.recordAction({
+      actionState: "proposed",
+      args: request.args,
+      capability: capability.manifest,
+      runId: request.runtimeContext.runId
+    }));
 
     const inputValidation = validateAgainstSchema(capability, request.args, "input");
     if (!inputValidation.valid) {
@@ -66,8 +92,12 @@ export class AicfToolExecutor {
         capabilityId: capability.manifest.id,
         operation: request.operation,
         runtimeContext: request.runtimeContext,
-        status: "failed",
-        type: "tool_execution"
+          status: "failed",
+          type: "tool_execution"
+      });
+      await this.markAction(proposedAction, {
+        actionState: "failed",
+        resultHash: resultRefFromValue(inputValidation.errors, "validation_errors").resultHash
       });
       return createToolEnvelope({
         capabilityId: capability.manifest.id,
@@ -77,7 +107,7 @@ export class AicfToolExecutor {
         requestId: request.runtimeContext.requestId,
         runId: request.runtimeContext.runId,
         status: "validation_error",
-        userMessage: "The tool input was invalid."
+          userMessage: "The tool input was invalid."
       });
     }
 
@@ -87,6 +117,7 @@ export class AicfToolExecutor {
         builtContext: request.builtContext,
         capabilityId: request.capabilityId,
         idempotencyKey: request.idempotencyKey,
+        ledgerActionId: proposedAction?.actionId,
         runtimeContext: request.runtimeContext
       });
       await writeAuditEvent(this.options.auditSink, {
@@ -116,19 +147,34 @@ export class AicfToolExecutor {
       operation: "select",
       runtimeContext: request.runtimeContext
     });
+    const policyRecord = await writeLedger(this.options.ledger, () => this.options.ledger?.recordPolicyDecision({
+      args: request.args,
+      capability: capability.manifest,
+      operation: "read",
+      policyDecision: policy,
+      runtimeContext: request.runtimeContext
+    }));
 
     if (policy.status === "denied") {
       await writeAuditEvent(this.options.auditSink, {
         capabilityId: capability.manifest.id,
         operation: "read",
         runtimeContext: request.runtimeContext,
-        status: "denied",
-        type: "tool_execution"
+          status: "denied",
+          type: "tool_execution"
+      });
+      await this.markAction(proposedAction, {
+        actionState: "failed",
+        policyDecisionId: policyRecord?.decisionId
       });
       return this.denied(request, capability.manifest.id, "read", policy, capability.manifest.version);
     }
 
     if (policy.status === "approval_required") {
+      await this.markAction(proposedAction, {
+        actionState: "approval_required",
+        policyDecisionId: policyRecord?.decisionId
+      });
       return createToolEnvelope({
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
@@ -153,8 +199,13 @@ export class AicfToolExecutor {
           capabilityId: capability.manifest.id,
           operation: "read",
           runtimeContext: request.runtimeContext,
-          status: "failed",
-          type: "tool_execution"
+            status: "failed",
+            type: "tool_execution"
+        });
+        await this.markAction(proposedAction, {
+          actionState: "failed",
+          policyDecisionId: policyRecord?.decisionId,
+          resultHash: resultRefFromValue(outputValidation.errors, "validation_errors").resultHash
         });
         return createToolEnvelope({
           capabilityId: capability.manifest.id,
@@ -173,7 +224,11 @@ export class AicfToolExecutor {
         operation: "read",
         runtimeContext: request.runtimeContext,
         status: "succeeded",
-        type: "tool_execution"
+          type: "tool_execution"
+      });
+      await this.markAction(proposedAction, {
+        policyDecisionId: policyRecord?.decisionId,
+        resultHash: resultRefFromValue(output, "read_result").resultHash
       });
       return createToolEnvelope({
         capabilityId: capability.manifest.id,
@@ -194,6 +249,11 @@ export class AicfToolExecutor {
         status: "failed",
         type: "tool_execution"
       });
+      await this.markAction(proposedAction, {
+        actionState: "failed",
+        policyDecisionId: policyRecord?.decisionId,
+        resultHash: resultRefFromValue({ error: "read_handler_failed" }, "error").resultHash
+      });
       return createToolEnvelope({
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
@@ -205,6 +265,14 @@ export class AicfToolExecutor {
         userMessage: "The read handler failed."
       });
     }
+  }
+
+  private async markAction(record: ActionRecord | undefined, patch: Partial<ActionRecord>): Promise<void> {
+    if (!record || !this.options.ledger) {
+      return;
+    }
+
+    await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(record.actionId, patch));
   }
 
   private unavailable(
@@ -311,4 +379,19 @@ function factsFromRuntime(runtimeContext: { facts: Record<string, unknown> }): R
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function writeLedger<T>(
+  ledger: unknown,
+  operation: () => Promise<T | undefined> | T | undefined
+): Promise<T | undefined> {
+  if (!ledger) {
+    return undefined;
+  }
+
+  try {
+    return await operation();
+  } catch {
+    return undefined;
+  }
 }

@@ -98,7 +98,8 @@ export class InMemoryIdempotencyStore implements AicfIdempotencyStore {
     metadata?: Record<string, unknown>;
     scope: string;
   }): Promise<{ reserved: true } | { existing?: Record<string, unknown>; reserved: false }> {
-    const existing = this.reservations.get(input.key);
+    const mapKey = scopedIdempotencyKey(input.scope, input.key);
+    const existing = this.reservations.get(mapKey);
     if (existing) {
       return {
         existing: existing.result ? clone(existing.result) : undefined,
@@ -106,7 +107,7 @@ export class InMemoryIdempotencyStore implements AicfIdempotencyStore {
       };
     }
 
-    this.reservations.set(input.key, {
+    this.reservations.set(mapKey, {
       expiresAt: input.expiresAt,
       metadata: input.metadata,
       scope: input.scope
@@ -120,8 +121,9 @@ export class InMemoryIdempotencyStore implements AicfIdempotencyStore {
     result: Record<string, unknown>;
     scope: string;
   }): Promise<void> {
-    const existing = this.reservations.get(input.key);
-    this.reservations.set(input.key, {
+    const mapKey = scopedIdempotencyKey(input.scope, input.key);
+    const existing = this.reservations.get(mapKey);
+    this.reservations.set(mapKey, {
       expiresAt: existing?.expiresAt ?? new Date(Date.now() + 3600000).toISOString(),
       metadata: existing?.metadata,
       result: clone(input.result),
@@ -130,7 +132,10 @@ export class InMemoryIdempotencyStore implements AicfIdempotencyStore {
   }
 }
 
+function scopedIdempotencyKey(scope: string, key: string): string {
+  return `${scope}#${key}`;
+}
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
-

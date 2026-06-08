@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security/retention-policy.schema.json",
+  "title": "AICF Security Retention Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "allowRawContentInEvals",
+    "id",
+    "rawPromptRetention",
+    "rawProviderPayloadRetention"
+  ],
+  "properties": {
+    "allowRawContentInEvals": { "type": "boolean" },
+    "auditRecordRetentionDays": { "type": "integer", "minimum": 0 },
+    "evalDatasetRetentionDays": { "type": "integer", "minimum": 0 },
+    "id": { "type": "string", "minLength": 1 },
+    "rawPromptRetention": { "enum": ["none", "short_diagnostic", "custom"] },
+    "rawProviderPayloadRetention": { "enum": ["none", "short_diagnostic", "custom"] },
+    "traceMetadataRetentionDays": { "type": "integer", "minimum": 0 }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/governance/compatibility-diff.schema.json",
+  "title": "AICF Governance Compatibility Diff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capabilityId", "fromVersion", "toVersion", "compatibility", "changes", "requiredActions"],
+  "properties": {
+    "capabilityId": { "type": "string" },
+    "fromVersion": { "type": "string" },
+    "toVersion": { "type": "string" },
+    "compatibility": { "enum": ["compatible", "requires_minor", "breaking"] },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "compatibility", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "compatibility": { "enum": ["compatible", "requires_minor", "breaking"] },
+          "message": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "requiredActions": { "type": "array", "items": { "$ref": "#/$defs/requirement" } }
+  },
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "severity": { "enum": ["info", "warning", "blocking"] }
+      }
+    }
+  }
+}

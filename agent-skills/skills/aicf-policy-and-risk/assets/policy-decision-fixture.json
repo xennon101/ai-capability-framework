@@ -1,0 +1,15 @@
+{
+  "capabilityId": "support.ticket.get",
+  "operation": "read",
+  "context": {
+    "subjectRef": "subject_hash_example",
+    "tenantRef": "tenant_hash_example",
+    "permissions": ["capability:support.ticket.get:read"],
+    "autonomyTier": "assistive"
+  },
+  "expected": {
+    "allowed": true,
+    "approvalRequired": false,
+    "reasons": ["policy_allowed"]
+  }
+}

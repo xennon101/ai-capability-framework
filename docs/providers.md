@@ -58,6 +58,8 @@ AICF remains the policy and action authority:
 - commit capabilities are not exported to models by default;
 - read and prepare calls execute through AICF validation, policy, lifecycle, and
   model-safe envelopes;
+- optional AICF controls can deny provider export, apply read-only mode, and
+  enforce provider-loop budgets;
 - commit remains host-controlled through `AicfActionLifecycleManager` after a
   stored prepared action, approval, idempotency, and audit checks;
 - raw prompts, raw user messages, provider request/response payloads, traces,
@@ -76,7 +78,7 @@ factories, descriptor exports, and synthetic fixtures.
 - [LangChain/LangGraph bridge](langchain-runtime.md)
 - [MCP server runtime](mcp-server-runtime.md)
 - [Semantic Kernel compatibility](semantic-kernel-runtime.md)
-- [Provider conformance](provider-conformance.md)
+- [Provider conformance](providers/conformance.md)
 
 Grouped public examples live under `examples/providers/`. They are README-only
 by design: no credentials, raw provider payloads, live transcripts, or local

@@ -29,9 +29,11 @@ Prepare validates:
 - registered prepare handler;
 - output schema for the prepared-action preview.
 
-Successful prepare stores an `AicfPreparedAction`. If policy requires approval,
-the returned model-safe envelope includes `status: "approval_required"` and a
-prepared-action reference.
+Successful prepare stores an `AicfPreparedAction`. Prepare capabilities that
+can later be committed should declare `lifecycle.commit_capability_id`, and the
+prepared action records that linked commit capability. If policy requires
+approval, the returned model-safe envelope includes
+`status: "approval_required"` and a prepared-action reference.
 
 ## Approval
 
@@ -45,6 +47,9 @@ decision.
 Commit validates:
 
 - stored prepared action exists and is not expired, rejected, or cancelled;
+- requested commit capability matches the prepared action's declared
+  `commitCapabilityId`, or the prepared action capability itself supports
+  commit;
 - commit capability exists and supports `lifecycle.commit`;
 - commit handler exists;
 - approval exists, is approved, matches the prepared action, and is not expired;
@@ -54,6 +59,16 @@ Commit validates:
 Commit uses the stored prepared action and approval. It does not accept
 model-provided raw business arguments. Duplicate idempotency keys return the
 safe existing result rather than invoking the handler again.
+
+Failed commit handlers, thrown commit handlers, and invalid commit output move
+the prepared action to `failed`. Terminal actions such as committed, verified,
+failed, expired, cancelled, and rejected cannot be moved back to approved.
+
+## Verify
+
+`verify()` checks a committed action through the committed capability's optional
+verify handler. It returns model-safe `verified`, `failed`, `unavailable`, or
+`denied` envelopes and never exposes thrown handler error details directly.
 
 In-memory stores are examples and test utilities. Production applications should
 use durable stores, such as the optional AWS reference stores or host-owned

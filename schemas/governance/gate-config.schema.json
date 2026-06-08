@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/governance/gate-config.schema.json",
+  "title": "AICF Governance Gate Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "environment": { "type": "string", "minLength": 1 }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gate_provider" }
+        },
+        "server_url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default_autonomy_tier": { "enum": ["A0", "A1", "A2", "A3", "A4", "A5"] },
+        "max_tool_calls_per_run": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "baseline_root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/gate" }
+    }
+  },
+  "$defs": {
+    "gate_provider": {
+      "enum": [
+        "openai",
+        "anthropic",
+        "gemini",
+        "ai-sdk",
+        "vercel-ai-sdk",
+        "vercel_ai_sdk",
+        "mcp",
+        "langchain",
+        "semantic-kernel",
+        "semantic-kernel-mcp",
+        "semantic-kernel-openapi"
+      ]
+    },
+    "gate_risk_tier": { "enum": ["none", "low", "medium", "high", "critical"] },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fail_on_warnings": { "type": "boolean" },
+        "require_security_packs_for": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gate_risk_tier" }
+        },
+        "require_evals_for": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gate_risk_tier" }
+        },
+        "require_conformance_for_enabled_providers": { "type": "boolean" },
+        "block_deprecated_capabilities": { "type": "boolean" },
+        "artifact_hygiene": { "type": "boolean" }
+      }
+    }
+  }
+}

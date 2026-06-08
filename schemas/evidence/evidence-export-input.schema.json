@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/evidence/evidence-export-input.schema.json",
+  "title": "AICF Evidence Export Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "environment": { "type": "string", "minLength": 1 }
+      }
+    },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "aicfVersion": { "type": "string", "minLength": 1 },
+    "format": { "enum": ["json", "markdown"] },
+    "incidentSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "modelUpgradeHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["changedAt", "toModel", "reason"],
+        "properties": {
+          "changedAt": { "type": "string", "minLength": 1 },
+          "fromModel": { "type": "string", "minLength": 1 },
+          "toModel": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

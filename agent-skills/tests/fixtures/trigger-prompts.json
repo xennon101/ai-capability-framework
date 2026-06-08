@@ -1,0 +1,225 @@
+{
+  "skills": [
+    {
+      "name": "aicf-capability-authoring",
+      "required_description_terms": ["capability", "entity", "starter evals"],
+      "positive": [
+        "Create an AICF manifest for a support ticket read tool.",
+        "Convert this refund operation into a governed AICF capability with an entity manifest.",
+        "Add starter evals for a new model-facing capability."
+      ],
+      "negative": [
+        "Implement the HTTP handler for an existing capability.",
+        "Prepare the repository for an npm release."
+      ]
+    },
+    {
+      "name": "aicf-governance-lifecycle",
+      "required_description_terms": ["lifecycle", "risk compiler", "impact analysis"],
+      "positive": [
+        "Review whether this capability can move from draft to production.",
+        "Run an impact analysis before deprecating a capability.",
+        "Compare two capability versions for governance risk."
+      ],
+      "negative": [
+        "Write a new capability manifest from scratch.",
+        "Create trigger fixtures for the skills package."
+      ]
+    },
+    {
+      "name": "aicf-policy-and-risk",
+      "required_description_terms": ["policy broker", "risk tiers", "fail-closed"],
+      "positive": [
+        "Audit the policy broker for missing tenant checks.",
+        "Add fail-closed tests for approval-required prepare actions.",
+        "Review risk tiers and semantic invariants for a money movement capability."
+      ],
+      "negative": [
+        "Generate a provider conformance matrix.",
+        "Create public release notes."
+      ]
+    },
+    {
+      "name": "aicf-eval-authoring",
+      "required_description_terms": ["evals", "golden tests", "model upgrades"],
+      "positive": [
+        "Add golden evals for tool choice and input args.",
+        "Create deterministic fixtures for a model upgrade regression suite.",
+        "Write eval cases proving no forbidden commit tool is called."
+      ],
+      "negative": [
+        "Configure a kill switch for a capability.",
+        "Review npm package contents."
+      ]
+    },
+    {
+      "name": "aicf-security-redteam",
+      "required_description_terms": ["red-team", "approval bypass", "schema confusion"],
+      "positive": [
+        "Generate red-team tests for approval bypass on a refund prepare capability.",
+        "Add prompt injection and schema confusion tests for a provider-exposed tool.",
+        "Create security cases for cross-tenant access and data exfiltration."
+      ],
+      "negative": [
+        "Author a normal read capability manifest.",
+        "Update the plugin metadata version."
+      ]
+    },
+    {
+      "name": "aicf-release-hygiene",
+      "required_description_terms": ["package contents", "source archives", "clean install"],
+      "positive": [
+        "Check package contents and clean install behavior before release.",
+        "Prepare a safe source archive review for the AICF package.",
+        "Run public release hygiene checks for docs, logs, traces, and generated files."
+      ],
+      "negative": [
+        "Write policy broker reason-code tests.",
+        "Create a new capability manifest."
+      ]
+    },
+    {
+      "name": "aicf-skill-pack-maintenance",
+      "required_description_terms": ["SKILL.md", "trigger descriptions", "plugin metadata"],
+      "positive": [
+        "Add a new SKILL.md with references and trigger descriptions.",
+        "Update the AICF Agent Skills plugin metadata.",
+        "Regenerate the skill index and validate trigger fixtures."
+      ],
+      "negative": [
+        "Promote a capability to production.",
+        "Create a red-team case for a high-risk tool."
+      ]
+    },
+    {
+      "name": "aicf-runtime-integration",
+      "required_description_terms": ["runtime", "context builders", "handler registries"],
+      "positive": [
+        "Wire AICF runtime into this API server with context builders and handlers.",
+        "Connect the capability router and policy broker to real app services.",
+        "Add runtime tests for denied permission, malformed args, and approval required."
+      ],
+      "negative": [
+        "Write only a capability manifest.",
+        "Prepare package contents for release."
+      ]
+    },
+    {
+      "name": "aicf-action-lifecycle",
+      "required_description_terms": ["prepare", "idempotency", "rollback-safe"],
+      "positive": [
+        "Implement prepare, approval, commit, and verify for a side-effecting capability.",
+        "Audit duplicate commit prevention and action state transitions.",
+        "Add idempotency and audit tests for approval-required actions."
+      ],
+      "negative": [
+        "Add a provider conformance export.",
+        "Create a quickstart README."
+      ]
+    },
+    {
+      "name": "aicf-trust-redaction-retention",
+      "required_description_terms": ["trust labels", "provider-boundary", "retention"],
+      "positive": [
+        "Add trust labels and taint rules for retrieved document context.",
+        "Review provider-boundary redaction for sensitive support data.",
+        "Add retention rules for trace and eval artifacts."
+      ],
+      "negative": [
+        "Implement a DynamoDB store.",
+        "Generate a skill index."
+      ]
+    },
+    {
+      "name": "aicf-observability-replay",
+      "required_description_terms": ["tracing", "trace-to-golden", "redacted"],
+      "positive": [
+        "Add AICF trace events for routing, policy, tools, and eval scores.",
+        "Create a replay fixture from sanitized runtime behavior.",
+        "Draft a trace-to-golden eval with review required."
+      ],
+      "negative": [
+        "Wire host auth into the runtime context builder.",
+        "Create a red-team prompt injection case."
+      ]
+    },
+    {
+      "name": "aicf-controls-and-budgets",
+      "required_description_terms": ["kill switches", "circuit breakers", "read-only"],
+      "positive": [
+        "Add a capability kill switch and read-only mode.",
+        "Test budget exceeded behavior in the provider tool loop.",
+        "Audit circuit breakers for provider errors and validation failures."
+      ],
+      "negative": [
+        "Add lifecycle approval records.",
+        "Prepare a source archive review."
+      ]
+    },
+    {
+      "name": "aicf-provider-conformance",
+      "required_description_terms": ["provider", "AICF capabilities", "Semantic Kernel"],
+      "positive": [
+        "Validate tool descriptors across OpenAI, Anthropic, Gemini, MCP, and LangChain.",
+        "Run a provider conformance matrix for routed support capabilities.",
+        "Check schema normalization and tool-call parsing across provider adapters."
+      ],
+      "negative": [
+        "Wire a handler registry into an API server.",
+        "Create public docs for a quickstart."
+      ]
+    },
+    {
+      "name": "aicf-storage-and-aws",
+      "required_description_terms": ["AWS", "DynamoDB", "least-privilege"],
+      "positive": [
+        "Add optional DynamoDB stores for AICF prepared actions and approvals.",
+        "Audit AWS adapter boundaries so root imports stay SDK-free.",
+        "Write fake-client tests for Step Functions approval handoff."
+      ],
+      "negative": [
+        "Run a provider conformance matrix.",
+        "Create an eval case for tool selection."
+      ]
+    },
+    {
+      "name": "aicf-migration",
+      "required_description_terms": ["Migrate", "RAG flows", "safe rollout"],
+      "positive": [
+        "Migrate our existing agent tools into AICF capabilities.",
+        "Inventory legacy function calls and convert them to governed manifests.",
+        "Plan a read-only canary rollout for a legacy RAG flow."
+      ],
+      "negative": [
+        "Build the optional control-plane UI.",
+        "Prepare an npm package dry run."
+      ]
+    },
+    {
+      "name": "aicf-docs-and-examples",
+      "required_description_terms": ["public docs", "quickstarts", "sample apps"],
+      "positive": [
+        "Update the README and quickstart after adding a provider subpath.",
+        "Refresh example app docs so commands and expected output match implementation.",
+        "Add a provider guide with mock-first usage and optional live steps."
+      ],
+      "negative": [
+        "Implement a storage adapter.",
+        "Audit an approval state transition."
+      ]
+    },
+    {
+      "name": "aicf-control-plane-ui",
+      "required_description_terms": ["control-plane", "approvals", "evidence export"],
+      "positive": [
+        "Build the AICF control-plane capability catalogue and approval queue.",
+        "Audit control-plane API responses for safe summaries only.",
+        "Add tests for lifecycle, eval status, controls, and evidence export views."
+      ],
+      "negative": [
+        "Convert a legacy tool into a capability manifest.",
+        "Validate Gemini function declarations."
+      ]
+    }
+  ]
+}

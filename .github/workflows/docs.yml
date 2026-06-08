@@ -1,0 +1,58 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "README.md"
+      - "CODE_OF_CONDUCT.md"
+      - "CONTRIBUTING.md"
+      - "GOVERNANCE.md"
+      - "ROADMAP.md"
+      - "SECURITY.md"
+      - "docs/**"
+      - "examples/**/README.md"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/check-docs.mjs"
+      - "typedoc.json"
+  pull_request:
+    paths:
+      - "README.md"
+      - "CODE_OF_CONDUCT.md"
+      - "CONTRIBUTING.md"
+      - "GOVERNANCE.md"
+      - "ROADMAP.md"
+      - "SECURITY.md"
+      - "docs/**"
+      - "examples/**/README.md"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/check-docs.mjs"
+      - "typedoc.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Documentation build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and check docs
+        run: npm run docs:build

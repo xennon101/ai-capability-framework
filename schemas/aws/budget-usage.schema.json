@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/aws/budget-usage.schema.json",
+  "title": "AICF AWS Budget Usage Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["createdAt", "schemaVersion", "scope", "usage", "usageId"],
+  "properties": {
+    "capabilityId": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "model": { "type": "string" },
+    "providerId": { "type": "string" },
+    "runId": { "type": "string" },
+    "schemaVersion": { "const": "1.0" },
+    "scope": { "type": "object", "additionalProperties": true },
+    "tenantId": { "type": "string" },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "estimatedCost": { "type": "number", "minimum": 0 },
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "providerCalls": { "type": "integer", "minimum": 0 },
+        "retries": { "type": "integer", "minimum": 0 },
+        "runtimeMs": { "type": "integer", "minimum": 0 },
+        "toolCalls": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "usageId": { "type": "string", "minLength": 1 }
+  }
+}

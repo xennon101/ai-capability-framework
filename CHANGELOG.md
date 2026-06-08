@@ -4,6 +4,12 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+- Added the final v1.0 certification gate with `check:public`,
+  `check:certification`, public certification docs, workflow hardening, and
+  release-readiness assertions for v1.0-ready release notes.
+- Added public repository release-readiness hardening with CI, docs, security,
+  and release dry-run workflows plus lint, conformance, governance-gate,
+  package, source archive, and secret-scan checks.
 - Added a first-time developer onboarding pass with a simplified README,
   start-here guide, OpenAI walkthrough, glossary, and clearer eval/runtime
   navigation.
@@ -14,11 +20,13 @@ All notable public changes to AI Capability Framework are documented here.
 - Added the optional `ai-capability-framework/openai` subpath for a bounded
   non-streaming OpenAI Responses loop with caller-provided clients, routed
   read/prepare tools, R2 executor integration, and model-safe tool envelopes.
-- Added optional observability, Langfuse, live eval, and Promptfoo export
-  subpaths with metadata-only tracing defaults and mock-driven tests.
+- Added optional observability, Langfuse, live eval, Promptfoo export, and
+  EvalOps subpaths with metadata-only tracing defaults, tracer adapters,
+  dependency-free Braintrust/OpenAI eval export helpers, and mock-driven tests.
 - Added the optional `ai-capability-framework/aws` subpath for DynamoDB runtime
-  stores, Step Functions approval handoff, EventBridge publishing, and fake AWS
-  test clients.
+  stores, canonical audit ledger stores, controls, control-plane state, budget
+  usage, Step Functions approval handoff, EventBridge/CloudWatch publishing,
+  KMS redaction refs, and fake AWS test clients.
 - Added the optional `ai-capability-framework/mcp-server` subpath and OpenAI
   Agents SDK bridge for executor-backed read/prepare interoperability.
 - Added a public runtime support/billing mock example plus action lifecycle,
@@ -45,11 +53,54 @@ All notable public changes to AI Capability Framework are documented here.
 - Added the optional `ai-capability-framework/providers/conformance` subpath and
   `aicf providers` CLI group for descriptor-only cross-provider conformance
   checks.
+- Added the canonical `ai-capability-framework/conformance` subpath,
+  `aicf conformance` CLI group, conformance schemas, richer F7 reports, and
+  provider target matrix output while preserving provider conformance aliases.
 - Added grouped public provider examples, provider release scripts, and
   provider package-readiness assertions for multi-vendor release review.
 - Added the optional `ai-capability-framework/providers/semantic-kernel`
   subpath for MCP guidance plus OpenAPI/plugin metadata exports for
   Semantic Kernel-compatible hosts.
+- Added the `ai-capability-framework/governance` subpath and `aicf governance`
+  CLI group for lifecycle transition checks, risk compilation, compatibility
+  diffs, and registry impact analysis.
+- Added the governance gate APIs and `aicf gate` CLI command for CI-friendly
+  validation, risk, lifecycle, compatibility, impact, eval coverage,
+  security-pack coverage, configured provider conformance, and public artifact
+  hygiene checks.
+- Added the optional `ai-capability-framework/control-plane` subpath and a
+  credential-free local reference app for reviewing capabilities, governance
+  status, eval/security/conformance coverage, redacted ledgers, approvals,
+  controls, replay metadata, and evidence exports.
+- Added the optional `ai-capability-framework/audit` subpath with schema-valid
+  policy decision, action, approval, and idempotency ledger records plus
+  in-memory reference stores and runtime ledger hooks.
+- Added the optional `ai-capability-framework/security` subpath for trust
+  segments, taint/provenance metadata, provider/trace redaction, and retention
+  policy evaluation.
+- Added the optional `ai-capability-framework/memory` subpath for governed
+  host-owned memory and preference summaries, use-case/scope exposure checks,
+  and conversion to security/runtime context.
+- Added the optional `ai-capability-framework/evidence` subpath and
+  `aicf evidence export` CLI for public-safe JSON/Markdown evidence packs with
+  required disclaimers and explicit coverage gaps.
+- Added the optional `ai-capability-framework/provenance` subpath for
+  public-safe generated-content provenance metadata, strict schemas, adapter
+  hooks, docs, and a synthetic refs-and-hashes support fixture.
+- Added public documentation and developer-experience hardening with root
+  governance/conduct/roadmap docs, grouped docs navigation, numbered examples,
+  TypeDoc tooling, docs checks, and package-readiness assertions.
+- Added the optional `ai-capability-framework/controls` subpath for runtime kill
+  switches, circuit breaker evaluation, per-run budgets, local control CLI
+  commands, controls schemas, docs, and runtime/provider enforcement hooks.
+- Added the optional `ai-capability-framework/replay` subpath for sanitized
+  runtime replay, policy/router/tool-validation simulation, trace-to-golden eval
+  drafting, replay schemas, CLI commands, and a public-safe support replay
+  fixture.
+- Added the optional `ai-capability-framework/security-packs` subpath with
+  built-in capability-aware security test packs, coverage reporting,
+  public-safe generated security cases, Promptfoo red-team config export,
+  schemas, CLI commands, and docs.
 - Kept provider/model calls, production storage, and model-exposed commit out of
   the Core/runtime boundary except for the optional OpenAI subpath.
 

@@ -1,0 +1,26 @@
+schema_version: "1.0"
+project:
+  name: aicf-public-examples
+  environment: production
+providers:
+  enabled:
+    - openai
+    - anthropic
+    - mcp
+  server_url: https://aicf.example.com
+runtime:
+  default_autonomy_tier: A2
+  max_tool_calls_per_run: 8
+gates:
+  production:
+    fail_on_warnings: false
+    require_evals_for:
+      - medium
+      - high
+      - critical
+    require_security_packs_for:
+      - high
+      - critical
+    require_conformance_for_enabled_providers: true
+    block_deprecated_capabilities: true
+    artifact_hygiene: true

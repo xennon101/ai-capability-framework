@@ -31,6 +31,7 @@ export function buildAiSdkTools(
       strict: true
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -39,6 +40,7 @@ export function buildAiSdkTools(
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,
+    providerId: "vercel-ai-sdk",
     registry
   });
 

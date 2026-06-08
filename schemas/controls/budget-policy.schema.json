@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/controls/budget-policy.schema.json",
+  "title": "AICF Budget Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scope"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "scope": { "$ref": "kill-switch.schema.json#/$defs/control_scope" },
+    "mode": { "enum": ["hard", "warn"] },
+    "maxToolCallsPerRun": { "type": "integer", "minimum": 0 },
+    "maxProviderCallsPerRun": { "type": "integer", "minimum": 0 },
+    "maxInputTokensPerRun": { "type": "integer", "minimum": 0 },
+    "maxOutputTokensPerRun": { "type": "integer", "minimum": 0 },
+    "maxEstimatedCostPerRun": { "type": "number", "minimum": 0 },
+    "maxRuntimeMsPerRun": { "type": "integer", "minimum": 0 },
+    "maxRetriesPerRun": { "type": "integer", "minimum": 0 }
+  }
+}

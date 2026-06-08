@@ -81,7 +81,7 @@
       "properties": {
         "prepared_action_id": { "type": "string" },
         "action_state": {
-          "enum": ["none", "prepared", "approval_required", "committed", "denied", "refused"]
+          "enum": ["none", "prepared", "approval_required", "committed", "verified", "denied", "refused"]
         },
         "preview": {},
         "approval_required": { "type": "boolean" }

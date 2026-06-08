@@ -6,6 +6,7 @@ import type {
   EvalCase,
   EvalResultFixture
 } from "./generated/manifest-types.js";
+import type { AicfRuntimeControls } from "./controls/types.js";
 
 export type {
   CapabilityManifest,
@@ -17,17 +18,19 @@ export type {
 
 export type ManifestKind = "capability" | "entity" | "eval";
 
-export type FixtureKind = "adapter_context" | "decision_request" | "eval_result" | "unknown";
+export type FixtureKind = "adapter_context" | "control_plane_state" | "decision_request" | "eval_result" | "generated_content_provenance" | "governance_gate_config" | "governed_memory" | "replay_trace" | "unknown";
 
 export type AicfErrorCode =
   | "duplicate_id"
   | "invalid_context"
   | "invalid_capability_lifecycle"
+  | "invalid_commit_capability_reference"
   | "invalid_fixture"
   | "invalid_eval_result"
   | "invalid_input_schema"
   | "invalid_output_schema"
   | "invalid_read_side_effects"
+  | "invalid_replay_trace"
   | "invalid_risk_tier"
   | "invalid_tool_call"
   | "missing_candidate"
@@ -54,10 +57,12 @@ export type AicfErrorCode =
   | "provider_tool_name_collision"
   | "provider_tool_name_invalid"
   | "provider_tool_result_format_failed"
+  | "replay_provider_live_disabled"
   | "unsupported";
 
 export type AicfWarningCode =
   | "capability_excluded"
+  | "missing_commit_capability_reference"
   | "missing_required_approval_policy"
   | "provider_schema_normalization_warning"
   | "schema_normalization"
@@ -292,6 +297,7 @@ export interface AdapterExcludedCapability {
     | "status_disabled"
     | "status_draft"
     | "status_experimental"
+    | "control_denied"
     | "tool_name_collision"
     | "unsupported_schema";
 }
@@ -309,6 +315,7 @@ export interface OpenAIResponsesToolset {
 
 export interface BuildOpenAIResponsesToolsOptions {
   context: DecisionRequest["context"];
+  controls?: AicfRuntimeControls;
   includeDeprecated?: boolean;
   includeDisabledForTests?: boolean;
   includeDraft?: boolean;
@@ -319,6 +326,7 @@ export interface BuildOpenAIResponsesToolsOptions {
 
 export interface BuildAdapterToolsOptions {
   context: DecisionRequest["context"];
+  controls?: AicfRuntimeControls;
   includeDeprecated?: boolean;
   includeDisabledForTests?: boolean;
   includeDraft?: boolean;

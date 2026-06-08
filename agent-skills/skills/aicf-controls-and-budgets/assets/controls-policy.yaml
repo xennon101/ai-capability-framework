@@ -1,0 +1,14 @@
+schemaVersion: "1.0"
+killSwitches:
+  - id: example-readonly-high-impact
+    mode: read_only
+    scope:
+      riskTier: high
+    reason: "Synthetic read-only control for high-impact actions."
+budgets:
+  - id: example-run-budget
+    scope:
+      provider: openai
+    maxToolCallsPerRun: 8
+    maxProviderCallsPerRun: 8
+    maxRuntimeMsPerRun: 60000

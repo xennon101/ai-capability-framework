@@ -6,7 +6,8 @@ describe("runtime support billing example", () => {
     const output = execFileSync(process.execPath, [
       "examples/runtime-support-billing/run-mock.mjs"
     ], {
-      encoding: "utf8"
+      encoding: "utf8",
+      timeout: 15_000
     });
     const summary = JSON.parse(output) as {
       approvalId: string;
@@ -38,5 +39,5 @@ describe("runtime support billing example", () => {
     expect(summary.auditEventCount).toBeGreaterThanOrEqual(7);
     expect(JSON.stringify(summary.modelSafePrepareEnvelope)).not.toContain("diagnostics");
     expect(JSON.stringify(summary.modelSafePrepareEnvelope)).not.toContain("token");
-  });
+  }, 20_000);
 });

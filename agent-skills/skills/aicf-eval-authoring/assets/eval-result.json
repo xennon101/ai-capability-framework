@@ -1,0 +1,15 @@
+{
+  "eval_id": "support.refund.prepare.requires_approval",
+  "candidate_id": "synthetic-candidate",
+  "selected_capabilities": ["support.refund.prepare_case"],
+  "tool_calls": [
+    {
+      "capability_id": "support.refund.prepare_case",
+      "args": {
+        "ticket_id": "TICKET-100",
+        "amount": 25
+      }
+    }
+  ],
+  "action_state": "approval_required"
+}

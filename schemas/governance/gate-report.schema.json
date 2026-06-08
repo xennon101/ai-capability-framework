@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/governance/gate-report.schema.json",
+  "title": "AICF Governance Gate Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generatedAt",
+    "environment",
+    "manifestRoot",
+    "passed",
+    "exitCode",
+    "summary",
+    "checks",
+    "failures",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "environment": { "type": "string", "minLength": 1 },
+    "manifestRoot": { "type": "string", "minLength": 1 },
+    "configPath": { "type": "string", "minLength": 1 },
+    "passed": { "type": "boolean" },
+    "exitCode": { "enum": [0, 1, 2, 3, 4, 5] },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "failed", "warnings", "skipped"],
+      "properties": {
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "failures": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "status", "summary", "failures", "warnings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["passed", "failed", "warning", "skipped"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "failures": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "details": {}
+      }
+    }
+  }
+}

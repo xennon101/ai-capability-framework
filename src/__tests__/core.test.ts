@@ -1,5 +1,6 @@
 import path from "node:path";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
@@ -168,7 +169,7 @@ describe("AICF CLI", () => {
     const exitCode = await runCli(["validate", "examples"], { stderr, stdout });
 
     expect(exitCode).toBe(0);
-    expect(stdout.value).toContain("Validated 16 manifest(s) and 13 fixture(s).");
+    expect(stdout.value).toContain("Validated 16 manifest(s) and 18 fixture(s).");
     expect(stderr.value).toBe("");
   });
 
@@ -403,10 +404,26 @@ describe("AICF release readiness", () => {
       "mcp-tools",
       "langchain-tools",
       "semantic-kernel-functions",
+      "conformance run",
+      "conformance matrix",
       "providers list",
       "providers conformance",
       "providers export-tools",
       "providers export-semantic-kernel-openapi",
+      "gate",
+      "evidence export",
+      "governance risk",
+      "governance lifecycle",
+      "governance compatibility",
+      "governance impact",
+      "controls list",
+      "controls check",
+      "controls kill-switch create",
+      "replay run",
+      "evals create-from-trace",
+      "security list-packs",
+      "security generate",
+      "security export-promptfoo",
       "eval",
       "eval-live",
       "export promptfoo"
@@ -419,21 +436,34 @@ describe("AICF release readiness", () => {
     const files = packageDryRunFiles();
     const requiredFiles = [
       "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
       "CONTRIBUTING.md",
+      "GOVERNANCE.md",
       "LICENSE",
+      "ROADMAP.md",
       "README.md",
       "SECURITY.md",
       "conformance/valid/capabilities/conformance.note.get.yaml",
       "conformance/invalid/schema/capabilities/conformance.invalid.missing_required.yaml",
       "dist/index.js",
       "dist/cli.js",
+      "dist/audit/index.js",
       "dist/aws/index.js",
+      "dist/conformance/index.js",
+      "dist/control-plane/index.js",
+      "dist/controls/index.js",
+      "dist/evidence/index.js",
+      "dist/evalops/index.js",
       "dist/evals-live/index.js",
+      "dist/governance/index.js",
       "dist/langfuse/index.js",
+      "dist/memory/index.js",
       "dist/mcp-server/index.js",
       "dist/observability/index.js",
       "dist/openai/index.js",
+      "dist/provenance/index.js",
       "dist/promptfoo/index.js",
+      "dist/replay/index.js",
       "dist/providers/ai-sdk/index.js",
       "dist/providers/index.js",
       "dist/providers/anthropic/index.js",
@@ -443,34 +473,93 @@ describe("AICF release readiness", () => {
       "dist/providers/mcp/index.js",
       "dist/providers/semantic-kernel/index.js",
       "dist/runtime/index.js",
+      "dist/security/index.js",
+      "dist/security-packs/index.js",
       "docs/action-lifecycle.md",
       "docs/adapters.md",
       "docs/ai-sdk-runtime.md",
       "docs/api.md",
+      "docs/architecture/current-state.md",
+      "docs/assets/aicf-logo.svg",
+      "docs/assets/aicf-mark.svg",
+      "docs/audit/index.md",
       "docs/anthropic-runtime.md",
+      "docs/aws/cloudwatch-telemetry.md",
+      "docs/aws/dynamodb-single-table.md",
+      "docs/aws/kms-redaction.md",
+      "docs/aws/production-reference.md",
+      "docs/aws/step-functions-approval.md",
       "docs/aws-runtime.md",
+      "docs/controls/index.md",
       "docs/control-plane.md",
       "docs/eval-runner.md",
+      "docs/evidence.md",
       "docs/glossary.md",
+      "docs/index.md",
+      "docs/core/capability-manifests.md",
+      "docs/core/entity-manifests.md",
+      "docs/control-plane/overview.md",
+      "docs/evals/golden-tests.md",
+      "docs/evals/overview.md",
+      "docs/getting-started/concepts.md",
+      "docs/getting-started/installation.md",
+      "docs/getting-started/quickstart.md",
+      "docs/governance/gate.md",
+      "docs/governance/impact-and-compatibility.md",
+      "docs/governance/index.md",
+      "docs/governance/lifecycle.md",
+      "docs/governance/overview.md",
+      "docs/governance/risk-compiler.md",
       "docs/gemini-runtime.md",
       "docs/getting-started.md",
+      "docs/implementation-notes/baseline-gaps.md",
       "docs/langchain-runtime.md",
       "docs/semantic-kernel-runtime.md",
       "docs/host-responsibilities.md",
       "docs/interoperability.md",
       "docs/migration-0.1-to-1.0.md",
       "docs/live-evals.md",
+      "docs/memory.md",
       "docs/mcp-server-runtime.md",
       "docs/observability-runtime.md",
       "docs/openai-walkthrough.md",
       "docs/openai-responses.md",
       "docs/openai-runtime.md",
       "docs/policy-broker.md",
+      "docs/provenance.md",
       "docs/provider-conformance.md",
+      "docs/observability/overview.md",
+      "docs/public-framework/compatibility-policy.md",
+      "docs/public-framework/deprecation-policy.md",
+      "docs/public-framework/release-process.md",
+      "docs/public-framework/security-disclosure.md",
+      "docs/public-framework/v1-certification.md",
+      "docs/providers/anthropic.md",
+      "docs/providers/conformance.md",
+      "docs/providers/gemini.md",
+      "docs/providers/langchain-langgraph.md",
+      "docs/providers/mcp.md",
+      "docs/providers/openai.md",
+      "docs/providers/semantic-kernel.md",
+      "docs/providers/vercel-ai-sdk.md",
       "docs/providers.md",
+      "docs/runtime/action-lifecycle.md",
+      "docs/runtime/policy-broker.md",
+      "docs/runtime/runtime-overview.md",
+      "docs/runtime/tool-result-envelope.md",
+      "docs/evals/replay-and-trace-to-golden.md",
+      "docs/evalops.md",
       "docs/runtime.md",
+      "docs/security/trust-taint-redaction.md",
+      "docs/security/overview.md",
+      "docs/security/security-packs.md",
       "docs/start-here.md",
       "examples/eval-results/public.results.passing.json",
+      "examples/aws/README.md",
+      "examples/control-plane/README.md",
+      "examples/control-plane/fixtures/control-plane.seed.json",
+      "examples/control-plane/public/index.html",
+      "examples/control-plane/server.mjs",
       "examples/providers/ai-sdk-next/README.md",
       "examples/providers/anthropic-claude/README.md",
       "examples/providers/gemini/README.md",
@@ -480,6 +569,18 @@ describe("AICF release readiness", () => {
       "examples/providers/provider-conformance/README.md",
       "examples/providers/semantic-kernel-mcp/README.md",
       "examples/providers/semantic-kernel-openapi/README.md",
+      "examples/01-basic-read-capability/README.md",
+      "examples/02-prepare-approve-commit/README.md",
+      "examples/03-multi-provider-tools/README.md",
+      "examples/04-mcp-server/README.md",
+      "examples/05-langchain-langgraph-bridge/README.md",
+      "examples/06-vercel-ai-sdk-bridge/README.md",
+      "examples/07-policy-broker-custom-auth/README.md",
+      "examples/08-aws-step-functions-approval/README.md",
+      "examples/09-security-packs-promptfoo/README.md",
+      "examples/10-trace-to-golden/README.md",
+      "examples/11-control-plane/README.md",
+      "examples/aicf.config.yaml",
       "examples/runtime-support-billing/README.md",
       "examples/runtime-support-billing/run-mock.mjs",
       "examples/runtime-support-billing/support-billing-runtime.mjs",
@@ -488,12 +589,59 @@ describe("AICF release readiness", () => {
       "examples/scheduling/capabilities/scheduling.invite.prepare.yaml",
       "examples/support/capabilities/support.ticket.get.yaml",
       "examples/support/eval-results/support.results.passing.json",
+      "examples/support/memory/support.agent.preferences.json",
+      "examples/support/provenance/support.refund.summary.provenance.json",
+      "examples/support/replay/support.refund.approval_required.trace.json",
       "schemas/adapter-context.schema.json",
+      "schemas/audit/action-record.schema.json",
+      "schemas/audit/approval-record.schema.json",
+      "schemas/audit/idempotency-record.schema.json",
+      "schemas/audit/policy-decision-record.schema.json",
+      "schemas/aws/approval-task.schema.json",
+      "schemas/aws/budget-usage.schema.json",
+      "schemas/aws/dynamodb-item.schema.json",
+      "schemas/aws/telemetry-event.schema.json",
       "schemas/capability-manifest.schema.json",
+      "schemas/conformance/conformance-case.schema.json",
+      "schemas/conformance/conformance-report.schema.json",
+      "schemas/conformance/provider-target-matrix.schema.json",
+      "schemas/control-plane/state.schema.json",
+      "schemas/controls/budget-policy.schema.json",
+      "schemas/controls/circuit-breaker-policy.schema.json",
+      "schemas/controls/control-decision.schema.json",
+      "schemas/controls/kill-switch.schema.json",
       "schemas/decision-request.schema.json",
       "schemas/entity-manifest.schema.json",
       "schemas/eval-case.schema.json",
+      "schemas/evalops/braintrust-dataset.schema.json",
+      "schemas/evalops/openai-eval-dataset.schema.json",
+      "schemas/evidence/evidence-export-input.schema.json",
+      "schemas/evidence/evidence-pack.schema.json",
       "schemas/eval-result.schema.json",
+      "schemas/governance/compatibility-diff.schema.json",
+      "schemas/governance/gate-config.schema.json",
+      "schemas/governance/gate-report.schema.json",
+      "schemas/governance/impact-report.schema.json",
+      "schemas/governance/lifecycle-transition.schema.json",
+      "schemas/governance/risk-compilation-result.schema.json",
+      "schemas/memory/governed-memory-fixture.schema.json",
+      "schemas/memory/governed-memory-record.schema.json",
+      "schemas/provenance/generated-content-provenance.schema.json",
+      "schemas/provenance/provenance-adapter-hook-result.schema.json",
+      "schemas/replay/replay-result.schema.json",
+      "schemas/replay/replay-trace.schema.json",
+      "schemas/replay/trace-to-golden-options.schema.json",
+      "schemas/security/context-segment.schema.json",
+      "schemas/security/redaction-policy.schema.json",
+      "schemas/security/retention-policy.schema.json",
+      "schemas/security/source-ref.schema.json",
+      "schemas/security-packs/coverage-report.schema.json",
+      "schemas/security-packs/promptfoo-red-team-config.schema.json",
+      "schemas/security-packs/security-case-suite.schema.json",
+      "schemas/security-packs/security-pack.schema.json",
+      "security-packs/approval_bypass.yaml",
+      "security-packs/prompt_injection_direct.yaml",
+      "security-packs/unsafe_commit_attempt.yaml",
       "schemas/tool-result-envelope.schema.json"
     ];
 
@@ -519,8 +667,31 @@ describe("AICF release readiness", () => {
 
     expect(packageJson.scripts["check:runtime"]).toContain("src/__tests__/runtime");
     expect(packageJson.scripts["check:runtime"]).toContain("src/__tests__/examples");
+    expect(packageJson.scripts["typecheck"]).toBe("tsc -p tsconfig.json --noEmit");
+    expect(packageJson.scripts["archive:source"]).toBe("node scripts/create-source-archive.mjs");
+    expect(packageJson.scripts["docs:api"]).toBe("typedoc --options typedoc.json");
+    expect(packageJson.scripts["docs:build"]).toContain("npm run docs:api");
+    expect(packageJson.scripts["docs:build"]).toContain("npm run check:docs");
+    expect(packageJson.scripts["check:docs"]).toBe("node scripts/check-docs.mjs");
+    expect(packageJson.scripts["check:public"]).toContain("npm run check:package-public");
+    expect(packageJson.scripts["check:public"]).toContain("npm run check:workspace-public");
+    expect(packageJson.scripts["check:public"]).toContain("npm run check:secrets");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:generated");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:public");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:runtime");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:optional");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:providers:mock");
+    expect(packageJson.scripts["check:certification"]).toContain("node scripts/check-certification.mjs");
+    expect(packageJson.scripts["check:git-clean"]).toBe("node scripts/check-git-clean.mjs");
+    expect(packageJson.scripts["check:source-archive"]).toBe("node scripts/check-source-archive.mjs");
+    expect(packageJson.scripts["check:release-source"]).toContain("npm run check:workspace-public");
+    expect(packageJson.scripts["check:release-source"]).toContain("npm run check:git-clean");
+    expect(packageJson.scripts["check:release-source"]).toContain("npm run check:source-archive");
     expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/aws");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/evalops");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/langfuse");
     expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/openai-agents");
+    expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/promptfoo");
     expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/anthropic");
     expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/gemini");
     expect(packageJson.scripts["check:optional"]).toContain("src/__tests__/providers/ai-sdk");
@@ -536,6 +707,7 @@ describe("AICF release readiness", () => {
     expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:semantic-kernel");
     expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:mcp-provider");
     expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:providers:conformance");
+    expect(packageJson.scripts["check:providers:mock"]).toContain("npm run test:conformance");
     expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:anthropic:live");
     expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:gemini:live");
     expect(packageJson.scripts["check:providers:live"]).toContain("npm run test:ai-sdk:live");
@@ -543,8 +715,22 @@ describe("AICF release readiness", () => {
     expect(packageJson.scripts["check:release:providers"]).toContain("npm run check:providers:mock");
     expect(packageJson.scripts["check:release:providers"]).toContain("npm run check:release-install");
     expect(packageJson.scripts["test:anthropic:mock"]).toContain("src/__tests__/providers/anthropic");
+    expect(packageJson.scripts["test:aws"]).toContain("src/__tests__/aws");
+    expect(packageJson.scripts["test:aws:live"]).toContain("src/__tests__/aws-live");
+    expect(packageJson.scripts["test:audit"]).toContain("src/__tests__/audit");
+    expect(packageJson.scripts["test:controls"]).toContain("src/__tests__/controls");
+    expect(packageJson.scripts["test:control-plane"]).toContain("src/__tests__/control-plane");
+    expect(packageJson.scripts["test:conformance"]).toContain("src/__tests__/conformance");
+    expect(packageJson.scripts["test:evalops"]).toContain("src/__tests__/evalops");
+    expect(packageJson.scripts["test:evidence"]).toContain("src/__tests__/evidence");
+    expect(packageJson.scripts["test:memory"]).toContain("src/__tests__/memory");
+    expect(packageJson.scripts["test:provenance"]).toContain("src/__tests__/provenance");
     expect(packageJson.scripts["test:gemini:mock"]).toContain("src/__tests__/providers/gemini");
+    expect(packageJson.scripts["test:governance"]).toContain("src/__tests__/governance");
     expect(packageJson.scripts["test:ai-sdk:mock"]).toContain("src/__tests__/providers/ai-sdk");
+    expect(packageJson.scripts["test:replay"]).toContain("src/__tests__/replay");
+    expect(packageJson.scripts["test:security"]).toContain("src/__tests__/security");
+    expect(packageJson.scripts["test:security-packs"]).toContain("src/__tests__/security-packs");
     expect(packageJson.scripts["test:langchain:mock"]).toContain("src/__tests__/providers/langchain");
     expect(packageJson.scripts["test:mcp-provider"]).toContain("src/__tests__/providers/mcp");
     expect(packageJson.scripts["test:mcp-server"]).toContain("src/__tests__/mcp-server");
@@ -553,11 +739,62 @@ describe("AICF release readiness", () => {
     expect(packageJson.scripts["check:release"]).toBe("npm run check && npm run check:optional && npm pack --dry-run --json");
   });
 
+  it("documents the F0 baseline reconciliation state", async () => {
+    const currentState = await readFile("docs/architecture/current-state.md", "utf8");
+    const baselineGaps = await readFile("docs/implementation-notes/baseline-gaps.md", "utf8");
+    const normalizedCurrentState = currentState.replace(/\s+/g, " ");
+    const normalizedBaselineGaps = baselineGaps.replace(/\s+/g, " ");
+
+    expect(normalizedCurrentState).toContain("package root is the provider-neutral Core API");
+    expect(normalizedCurrentState).toContain("runtime subpath");
+    expect(normalizedCurrentState).toContain("provider-specific APIs live behind optional subpaths");
+    expect(normalizedCurrentState).toContain("public hygiene");
+    expect(normalizedBaselineGaps).toContain("No unresolved F0 baseline gaps remain");
+    expect(normalizedBaselineGaps).toContain("npm run typecheck");
+    expect(normalizedBaselineGaps).toContain("docs/architecture/current-state.md");
+  });
+
+  it("source archive export-ignore rules cover private, generated, and local artifacts", async () => {
+    const attributes = await readFile(".gitattributes", "utf8");
+    for (const rule of [
+      "_private/ export-ignore",
+      ".aicf/ export-ignore",
+      "node_modules/ export-ignore",
+      "dist/ export-ignore",
+      "dist-source/ export-ignore",
+      "traces/ export-ignore",
+      "*.tgz export-ignore",
+      "*.zip export-ignore",
+      "*.docx export-ignore",
+      "*.pdf export-ignore",
+      ".env export-ignore",
+      ".env.* export-ignore"
+    ]) {
+      expect(attributes).toContain(rule);
+    }
+  });
+
+  it("git cleanliness release check skips safely when .git is absent", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "aicf-no-git-"));
+    let output = "";
+    try {
+      output = execFileSync(process.execPath, [path.resolve("scripts/check-git-clean.mjs")], {
+        cwd: directory,
+        encoding: "utf8"
+      });
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+
+    expect(output).toContain("Git clean check skipped");
+  });
+
   it("public docs describe the provider-neutral release boundary", async () => {
     const readme = await readFile("README.md", "utf8");
     const startHere = await readFile("docs/start-here.md", "utf8");
     const openaiWalkthrough = await readFile("docs/openai-walkthrough.md", "utf8");
     const evalRunner = await readFile("docs/eval-runner.md", "utf8");
+    const governanceGate = await readFile("docs/governance/gate.md", "utf8");
     const providers = await readFile("docs/providers.md", "utf8");
     const release = await readFile("docs/release.md", "utf8");
 
@@ -577,21 +814,15 @@ describe("AICF release readiness", () => {
     expect(normalizedOpenaiWalkthrough).toContain("The model does not call `support.refund.commit_case`");
     expect(normalizedOpenaiWalkthrough).toContain("host applications remain responsible for provider credentials, model selection, auth, side effects, approvals, storage, and audit");
     expect(normalizedEvalRunner).toContain("without calling models");
+    expect(governanceGate).toContain("does not call models");
+    expect(governanceGate).toContain("does not call live integrations");
     expect(providers).toContain("Provider SDK validation does not replace AICF validation");
     expect(normalizedRelease).toContain("root and runtime imports remain provider-SDK-free");
     expect(normalizedRelease).toContain("commit capabilities are not exported by default");
   });
 
   it("public docs and examples do not include private or local-only path markers", () => {
-    const publicFiles = execFileSync(
-      "git",
-      ["ls-files", "--cached", "--others", "--exclude-standard", "README.md", "docs", "examples"],
-      {
-        encoding: "utf8"
-      }
-    )
-      .split(/\r?\n/)
-      .filter(Boolean);
+    const publicFiles = listPublicDocsAndExamples();
 
     const forbiddenPathPatterns = [
       /(^|\/)_private(\/|$)/,
@@ -1529,7 +1760,7 @@ describe("AICF core repair hardening", () => {
     const fixtureValidation = validatePublicFixtures(loaded.fixtures);
 
     expect(loaded.errors).toEqual([]);
-    expect(loaded.fixtures).toHaveLength(13);
+    expect(loaded.fixtures).toHaveLength(18);
     expect(fixtureValidation.errors).toEqual([]);
     expect(fixtureValidation.valid).toBe(true);
   });
@@ -1756,6 +1987,8 @@ describe("AICF core repair hardening", () => {
     const registry = await loadValidRegistry();
     const baseCapability = registry.capabilityById.get("support.ticket.get");
     if (!baseCapability) throw new Error("Expected support.ticket.get.");
+    const prepareCapability = registry.capabilityById.get("support.refund.prepare_case");
+    if (!prepareCapability) throw new Error("Expected support.refund.prepare_case.");
 
     const invalidSchema = loadedCapability("examples/invalid/capabilities/schema.yaml", {
       ...cloneManifest(baseCapability.manifest),
@@ -1771,10 +2004,27 @@ describe("AICF core repair hardening", () => {
         writes_data: true
       }
     });
-    const validation = validateManifests([invalidSchema, invalidInvariant]);
+    const missingCommitReference = loadedCapability("examples/invalid/capabilities/missing-commit-link.yaml", {
+      ...cloneManifest(prepareCapability.manifest),
+      id: "support.refund.prepare_missing_commit_link",
+      lifecycle: {
+        ...cloneManifest(prepareCapability.manifest.lifecycle),
+        commit_capability_id: "support.refund.missing_commit"
+      }
+    });
+    const nonCommitReference = loadedCapability("examples/invalid/capabilities/non-commit-link.yaml", {
+      ...cloneManifest(prepareCapability.manifest),
+      id: "support.refund.prepare_non_commit_link",
+      lifecycle: {
+        ...cloneManifest(prepareCapability.manifest.lifecycle),
+        commit_capability_id: "support.ticket.get"
+      }
+    });
+    const validation = validateManifests([invalidSchema, invalidInvariant, missingCommitReference, nonCommitReference, loadedCapability(baseCapability.path, cloneManifest(baseCapability.manifest))]);
 
     expect(validation.errors).toContainEqual(expect.objectContaining({ code: "invalid_input_schema" }));
     expect(validation.errors).toContainEqual(expect.objectContaining({ code: "invalid_read_side_effects" }));
+    expect(validation.errors.filter((error) => error.code === "invalid_commit_capability_reference")).toHaveLength(2);
   });
 
   it("scores action state, duplicate candidates, unknown evals, exact args, and forbidden calls", async () => {
@@ -2302,6 +2552,62 @@ function packageDryRunFiles(): string[] {
     files: Array<{ path: string }>;
   }>;
   return packResult[0].files.map((file) => file.path.replaceAll("\\", "/")).sort();
+}
+
+function listPublicDocsAndExamples(): string[] {
+  if (existsSync(".git")) {
+    try {
+      return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "README.md", "docs", "examples"], {
+        encoding: "utf8"
+      })
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((file) => file.replaceAll("\\", "/"))
+        .sort();
+    } catch {
+      // Fall through to filesystem traversal for source archives without usable Git.
+    }
+  }
+
+  const files: string[] = [];
+  for (const root of ["README.md", "docs", "examples"]) {
+    collectPublicFiles(root, files);
+  }
+  return files.sort();
+}
+
+function collectPublicFiles(filePath: string, files: string[]): void {
+  if (!existsSync(filePath) || shouldSkipPublicWalkPath(filePath)) {
+    return;
+  }
+
+  const stat = statSync(filePath);
+  if (stat.isFile()) {
+    files.push(filePath.replaceAll("\\", "/"));
+    return;
+  }
+
+  if (stat.isDirectory()) {
+    for (const child of readdirSync(filePath)) {
+      collectPublicFiles(path.join(filePath, child), files);
+    }
+  }
+}
+
+function shouldSkipPublicWalkPath(filePath: string): boolean {
+  const segments = filePath.replaceAll("\\", "/").split("/");
+  const skipped = new Set([
+    ".cache",
+    "_private",
+    "coverage",
+    "dist",
+    "local",
+    "logs",
+    "node_modules",
+    "private",
+    "traces"
+  ]);
+  return segments.some((segment) => skipped.has(segment));
 }
 
 function loadedCapability(filePath: string, manifest: CapabilityManifest): LoadedCapabilityManifest {

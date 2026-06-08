@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/memory/governed-memory-record.schema.json",
+  "title": "AICF Governed Memory Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "allowedUseCases",
+    "confidence",
+    "contentSummary",
+    "createdAt",
+    "disallowedUseCases",
+    "id",
+    "purpose",
+    "scope",
+    "sensitivity",
+    "sourceRef",
+    "subjectRef"
+  ],
+  "properties": {
+    "accountRef": { "$ref": "#/$defs/redacted_ref" },
+    "allowedUseCases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "consentBasis": { "type": "string", "minLength": 1 },
+    "contentSummary": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string" },
+    "disallowedUseCases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "expiresAt": { "type": "string" },
+    "id": { "type": "string", "minLength": 1 },
+    "lastConfirmedAt": { "type": "string" },
+    "purpose": { "type": "string", "minLength": 1 },
+    "retentionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scope": {
+      "enum": ["user", "account", "tenant", "workflow", "session"]
+    },
+    "sensitivity": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/data_classification" },
+      "uniqueItems": true
+    },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "sourceRef": { "$ref": "#/$defs/source_ref" },
+    "subjectRef": { "$ref": "#/$defs/subject_ref" },
+    "tenantRef": { "$ref": "#/$defs/redacted_ref" },
+    "workflowId": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "data_classification": {
+      "enum": [
+        "public",
+        "internal",
+        "customer_pii",
+        "employee_pii",
+        "payment_metadata",
+        "financial",
+        "health",
+        "legal",
+        "security_sensitive",
+        "credential_material"
+      ]
+    },
+    "redacted_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refHash"],
+      "properties": {
+        "refHash": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "sourceType", "trust"],
+      "properties": {
+        "contentHash": { "type": "string" },
+        "freshness": { "enum": ["fresh", "stale", "unknown"] },
+        "retrievedAt": { "type": "string" },
+        "sourceId": { "type": "string", "minLength": 1 },
+        "sourceType": {
+          "enum": [
+            "user_message",
+            "uploaded_file",
+            "retrieved_document",
+            "app_record",
+            "tool_result",
+            "external_api",
+            "policy",
+            "manual_review",
+            "model_output"
+          ]
+        },
+        "trust": {
+          "enum": [
+            "system_instruction",
+            "developer_instruction",
+            "app_policy",
+            "app_data",
+            "tool_result",
+            "retrieved_document",
+            "user_input",
+            "model_output",
+            "external_api"
+          ]
+        },
+        "uri": { "type": "string" }
+      }
+    },
+    "subject_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refHash"],
+      "properties": {
+        "actorType": { "type": "string" },
+        "refHash": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

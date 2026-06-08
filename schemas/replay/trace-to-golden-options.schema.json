@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/replay/trace-to-golden-options.schema.json",
+  "title": "AICF Trace To Golden Options",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suiteId"],
+  "properties": {
+    "suiteId": { "type": "string", "minLength": 1 },
+    "evalId": { "type": "string", "minLength": 1 },
+    "capabilityUnderTest": { "type": "string", "minLength": 1 },
+    "includeRawContent": { "type": "boolean" },
+    "requireReview": { "type": "boolean" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

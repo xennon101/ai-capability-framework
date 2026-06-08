@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/replay/replay-trace.schema.json",
+  "title": "AICF Replay Trace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "traceId",
+    "runId",
+    "createdAt",
+    "capabilitySlice",
+    "capabilityVersions",
+    "context",
+    "toolCalls",
+    "toolResults",
+    "policyDecisions",
+    "actions",
+    "redaction"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "traceId": { "type": "string", "minLength": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "runtimeVersion": { "type": "string" },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "model": { "type": "string" },
+        "promptTemplateVersion": { "type": "string" }
+      }
+    },
+    "capabilitySlice": { "$ref": "#/$defs/capabilitySlice" },
+    "capabilityVersions": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "context": { "$ref": "#/$defs/redactedContext" },
+    "toolCalls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/toolCall" }
+    },
+    "toolResults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/toolResult" }
+    },
+    "policyDecisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/policyDecision" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    },
+    "approvals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/approval" }
+    },
+    "finalResponse": { "$ref": "#/$defs/finalResponse" },
+    "redaction": { "$ref": "#/$defs/redactionSummary" },
+    "extensions": { "type": "object" }
+  },
+  "$defs": {
+    "json": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/json" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/json" }
+        }
+      ]
+    },
+    "capabilitySlice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityIds"],
+      "properties": {
+        "capabilityIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "excludedCapabilityIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "hash": { "type": "string" },
+        "includeRestricted": { "type": "boolean" },
+        "maxCapabilities": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "redactedContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contextHash", "decisionContext"],
+      "properties": {
+        "contextHash": { "type": "string", "minLength": 1 },
+        "userInputSummary": { "type": "string" },
+        "decisionContext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["permissions", "autonomyTier"],
+          "properties": {
+            "permissions": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "autonomyTier": { "enum": ["A0", "A1", "A2", "A3", "A4", "A5"] },
+            "allowedRiskTiers": {
+              "type": "array",
+              "items": { "enum": ["none", "low", "medium", "high", "critical"] }
+            },
+            "riskCeiling": { "enum": ["none", "low", "medium", "high", "critical"] },
+            "tenantId": { "type": "string" },
+            "userId": { "type": "string" }
+          }
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "boolean" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["value"],
+                "properties": {
+                  "value": { "type": "boolean" },
+                  "reason": { "type": "string" }
+                }
+              }
+            ]
+          }
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sourceId", "sourceType", "trust"],
+            "properties": {
+              "sourceId": { "type": "string" },
+              "sourceType": { "type": "string" },
+              "trust": { "type": "string" },
+              "contentHash": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "toolCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "operation", "args", "argsHash"],
+      "properties": {
+        "callId": { "type": "string" },
+        "provider": { "type": "string" },
+        "providerToolName": { "type": "string" },
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "operation": { "enum": ["read", "prepare", "commit"] },
+        "args": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/json" }
+        },
+        "argsHash": { "type": "string", "minLength": 1 }
+      }
+    },
+    "toolResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "status", "resultHash"],
+      "properties": {
+        "callId": { "type": "string" },
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["ok", "unavailable", "denied", "approval_required", "error", "verified"]
+        },
+        "actionState": { "type": "string" },
+        "policyDecision": { "enum": ["allowed", "approval_required", "denied"] },
+        "resultHash": { "type": "string", "minLength": 1 },
+        "modelSafeEnvelope": { "$ref": "#/$defs/json" }
+      }
+    },
+    "policyDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "operation", "decision"],
+      "properties": {
+        "decisionId": { "type": "string" },
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "operation": { "enum": ["select", "read", "prepare", "approve", "commit"] },
+        "decision": { "enum": ["allowed", "approval_required", "denied"] },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "ruleId": { "type": "string" },
+              "severity": { "type": "string" },
+              "source": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actionId", "capabilityId", "actionState"],
+      "properties": {
+        "actionId": { "type": "string", "minLength": 1 },
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "preparedActionId": { "type": "string" },
+        "actionState": {
+          "enum": [
+            "proposed",
+            "prepared",
+            "approval_required",
+            "approved",
+            "rejected",
+            "committing",
+            "committed",
+            "failed",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "resultHash": { "type": "string" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalRecordId", "preparedActionId", "capabilityId", "status"],
+      "properties": {
+        "approvalRecordId": { "type": "string" },
+        "preparedActionId": { "type": "string" },
+        "capabilityId": { "type": "string" },
+        "status": { "enum": ["pending", "approved", "rejected", "expired", "cancelled"] },
+        "requiredReasonCodes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "finalResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["textHash"],
+      "properties": {
+        "text": { "type": "string" },
+        "textHash": { "type": "string", "minLength": 1 },
+        "redacted": { "type": "boolean" },
+        "placeholders": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "redactionSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fieldsRedacted", "hashAlgorithm", "mode"],
+      "properties": {
+        "fieldsRedacted": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hashAlgorithm": { "const": "sha256" },
+        "mode": { "enum": ["redacted", "unsafe_unredacted"] }
+      }
+    }
+  }
+}

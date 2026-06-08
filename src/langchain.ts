@@ -38,6 +38,7 @@ export function buildLangChainToolDescriptors(
       schema: normalizedInputSchema
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -46,6 +47,7 @@ export function buildLangChainToolDescriptors(
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,
+    providerId: "langchain",
     registry
   });
 }

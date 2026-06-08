@@ -86,8 +86,11 @@ export function toOpenTelemetryAttributes(event: AicfRuntimeTraceEvent): Record<
     attributes["aicf.action.state"] = actionState;
   }
 
+  const provider = stringAttribute(event.attributes.provider) ?? stringAttribute(event.attributes.providerName);
   if (event.type.startsWith("model.call")) {
-    attributes["gen_ai.provider.name"] = "openai";
+    if (provider) {
+      attributes["gen_ai.provider.name"] = provider;
+    }
     attributes["gen_ai.operation.name"] = "chat";
     attributes["gen_ai.request.stream"] = false;
   }

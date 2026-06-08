@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "contentId": "support.refund.summary.example",
+  "contentType": "document",
+  "generatedBy": "human_approved_model",
+  "providerRefs": [
+    {
+      "providerId": "openai",
+      "runId": "run_support_refund_example",
+      "responseId": "resp_support_refund_example",
+      "traceId": "trace_support_refund_example"
+    }
+  ],
+  "modelRefs": [
+    "example-support-model"
+  ],
+  "capabilityRefs": [
+    {
+      "capabilityId": "support.ticket.get",
+      "operation": "read",
+      "version": "0.1.0"
+    },
+    {
+      "capabilityId": "support.refund.prepare_case",
+      "operation": "prepare",
+      "version": "0.1.0"
+    },
+    {
+      "capabilityId": "support.refund.commit_case",
+      "operation": "commit",
+      "version": "0.1.0"
+    }
+  ],
+  "sourceRefs": [
+    {
+      "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "freshness": "fresh",
+      "retrievedAt": "2026-06-05T00:00:00.000Z",
+      "sourceId": "support.ticket.synthetic.ref",
+      "sourceType": "app_record",
+      "trust": "app_data"
+    },
+    {
+      "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "freshness": "fresh",
+      "retrievedAt": "2026-06-05T00:00:00.000Z",
+      "sourceId": "support.refund.preview.synthetic.ref",
+      "sourceType": "tool_result",
+      "trust": "tool_result"
+    }
+  ],
+  "approvalRefs": [
+    "approval.support.refund.synthetic"
+  ],
+  "traceRef": {
+    "provider": "openai",
+    "traceId": "trace_support_refund_example"
+  },
+  "createdAt": "2026-06-05T00:00:00.000Z"
+}

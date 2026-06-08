@@ -31,6 +31,7 @@ export function buildGeminiFunctionDeclarations(
       parameters: normalizedInputSchema
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -39,6 +40,7 @@ export function buildGeminiFunctionDeclarations(
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxFunctionNameLength,
     namePrefix: options.namePrefix,
+    providerId: "gemini",
     registry
   });
 

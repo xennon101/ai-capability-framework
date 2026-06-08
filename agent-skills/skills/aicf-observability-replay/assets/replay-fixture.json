@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "traceId": "trace_example_001",
+  "mode": "deterministic_mock",
+  "selectedCapabilities": ["support.ticket.get"],
+  "toolCalls": [
+    {
+      "callId": "call_example_001",
+      "capabilityId": "support.ticket.get",
+      "argsHash": "hash_example_args"
+    }
+  ],
+  "toolResults": [
+    {
+      "callId": "call_example_001",
+      "status": "ok",
+      "resultHash": "hash_example_result"
+    }
+  ],
+  "redactionSummary": {
+    "rawContentIncluded": false
+  }
+}

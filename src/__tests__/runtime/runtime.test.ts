@@ -29,9 +29,12 @@ import {
   validateRuntimeContext,
   type AicfCapabilityHandler,
   type AicfAuthPlatformAdapter,
+  type AicfCommittedAction,
   type AicfRuntimeContext,
   type AicfRuntimeUserInput
 } from "../../runtime/index.js";
+import { DefaultAuditLedger } from "../../audit/index.js";
+import type { AicfRuntimeLedgerRecorder, DefaultAuditLedgerOptions } from "../../audit/index.js";
 
 const supportPermissions = ["ticket.read", "refund.case.create"];
 const supportUserInput: AicfRuntimeUserInput = {
@@ -355,7 +358,7 @@ describe("runtime policy broker", () => {
         allowMoneyMovement: true,
         allowSideEffects: true,
         autonomyTier: "A0",
-        maxRiskTier: "high",
+        maxRiskTier: "critical",
         permissions: ["refund.case.commit"]
       })
     });
@@ -375,7 +378,7 @@ describe("runtime policy broker", () => {
         allowMoneyMovement: true,
         allowSideEffects: true,
         autonomyTier: "A0",
-        maxRiskTier: "high",
+        maxRiskTier: "critical",
         permissions: ["refund.case.commit"]
       })
     });
@@ -494,6 +497,41 @@ describe("runtime tool envelopes", () => {
 });
 
 describe("runtime handler registry and execution lifecycle", () => {
+  it("scopes in-memory idempotency reservations by scope and key", async () => {
+    const store = new InMemoryIdempotencyStore();
+    const first = await store.reserve({
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      key: "same-key",
+      scope: "tenant:a|prepared:one"
+    });
+    const sameScopeDuplicate = await store.reserve({
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      key: "same-key",
+      scope: "tenant:a|prepared:one"
+    });
+
+    await store.complete({
+      key: "same-key",
+      result: { committedActionId: "commit_a" },
+      scope: "tenant:a|prepared:one"
+    });
+    const sameScopeCompleted = await store.reserve({
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      key: "same-key",
+      scope: "tenant:a|prepared:one"
+    });
+    const differentScope = await store.reserve({
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      key: "same-key",
+      scope: "tenant:b|prepared:two"
+    });
+
+    expect(first).toEqual({ reserved: true });
+    expect(sameScopeDuplicate).toEqual({ existing: undefined, reserved: false });
+    expect(sameScopeCompleted).toEqual({ existing: { committedActionId: "commit_a" }, reserved: false });
+    expect(differentScope).toEqual({ reserved: true });
+  });
+
   it("registers, retrieves, lists, and validates handlers against a manifest registry", async () => {
     const registry = await loadExampleRegistry();
     const handlers = new AicfHandlerRegistry({ registry });
@@ -536,8 +574,50 @@ describe("runtime handler registry and execution lifecycle", () => {
     expect(prepare.action?.preparedActionId).toEqual(expect.any(String));
     expect(await harness.preparedActionStore.get(prepare.action?.preparedActionId ?? "")).toMatchObject({
       capabilityId: "support.refund.prepare_case",
+      commitCapabilityId: "support.refund.commit_case",
       state: "prepared"
     });
+  });
+
+  it("records read and prepare ledger evidence when configured", async () => {
+    const ledger = new DefaultAuditLedger();
+    const harness = await createRuntimeHarness({ ledger });
+    const read = await harness.executor.execute({
+      args: { ticket_id: "TCK-100" },
+      builtContext: harness.builtContext,
+      capabilityId: "support.ticket.get",
+      operation: "read",
+      runtimeContext: harness.runtimeContext,
+      source: "model_tool_call"
+    });
+    const prepare = await harness.executor.execute({
+      args: {
+        ...refundPrepareArgs(),
+        requested_amount: 750
+      },
+      builtContext: harness.builtContext,
+      capabilityId: "support.refund.prepare_case",
+      operation: "prepare",
+      runtimeContext: harness.runtimeContext,
+      source: "model_tool_call"
+    });
+    const decisions = await ledger.policyDecisionStore.listDecisions();
+    const actions = await ledger.actionStore.listActions();
+    const approvals = await ledger.approvalStore.listApprovals();
+
+    expect(read.status).toBe("success");
+    expect(prepare.status).toBe("approval_required");
+    expect(decisions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityId: "support.ticket.get", operation: "read" }),
+      expect.objectContaining({ capabilityId: "support.refund.prepare_case", operation: "prepare" })
+    ]));
+    expect(actions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ actionState: "proposed", capabilityId: "support.ticket.get" }),
+      expect.objectContaining({ actionState: "approval_required", capabilityId: "support.refund.prepare_case" })
+    ]));
+    expect(approvals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityId: "support.refund.prepare_case", status: "pending" })
+    ]));
   });
 
   it("creates approval-required prepared actions and denies commit without approval", async () => {
@@ -608,6 +688,107 @@ describe("runtime handler registry and execution lifecycle", () => {
     });
   });
 
+  it("updates ledger approval, action, and idempotency records across commit", async () => {
+    const ledger = new DefaultAuditLedger();
+    const harness = await createRuntimeHarness({ ledger });
+    const prepare = await harness.executor.execute({
+      args: {
+        ...refundPrepareArgs(),
+        requested_amount: 750
+      },
+      builtContext: harness.builtContext,
+      capabilityId: "support.refund.prepare_case",
+      operation: "prepare",
+      runtimeContext: harness.runtimeContext,
+      source: "host_call"
+    });
+    const preparedActionId = prepare.action?.preparedActionId ?? "";
+    const approval = await harness.lifecycle.recordApproval({
+      approved: true,
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const commit = await harness.lifecycle.commit({
+      approvalId: approval.approvalId,
+      commitCapabilityId: "support.refund.commit_case",
+      idempotencyKey: "refund:TCK-100:ledger",
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const actions = await ledger.actionStore.listActions({ preparedActionId });
+    const approvals = await ledger.approvalStore.listApprovals({ preparedActionId });
+    const idempotencyRecords = await ledger.idempotencyStore.listIdempotencyRecords();
+
+    expect(commit.status).toBe("committed");
+    expect(actions).toEqual([expect.objectContaining({
+      actionState: "committed",
+      capabilityId: "support.refund.prepare_case",
+      resultHash: expect.stringMatching(/^sha256:/)
+    })]);
+    expect(approvals).toContainEqual(expect.objectContaining({
+      status: "approved"
+    }));
+    expect(idempotencyRecords).toContainEqual(expect.objectContaining({
+      resultRef: expect.objectContaining({ resultHash: expect.stringMatching(/^sha256:/) }),
+      status: "completed"
+    }));
+  });
+
+  it("denies commit through an unrelated or undeclared commit capability", async () => {
+    const harness = await createRuntimeHarness();
+    const prepare = await harness.executor.execute({
+      args: {
+        ...refundPrepareArgs(),
+        requested_amount: 750
+      },
+      builtContext: harness.builtContext,
+      capabilityId: "support.refund.prepare_case",
+      operation: "prepare",
+      runtimeContext: harness.runtimeContext,
+      source: "host_call"
+    });
+    const preparedActionId = prepare.action?.preparedActionId ?? "";
+    const approval = await harness.lifecycle.recordApproval({
+      approved: true,
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const unrelatedCommit = await harness.lifecycle.commit({
+      approvalId: approval.approvalId,
+      commitCapabilityId: "scheduling.invite.send",
+      idempotencyKey: "refund:TCK-100:mismatch",
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const originalPreparedAction = await harness.preparedActionStore.get(preparedActionId);
+    if (!originalPreparedAction) throw new Error("Expected prepared action.");
+    await harness.preparedActionStore.create({
+      ...originalPreparedAction,
+      commitCapabilityId: undefined,
+      preparedActionId: "prepared_unlinked",
+      state: "approved",
+      updatedAt: "2026-06-04T00:00:00.000Z"
+    });
+    await harness.approvalStore.create({
+      ...approval,
+      approvalId: "approval_unlinked",
+      preparedActionId: "prepared_unlinked"
+    });
+    const unlinkedCommit = await harness.lifecycle.commit({
+      approvalId: "approval_unlinked",
+      commitCapabilityId: "support.refund.commit_case",
+      idempotencyKey: "refund:TCK-100:unlinked",
+      preparedActionId: "prepared_unlinked",
+      runtimeContext: harness.commitRuntimeContext
+    });
+
+    expect(originalPreparedAction.commitCapabilityId).toBe("support.refund.commit_case");
+    expect(unrelatedCommit.status).toBe("denied");
+    expect(unrelatedCommit.userMessage).toContain("not linked");
+    expect(unlinkedCommit.status).toBe("denied");
+    expect(unlinkedCommit.userMessage).toContain("not linked");
+  });
+
   it("denies rejected and expired prepared actions", async () => {
     const rejectedHarness = await createRuntimeHarness();
     const rejectedPrepare = await rejectedHarness.executor.execute({
@@ -642,22 +823,145 @@ describe("runtime handler registry and execution lifecycle", () => {
       runtimeContext: expiredHarness.runtimeContext,
       source: "host_call"
     });
-    const expiredApproval = await expiredHarness.lifecycle.recordApproval({
+    await expect(expiredHarness.lifecycle.recordApproval({
       approved: true,
       preparedActionId: expiredPrepare.action?.preparedActionId ?? "",
       runtimeContext: expiredHarness.commitRuntimeContext
-    });
-    const expiredCommit = await expiredHarness.lifecycle.commit({
-      approvalId: expiredApproval.approvalId,
-      commitCapabilityId: "support.refund.commit_case",
-      idempotencyKey: "refund:TCK-100:4",
-      preparedActionId: expiredPrepare.action?.preparedActionId ?? "",
-      runtimeContext: expiredHarness.commitRuntimeContext
+    })).rejects.toMatchObject({
+      code: "approval_expired"
     });
 
     expect(rejectedCommit.status).toBe("denied");
-    expect(expiredCommit.status).toBe("denied");
-    expect(expiredCommit.userMessage).toContain("expired");
+    expect(await expiredHarness.preparedActionStore.get(expiredPrepare.action?.preparedActionId ?? "")).toMatchObject({
+      state: "expired"
+    });
+  });
+
+  it("prevents terminal prepared actions from moving back to approved", async () => {
+    const harness = await createRuntimeHarness();
+    const prepare = await harness.executor.execute({
+      args: { ...refundPrepareArgs(), requested_amount: 750 },
+      builtContext: harness.builtContext,
+      capabilityId: "support.refund.prepare_case",
+      operation: "prepare",
+      runtimeContext: harness.runtimeContext,
+      source: "host_call"
+    });
+    const preparedActionId = prepare.action?.preparedActionId ?? "";
+    const approval = await harness.lifecycle.recordApproval({
+      approved: true,
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const commit = await harness.lifecycle.commit({
+      approvalId: approval.approvalId,
+      commitCapabilityId: "support.refund.commit_case",
+      idempotencyKey: "refund:TCK-100:terminal",
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    });
+
+    await expect(harness.lifecycle.recordApproval({
+      approved: true,
+      preparedActionId,
+      runtimeContext: harness.commitRuntimeContext
+    })).rejects.toMatchObject({
+      code: "policy_denied"
+    });
+
+    expect(commit.status).toBe("committed");
+    expect(await harness.preparedActionStore.get(preparedActionId)).toMatchObject({
+      state: "committed"
+    });
+  });
+
+  it("marks prepared actions failed when commit handler fails, throws, or returns invalid output", async () => {
+    for (const [key, options] of [
+      ["handler_failed", { commitFailure: true }],
+      ["handler_thrown", { throwCommitHandler: true }],
+      ["invalid_output", { invalidCommitOutput: true }]
+    ] as const) {
+      const harness = await createRuntimeHarness(options);
+      const prepare = await harness.executor.execute({
+        args: { ...refundPrepareArgs(), requested_amount: 750 },
+        builtContext: harness.builtContext,
+        capabilityId: "support.refund.prepare_case",
+        operation: "prepare",
+        runtimeContext: harness.runtimeContext,
+        source: "host_call"
+      });
+      const preparedActionId = prepare.action?.preparedActionId ?? "";
+      const approval = await harness.lifecycle.recordApproval({
+        approved: true,
+        preparedActionId,
+        runtimeContext: harness.commitRuntimeContext
+      });
+      const commit = await harness.lifecycle.commit({
+        approvalId: approval.approvalId,
+        commitCapabilityId: "support.refund.commit_case",
+        idempotencyKey: `refund:TCK-100:${key}`,
+        preparedActionId,
+        runtimeContext: harness.commitRuntimeContext
+      });
+
+      expect(commit.status).toBe("failed");
+      expect(JSON.stringify(commit)).not.toContain("secret commit token");
+      expect(await harness.preparedActionStore.get(preparedActionId)).toMatchObject({
+        state: "failed"
+      });
+    }
+  });
+
+  it("does not leak handler secrets into ledger records on failure", async () => {
+    const ledger = new DefaultAuditLedger();
+    const harness = await createRuntimeHarness({ ledger, throwReadHandler: true });
+    const read = await harness.executor.execute({
+      args: { ticket_id: "TCK-100" },
+      builtContext: harness.builtContext,
+      capabilityId: "support.ticket.get",
+      operation: "read",
+      runtimeContext: harness.runtimeContext,
+      source: "model_tool_call"
+    });
+    const actions = await ledger.actionStore.listActions();
+
+    expect(read.status).toBe("failed");
+    expect(JSON.stringify(actions)).not.toContain("secret stack should not leak");
+  });
+
+  it("verifies committed actions with safe unavailable, denied, and failed envelopes", async () => {
+    const harness = await createRuntimeHarness();
+    const success = await harness.lifecycle.verify({
+      committedAction: committedAction("support.refund.commit_case"),
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const missingCapability = await harness.lifecycle.verify({
+      committedAction: committedAction("missing.capability"),
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const unsupportedLifecycle = await harness.lifecycle.verify({
+      committedAction: committedAction("support.ticket.get"),
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const missingHandlerHarness = await createRuntimeHarness({ registerVerifyHandler: false });
+    const missingHandler = await missingHandlerHarness.lifecycle.verify({
+      committedAction: committedAction("support.refund.commit_case"),
+      runtimeContext: missingHandlerHarness.commitRuntimeContext
+    });
+    const throwingHarness = await createRuntimeHarness({ throwVerifyHandler: true });
+    const thrown = await throwingHarness.lifecycle.verify({
+      committedAction: committedAction("support.refund.commit_case"),
+      runtimeContext: throwingHarness.commitRuntimeContext
+    });
+
+    expect(success.status).toBe("verified");
+    expect(success.action?.state).toBe("verified");
+    expect(success.data).toEqual({ verification_id: "VER-1" });
+    expect(missingCapability.status).toBe("unavailable");
+    expect(unsupportedLifecycle.status).toBe("denied");
+    expect(missingHandler.status).toBe("unavailable");
+    expect(thrown.status).toBe("failed");
+    expect(JSON.stringify(thrown)).not.toContain("secret verify token");
   });
 
   it("returns safe envelopes for missing handlers, lifecycle mismatch, invalid input, invalid output, and handler errors", async () => {
@@ -829,11 +1133,41 @@ function refundPrepareArgs(): Record<string, unknown> {
   };
 }
 
+function committedAction(capabilityId: string): AicfCommittedAction {
+  return {
+    accountId: "acct_example_support",
+    capabilityId,
+    committedActionId: "commit_1",
+    committedAt: "2026-06-04T00:00:00.000Z",
+    preparedActionId: "prepared_1",
+    requestId: "req_test_0001",
+    result: {
+      committedActionId: "commit_1",
+      data: {
+        audit_event_id: "AUD-1",
+        refund_id: "RF-1",
+        status: "committed"
+      },
+      status: "committed"
+    },
+    runId: "run_test_0001",
+    state: "committed",
+    subjectId: "user_example_support_agent",
+    tenantId: "tenant_example_support"
+  };
+}
+
 async function createRuntimeHarness(options: {
+  commitFailure?: boolean;
+  invalidCommitOutput?: boolean;
   invalidReadOutput?: boolean;
+  ledger?: AicfRuntimeLedgerRecorder;
   prepareExpiresAt?: string;
   registerReadHandler?: boolean;
+  registerVerifyHandler?: boolean;
+  throwCommitHandler?: boolean;
   throwReadHandler?: boolean;
+  throwVerifyHandler?: boolean;
 } = {}) {
   const registry = await loadExampleRegistry();
   const runtimeContext = await buildSupportRuntimeContext({
@@ -848,7 +1182,7 @@ async function createRuntimeHarness(options: {
     facts: {
       "refund.approval_missing_or_invalid": false
     },
-    maxRiskTier: "high",
+    maxRiskTier: "critical",
     permissions: ["refund.case.commit"]
   });
   const builtContext = await buildSupportContext(registry, {
@@ -894,16 +1228,43 @@ async function createRuntimeHarness(options: {
   handlers.register({
     capabilityId: "support.refund.commit_case",
     commit: () => {
+      if (options.throwCommitHandler) {
+        throw new Error("secret commit token should not leak");
+      }
+
+      if (options.commitFailure) {
+        return {
+          committedActionId: `commit_failed_${commitCount + 1}`,
+          status: "failed",
+          userMessage: "Commit failed safely."
+        };
+      }
+
       commitCount += 1;
       return {
         committedActionId: `commit_${commitCount}`,
-        data: {
+        data: options.invalidCommitOutput ? {
+          status: "committed"
+        } : {
           audit_event_id: `AUD-${commitCount}`,
           refund_id: `RF-${commitCount}`,
           status: "committed"
         },
         status: "committed",
         userMessage: "Refund committed."
+      };
+    },
+    verify: options.registerVerifyHandler === false ? undefined : () => {
+      if (options.throwVerifyHandler) {
+        throw new Error("secret verify token should not leak");
+      }
+
+      return {
+        data: {
+          verification_id: "VER-1"
+        },
+        message: "Refund commit verified.",
+        status: "verified"
       };
     }
   });
@@ -913,6 +1274,7 @@ async function createRuntimeHarness(options: {
     auditSink,
     handlers,
     idempotencyStore,
+    ledger: options.ledger,
     policyBroker,
     preparedActionStore,
     registry
@@ -921,6 +1283,7 @@ async function createRuntimeHarness(options: {
     actionLifecycle: lifecycle,
     auditSink,
     handlers,
+    ledger: options.ledger,
     policyBroker,
     registry
   });

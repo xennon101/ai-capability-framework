@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">AICF mark</title>
+  <desc id="desc">A hexagonal framework mark with routed capability nodes and a validated core.</desc>
+  <path d="M64 14 106 38v48l-42 24-42-24V38Z" fill="#F8FAFC" stroke="#0F172A" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M38 40h26l26 24-26 24H38" fill="none" stroke="#334155" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64 42 86 64 64 86 42 64Z" fill="#14B8A6"/>
+  <path d="m54 64 8 8 18-20" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="38" cy="40" r="9" fill="#F59E0B" stroke="#0F172A" stroke-width="4"/>
+  <circle cx="90" cy="64" r="9" fill="#EF4444" stroke="#0F172A" stroke-width="4"/>
+  <circle cx="38" cy="88" r="9" fill="#38BDF8" stroke="#0F172A" stroke-width="4"/>
+</svg>

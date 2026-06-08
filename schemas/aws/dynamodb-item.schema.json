@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/aws/dynamodb-item.schema.json",
+  "title": "AICF AWS DynamoDB Item",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["PK", "SK", "entityType", "schemaVersion"],
+  "properties": {
+    "PK": { "type": "string", "minLength": 1 },
+    "SK": { "type": "string", "minLength": 1 },
+    "GSI1PK": { "type": "string" },
+    "GSI1SK": { "type": "string" },
+    "GSI2PK": { "type": "string" },
+    "GSI2SK": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "entityType": { "type": "string", "minLength": 1 },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "payload": true,
+    "schemaVersion": { "enum": ["0.1", "1.0"] },
+    "ttlEpochSeconds": { "type": "integer", "minimum": 0 }
+  },
+  "not": {
+    "anyOf": [
+      { "required": ["rawPrompt"] },
+      { "required": ["rawProviderPayload"] },
+      { "required": ["rawTranscript"] },
+      { "required": ["secret"] },
+      { "required": ["token"] }
+    ]
+  }
+}

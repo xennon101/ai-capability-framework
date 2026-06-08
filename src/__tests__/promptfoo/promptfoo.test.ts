@@ -26,7 +26,13 @@ const evalCase: EvalCase = {
 describe("Promptfoo export and import", () => {
   it("exports public-safe suite files with echo provider by default", () => {
     const suite = exportPromptfooSuite({
-      evalCases: [evalCase]
+      ciCommand: "npx promptfoo eval -c promptfooconfig.yaml",
+      evalCases: [evalCase],
+      providerTargets: [{
+        id: "openai:responses",
+        label: "Host OpenAI runtime placeholder"
+      }],
+      targetUrlPlaceholder: "https://example.com/aicf/runtime"
     });
 
     expect(suite.files.map((file) => file.path)).toEqual([
@@ -37,6 +43,10 @@ describe("Promptfoo export and import", () => {
     ]);
     expect(suite.files[0]?.content).toContain("echo");
     expect(suite.files[2]?.content).toContain("support.refund.prepare_case.valid");
+    expect(suite.files[3]?.content).toContain("Provider Targets");
+    expect(suite.files[3]?.content).toContain("openai:responses");
+    expect(suite.files[3]?.content).toContain("npx promptfoo eval -c promptfooconfig.yaml");
+    expect(suite.files[3]?.content).toContain("https://example.com/aicf/runtime");
     expect(JSON.stringify(suite)).not.toContain("_private");
   });
 

@@ -10,7 +10,7 @@ owner:
   contact: support@example.com
 capability_type: write_commit
 autonomy_tier: A0
-risk_tier: high
+risk_tier: critical
 model_description: >
   Use this capability only when application code has verified an approved
   prepared refund action. Do not expose this capability in the default model
@@ -93,6 +93,21 @@ observability:
   trace_attributes:
     domain: support
     risk_tier: high
+extensions:
+  governance:
+    retention_policy: synthetic_audit_365d
+    security_packs:
+      - approval_bypass
+      - capability_spoofing
+      - cross_tenant_access
+      - mcp_tool_abuse
+      - prompt_injection_direct
+      - provider_payload_exposure
+      - schema_confusion
+      - sensitive_data_disclosure
+      - tool_exfiltration
+      - tool_result_poisoning
+      - unsafe_commit_attempt
 evals:
   red_team:
     - ../evals/support.refund.commit_case.requires_approval.yaml

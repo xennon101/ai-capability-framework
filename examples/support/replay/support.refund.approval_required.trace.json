@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "1.0",
+  "traceId": "support_refund_approval_required_trace",
+  "runId": "run_example_support_refund_approval_required",
+  "createdAt": "2026-06-04T00:00:00.000Z",
+  "runtimeVersion": "1.0.0-rc.1",
+  "provider": {
+    "id": "openai",
+    "model": "mock-responses",
+    "promptTemplateVersion": "support-refund-v1"
+  },
+  "capabilitySlice": {
+    "capabilityIds": [
+      "support.ticket.get",
+      "support.refund.prepare_case"
+    ],
+    "excludedCapabilityIds": [
+      "support.refund.commit_case"
+    ],
+    "hash": "sha256:example-support-slice"
+  },
+  "capabilityVersions": {
+    "support.ticket.get": "1.0.0",
+    "support.refund.prepare_case": "1.0.0",
+    "support.refund.commit_case": "1.0.0"
+  },
+  "context": {
+    "contextHash": "sha256:example-support-context",
+    "userInputSummary": "Synthetic user asks to prepare a refund case for ticket TCK-1002.",
+    "decisionContext": {
+      "permissions": [
+        "ticket.read",
+        "refund.case.create"
+      ],
+      "autonomyTier": "A2",
+      "riskCeiling": "medium",
+      "tenantId": "tenant_example_support",
+      "userId": "user_example_support_agent"
+    },
+    "facts": {
+      "refund.order_not_refundable": false
+    },
+    "sourceRefs": [
+      {
+        "sourceId": "src_support_ticket_summary",
+        "sourceType": "app_record",
+        "trust": "app_data",
+        "contentHash": "sha256:example-ticket-summary"
+      }
+    ]
+  },
+  "toolCalls": [
+    {
+      "callId": "call_ticket_get_1",
+      "provider": "openai",
+      "providerToolName": "aicf_support_ticket_get",
+      "capabilityId": "support.ticket.get",
+      "operation": "read",
+      "args": {
+        "ticket_id": "TCK-1002"
+      },
+      "argsHash": "sha256:example-ticket-args"
+    },
+    {
+      "callId": "call_refund_prepare_1",
+      "provider": "openai",
+      "providerToolName": "aicf_support_refund_prepare_case",
+      "capabilityId": "support.refund.prepare_case",
+      "operation": "prepare",
+      "args": {
+        "ticket_id": "TCK-1002",
+        "order_id": "ORD-2003",
+        "reason_code": "damaged_item",
+        "requested_amount": 750
+      },
+      "argsHash": "sha256:example-prepare-args"
+    }
+  ],
+  "toolResults": [
+    {
+      "callId": "call_ticket_get_1",
+      "capabilityId": "support.ticket.get",
+      "status": "ok",
+      "resultHash": "sha256:example-ticket-result",
+      "modelSafeEnvelope": {
+        "schema_version": "1.0",
+        "status": "ok",
+        "capability_id": "support.ticket.get",
+        "capability_version": "1.0.0",
+        "data": {
+          "ticket": {
+            "ticket_id": "TCK-1002",
+            "status": "open",
+            "order_id": "ORD-2003"
+          }
+        }
+      }
+    },
+    {
+      "callId": "call_refund_prepare_1",
+      "capabilityId": "support.refund.prepare_case",
+      "status": "approval_required",
+      "actionState": "approval_required",
+      "policyDecision": "approval_required",
+      "resultHash": "sha256:example-prepare-result",
+      "modelSafeEnvelope": {
+        "schema_version": "1.0",
+        "status": "approval_required",
+        "capability_id": "support.refund.prepare_case",
+        "capability_version": "1.0.0",
+        "policy": {
+          "status": "approval_required",
+          "reasons": [
+            {
+              "code": "approval_required",
+              "message": "Refund requests over the threshold require human approval."
+            }
+          ]
+        },
+        "action": {
+          "action_state": "approval_required",
+          "approval_required": true,
+          "prepared_action_id": "prepared_refund_example_1",
+          "preview": {
+            "summary": "Refund case prepared for host approval."
+          }
+        },
+        "user_message": "Approval is required before commit."
+      }
+    }
+  ],
+  "policyDecisions": [
+    {
+      "decisionId": "decision_ticket_get_1",
+      "capabilityId": "support.ticket.get",
+      "operation": "read",
+      "decision": "allowed",
+      "reasons": []
+    },
+    {
+      "decisionId": "decision_refund_prepare_1",
+      "capabilityId": "support.refund.prepare_case",
+      "operation": "prepare",
+      "decision": "approval_required",
+      "reasons": [
+        {
+          "code": "approval_required",
+          "message": "Refund requests over the threshold require human approval.",
+          "ruleId": "refund.amount_over_threshold",
+          "severity": "info",
+          "source": "aicf"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "actionId": "action_prepared_refund_example_1",
+      "capabilityId": "support.refund.prepare_case",
+      "preparedActionId": "prepared_refund_example_1",
+      "actionState": "approval_required",
+      "resultHash": "sha256:example-prepare-result"
+    }
+  ],
+  "approvals": [
+    {
+      "approvalRecordId": "approval_record_example_1",
+      "preparedActionId": "prepared_refund_example_1",
+      "capabilityId": "support.refund.prepare_case",
+      "status": "pending",
+      "requiredReasonCodes": [
+        "approval_required"
+      ]
+    }
+  ],
+  "finalResponse": {
+    "text": "Prepared a refund case for approval review.",
+    "textHash": "sha256:example-final-response",
+    "redacted": true,
+    "placeholders": []
+  },
+  "redaction": {
+    "fieldsRedacted": [],
+    "hashAlgorithm": "sha256",
+    "mode": "redacted"
+  },
+  "extensions": {
+    "example": true
+  }
+}

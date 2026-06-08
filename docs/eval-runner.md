@@ -61,6 +61,11 @@ This fails because the candidate selected a commit capability and records a
 commit where the eval expected only preparation. The runner reports the failed
 scorer instead of calling a model to repair it.
 
+Sanitized replay traces can also become draft eval manifests. Use this when a
+mock or live run produced a useful public-safe behavior summary and you want to
+lock it in as a regression case. See
+[Replay and trace-to-golden](evals/replay-and-trace-to-golden.md).
+
 ## Candidate Fixture
 
 Candidate fixtures are JSON files with `schema_version: "1.0"` and a `results`

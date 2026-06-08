@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/audit/idempotency-record.schema.json",
+  "title": "AICF Audit Idempotency Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "createdAt",
+    "idempotencyRecordId",
+    "keyHash",
+    "schemaVersion",
+    "scopeHash",
+    "status"
+  ],
+  "properties": {
+    "completedAt": { "type": "string", "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "idempotencyRecordId": { "type": "string", "minLength": 1 },
+    "keyHash": { "$ref": "#/$defs/sha256_ref" },
+    "metadataHash": { "$ref": "#/$defs/sha256_ref" },
+    "resultRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resultHash"],
+      "properties": {
+        "resultHash": { "$ref": "#/$defs/sha256_ref" },
+        "resultType": { "type": "string" }
+      }
+    },
+    "schemaVersion": { "const": "1.0" },
+    "scopeHash": { "$ref": "#/$defs/sha256_ref" },
+    "status": { "enum": ["reserved", "completed"] }
+  },
+  "$defs": {
+    "sha256_ref": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

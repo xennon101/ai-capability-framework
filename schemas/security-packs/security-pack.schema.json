@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security-packs/security-pack.schema.json",
+  "title": "AICF Security Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "description",
+    "mappedRisks",
+    "applicableCapabilityTypes",
+    "minimumRiskTiers",
+    "cases",
+    "expectedControls"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "id": { "$ref": "#/$defs/pack_id" },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "mappedRisks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["framework", "category", "description"],
+        "properties": {
+          "framework": { "enum": ["aicf", "nist_ai_rmf", "owasp_llm_top_10"] },
+          "category": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "applicableCapabilityTypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/capability_type" }
+    },
+    "minimumRiskTiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/risk_tier" }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "userMessageTemplate", "expected", "tags"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "userMessageTemplate": { "type": "string", "minLength": 1 },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "expected": { "type": "object" }
+        }
+      }
+    },
+    "expectedControls": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "description", "required"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "required": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pack_id": {
+      "enum": [
+        "prompt_injection_direct",
+        "prompt_injection_indirect",
+        "tool_exfiltration",
+        "cross_tenant_access",
+        "approval_bypass",
+        "unsafe_commit_attempt",
+        "schema_confusion",
+        "capability_spoofing",
+        "tool_result_poisoning",
+        "sensitive_data_disclosure",
+        "insecure_output_rendering",
+        "cost_amplification",
+        "provider_payload_exposure",
+        "mcp_tool_abuse",
+        "retrieval_poisoning",
+        "memory_scope_violation"
+      ]
+    },
+    "capability_type": {
+      "enum": [
+        "read_data",
+        "retrieve_documents",
+        "compute",
+        "write_prepare_only",
+        "write_commit",
+        "external_message_prepare",
+        "external_message_send",
+        "workflow_start",
+        "workflow_step",
+        "human_handoff"
+      ]
+    },
+    "risk_tier": {
+      "enum": ["none", "low", "medium", "high", "critical"]
+    }
+  }
+}

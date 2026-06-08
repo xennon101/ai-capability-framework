@@ -70,24 +70,34 @@ export class DynamoDbPreparedActionStore implements AicfPreparedActionStore {
       throw new Error("Prepared action was not found.");
     }
 
-    await this.client.send(await dynamoDbCommand("UpdateCommand", {
-      ConditionExpression: input.expectedState ? "#state = :expectedState" : undefined,
+    const expressionAttributeValues: Record<string, unknown> = {
+      ":nextState": input.nextState,
+      ":updatedAt": input.updatedAt
+    };
+
+    if (input.expectedState) {
+      expressionAttributeValues[":expectedState"] = input.expectedState;
+    }
+
+    const commandInput: Record<string, unknown> = {
       ExpressionAttributeNames: {
         "#payload": "payload",
         "#state": "state"
       },
-      ExpressionAttributeValues: {
-        ":expectedState": input.expectedState,
-        ":nextState": input.nextState,
-        ":updatedAt": input.updatedAt
-      },
+      ExpressionAttributeValues: expressionAttributeValues,
       Key: {
         PK: item.PK,
         SK: item.SK
       },
       TableName: this.options.tableName,
       UpdateExpression: "SET #state = :nextState, updatedAt = :updatedAt, #payload.#state = :nextState, #payload.updatedAt = :updatedAt"
-    }));
+    };
+
+    if (input.expectedState) {
+      commandInput.ConditionExpression = "#state = :expectedState";
+    }
+
+    await this.client.send(await dynamoDbCommand("UpdateCommand", commandInput));
   }
 }
 

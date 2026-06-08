@@ -1,0 +1,43 @@
+{
+  "name": "aicf-agent-skills",
+  "version": "1.0.0",
+  "description": "Reusable Agent Skills for building, auditing, testing, migrating, and releasing AI Capability Framework projects.",
+  "author": {
+    "name": "AICF Contributors",
+    "url": "https://github.com/xennon101/ai-capability-framework"
+  },
+  "homepage": "https://github.com/xennon101/ai-capability-framework/tree/main/agent-skills",
+  "repository": "https://github.com/xennon101/ai-capability-framework",
+  "license": "MIT",
+  "keywords": [
+    "aicf",
+    "ai-capabilities",
+    "agents",
+    "agent-skills",
+    "evals",
+    "policy",
+    "governance",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AICF Agent Skills",
+    "shortDescription": "Build governed, testable AICF capability systems with coding agents.",
+    "longDescription": "Agent Skills for authoring AICF capabilities, integrating runtime handlers, writing evals, red-teaming, validating provider adapters, and releasing public AICF projects safely.",
+    "developerName": "AICF Contributors",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/xennon101/ai-capability-framework",
+    "defaultPrompt": [
+      "Use AICF Agent Skills to author a new governed AI capability.",
+      "Use AICF Agent Skills to migrate this AI tool to AICF.",
+      "Use AICF Agent Skills to add evals and red-team tests for this capability."
+    ],
+    "brandColor": "#111827",
+    "composerIcon": "./assets/aicf-agent-skills-icon.svg",
+    "logo": "./assets/aicf-agent-skills-logo.svg"
+  }
+}

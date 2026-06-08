@@ -32,6 +32,7 @@ export function buildAnthropicClaudeTools(
       strict: true
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -40,6 +41,7 @@ export function buildAnthropicClaudeTools(
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,
+    providerId: "anthropic",
     registry
   });
 }

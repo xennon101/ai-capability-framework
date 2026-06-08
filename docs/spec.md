@@ -168,6 +168,8 @@ Side-effecting capabilities SHOULD make their lifecycle explicit:
 - `preview`: Return a reviewable summary of the proposed action.
 - `approve`: Record a policy or human approval.
 - `commit`: Execute the approved side effect.
+- `commit_capability_id`: Optional link from a prepare capability to the
+  specific commit capability that may commit its prepared actions.
 - `verify`: Confirm the side effect reached the expected state.
 - `audit`: Record durable evidence of the decision and execution path.
 
@@ -175,8 +177,8 @@ AICF evaluates lifecycle flags only:
 
 - `select` checks model/tool-set eligibility.
 - `prepare` requires `lifecycle.prepare: true`.
-- `commit` requires `lifecycle.commit: true`, valid approval when required, and
-  idempotency when required.
+- `commit` requires `lifecycle.commit: true`, a valid prepared-action to commit
+  capability link, valid approval when required, and idempotency when required.
 - Decision results include an audit preview. The preview MUST NOT be treated as
   a persisted audit record.
 

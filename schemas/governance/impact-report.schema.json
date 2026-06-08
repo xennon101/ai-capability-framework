@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/governance/impact-report.schema.json",
+  "title": "AICF Governance Impact Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capabilityId",
+    "affectedCapabilities",
+    "affectedEntities",
+    "affectedEvalSuites",
+    "affectedSecurityPacks",
+    "affectedProviders",
+    "affectedPolicies",
+    "missingCoverage"
+  ],
+  "properties": {
+    "capabilityId": { "type": "string" },
+    "affectedCapabilities": { "type": "array", "items": { "type": "string" } },
+    "affectedEntities": { "type": "array", "items": { "type": "string" } },
+    "affectedEvalSuites": { "type": "array", "items": { "type": "string" } },
+    "affectedSecurityPacks": { "type": "array", "items": { "type": "string" } },
+    "affectedProviders": { "type": "array", "items": { "type": "string" } },
+    "affectedPolicies": { "type": "array", "items": { "type": "string" } },
+    "affectedTraces": { "type": "array", "items": { "type": "string" } },
+    "affectedTenants": { "type": "array", "items": { "type": "string" } },
+    "missingCoverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "severity"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "severity": { "enum": ["info", "warning", "blocking"] }
+        }
+      }
+    }
+  }
+}

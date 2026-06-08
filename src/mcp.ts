@@ -36,6 +36,7 @@ export function buildMcpToolDescriptors(
       title: loadedCapability.manifest.name
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -44,6 +45,7 @@ export function buildMcpToolDescriptors(
     includeRestricted: options.includeRestricted,
     maxToolNameLength,
     namePrefix: options.namePrefix,
+    providerId: "mcp",
     registry
   });
 }

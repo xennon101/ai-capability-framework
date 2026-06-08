@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/controls/kill-switch.schema.json",
+  "title": "AICF Kill Switch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scope", "mode", "reason", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "scope": { "$ref": "#/$defs/control_scope" },
+    "mode": { "enum": ["deny", "force_approval", "read_only"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "createdBy": { "$ref": "#/$defs/governance_actor" }
+  },
+  "$defs": {
+    "control_scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": { "type": { "const": "global" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "providerId"],
+          "properties": {
+            "type": { "const": "provider" },
+            "providerId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "providerId", "model"],
+          "properties": {
+            "type": { "const": "model" },
+            "providerId": { "type": "string", "minLength": 1 },
+            "model": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "capabilityId"],
+          "properties": {
+            "type": { "const": "capability" },
+            "capabilityId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "domain"],
+          "properties": {
+            "type": { "const": "domain" },
+            "domain": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "riskTier"],
+          "properties": {
+            "type": { "const": "risk_tier" },
+            "riskTier": { "enum": ["none", "low", "medium", "high", "critical"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tenantId"],
+          "properties": {
+            "type": { "const": "tenant" },
+            "tenantId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "autonomyTier"],
+          "properties": {
+            "type": { "const": "autonomy_tier" },
+            "autonomyTier": { "enum": ["A0", "A1", "A2", "A3", "A4", "A5"] }
+          }
+        }
+      ]
+    },
+    "governance_actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "type": { "enum": ["user", "service", "system"] }
+      }
+    }
+  }
+}

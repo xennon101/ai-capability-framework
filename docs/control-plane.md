@@ -1,59 +1,126 @@
 # Control Plane
 
-The control plane provides deterministic decision APIs for capability selection,
-preparation, and commit gating. It does not execute capabilities, store action
-state, call models, or enforce host application authorization.
+The AICF control plane is an optional self-hostable review surface for
+capabilities and their runtime evidence. It is for local or host-owned
+governance workflows, not a hosted SaaS dashboard.
 
-## Decision API
+The control plane does not call models, run provider SDKs, execute handlers,
+commit side effects, enforce production auth, or provide durable production
+storage. Host applications must supply real authentication, tenant/account
+authorization, approval identity, storage, retention, and side-effect
+execution.
 
-Use `decideCapability(registry, request)` with a registry built from validated
-manifests.
+## What It Reviews
 
-The request includes:
+The control plane composes existing AICF evidence:
 
-- `capabilityId`
-- `operation`: `select`, `prepare`, or `commit`
-- `args`
-- `context.permissions`
-- `context.autonomyTier`
-- optional `facts`
-- optional `approval`
-- optional `idempotencyKey`
+- capability catalogue and detail;
+- lifecycle, risk, compatibility, and impact analysis;
+- eval coverage and security-pack coverage;
+- provider conformance summaries;
+- policy decision ledger records;
+- action and approval records;
+- kill switches, budgets, and circuit breaker state;
+- redacted replay metadata;
+- evidence exports made only from summaries, hashes, and redacted refs.
 
-The result includes:
+It must not display raw prompts, raw provider payloads, raw transcripts,
+secrets, stack traces, tenant IDs, account IDs, or sensitive tool outputs.
+The evidence endpoint preserves the control-plane response shape and also
+includes the canonical evidence pack documented in [Evidence export](evidence.md).
 
-- `status`: `allowed`, `approval_required`, or `denied`
-- `reasons`
-- `requiredApprovals`
-- `policy`
-- `lifecycle`
-- `audit` preview
+## TypeScript
 
-The audit preview is not persisted and has no timestamp. Host applications own
-real audit logging.
+```ts
+import {
+  createControlPlaneService,
+  InMemoryControlPlaneStore,
+  routeControlPlaneRequest
+} from "ai-capability-framework/control-plane";
+import { buildRegistry, loadManifests } from "ai-capability-framework";
 
-## Policy Semantics
+const loaded = await loadManifests({ path: "examples" });
+const registry = buildRegistry(loaded.manifests);
 
-- Missing permissions deny.
-- Autonomy above the capability tier or policy max tier denies.
-- `select` decisions check tool-set eligibility with permissions and autonomy.
-- `prepare` and `commit` decisions evaluate fact-dependent policy rules.
-- `deny_if` rules read `facts[rule]`.
-- A true deny fact denies.
-- A missing deny fact fails closed and denies.
-- `approval_required_if` can return `approval_required` for prepare decisions.
-- Commit decisions missing required approval deny.
-- Commit decisions missing required idempotency deny.
+const service = createControlPlaneService({
+  registry,
+  store: new InMemoryControlPlaneStore()
+});
 
-## CLI
+const response = await routeControlPlaneRequest({
+  service,
+  request: {
+    method: "GET",
+    path: "/api/aicf/capabilities"
+  }
+});
+```
 
-Run a decision from a JSON request file:
+`routeControlPlaneRequest()` returns a JSON-serializable response with
+`status`, `headers`, and `body`. It does not start a server. Bind it to Express,
+Fastify, a Node HTTP server, a worker, or another host-owned transport.
+
+## Local Reference App
+
+Run the credential-free example:
 
 ```bash
 npm run build
-node dist/cli.js decide examples --request examples/support/decisions/support.refund.commit_case.allowed.json
+node examples/control-plane/server.mjs
 ```
 
-Denied decisions still exit `0` because the decision was evaluated
-successfully. Invalid manifests, invalid request files, and unknown capability
-IDs exit nonzero.
+Then open `http://localhost:4127`.
+
+The example uses a tracked synthetic seed fixture and writes local mutable state
+to `.aicf/control-plane-state.json`, which is ignored. It uses a fake local dev
+operator only to demonstrate approve/reject and kill-switch interactions.
+
+## API Paths
+
+The reference router supports:
+
+- `GET /api/aicf/capabilities`
+- `GET /api/aicf/capabilities/:id`
+- `GET /api/aicf/capabilities/:id/impact`
+- `POST /api/aicf/capabilities/:id/lifecycle/evaluate`
+- `GET /api/aicf/decisions`
+- `GET /api/aicf/actions`
+- `GET /api/aicf/approvals`
+- `POST /api/aicf/approvals/:id/approve`
+- `POST /api/aicf/approvals/:id/reject`
+- `GET /api/aicf/controls/kill-switches`
+- `POST /api/aicf/controls/kill-switches`
+- `DELETE /api/aicf/controls/kill-switches/:id`
+- `GET /api/aicf/evals/status`
+- `GET /api/aicf/conformance/status`
+- `POST /api/aicf/evidence/export`
+
+Errors use a stable safe shape:
+
+```json
+{
+  "error": {
+    "code": "control_plane_not_found",
+    "message": "Capability \"example.missing\" was not found."
+  }
+}
+```
+
+Stack traces and private diagnostics are not returned.
+
+## Stores
+
+`InMemoryControlPlaneStore` is for tests and examples.
+
+`FileControlPlaneStore` is for local development. It defaults to
+`.aicf/control-plane-state.json` and should not be used as production durable
+storage.
+
+Production hosts can wire `DynamoDbControlPlaneStore` from
+`ai-capability-framework/aws` to the same service/router API when they want AWS
+backed audit, controls, approval, and replay metadata. The AWS adapter remains
+optional and does not provide production auth, deployment, tenant enforcement,
+or evidence retention policy.
+
+Production hosts should implement `AicfControlPlaneStore` with their own
+authorization, audit, retention, and tenant isolation.

@@ -46,6 +46,38 @@
       "types": "./dist/observability/index.d.ts",
       "import": "./dist/observability/index.js"
     },
+    "./governance": {
+      "types": "./dist/governance/index.d.ts",
+      "import": "./dist/governance/index.js"
+    },
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "import": "./dist/audit/index.js"
+    },
+    "./security": {
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js"
+    },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js"
+    },
+    "./control-plane": {
+      "types": "./dist/control-plane/index.d.ts",
+      "import": "./dist/control-plane/index.js"
+    },
+    "./replay": {
+      "types": "./dist/replay/index.d.ts",
+      "import": "./dist/replay/index.js"
+    },
+    "./security-packs": {
+      "types": "./dist/security-packs/index.d.ts",
+      "import": "./dist/security-packs/index.js"
+    },
+    "./conformance": {
+      "types": "./dist/conformance/index.d.ts",
+      "import": "./dist/conformance/index.js"
+    },
     "./langfuse": {
       "types": "./dist/langfuse/index.d.ts",
       "import": "./dist/langfuse/index.js"
@@ -53,6 +85,22 @@
     "./evals-live": {
       "types": "./dist/evals-live/index.d.ts",
       "import": "./dist/evals-live/index.js"
+    },
+    "./evalops": {
+      "types": "./dist/evalops/index.d.ts",
+      "import": "./dist/evalops/index.js"
+    },
+    "./evidence": {
+      "types": "./dist/evidence/index.d.ts",
+      "import": "./dist/evidence/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/index.d.ts",
+      "import": "./dist/memory/index.js"
+    },
+    "./provenance": {
+      "types": "./dist/provenance/index.d.ts",
+      "import": "./dist/provenance/index.js"
     },
     "./promptfoo": {
       "types": "./dist/promptfoo/index.d.ts",
@@ -99,12 +147,53 @@
       "import": "./dist/providers/semantic-kernel/index.js"
     },
     "./schemas/adapter-context.schema.json": "./schemas/adapter-context.schema.json",
+    "./schemas/audit/action-record.schema.json": "./schemas/audit/action-record.schema.json",
+    "./schemas/audit/approval-record.schema.json": "./schemas/audit/approval-record.schema.json",
+    "./schemas/audit/idempotency-record.schema.json": "./schemas/audit/idempotency-record.schema.json",
+    "./schemas/audit/policy-decision-record.schema.json": "./schemas/audit/policy-decision-record.schema.json",
+    "./schemas/aws/approval-task.schema.json": "./schemas/aws/approval-task.schema.json",
+    "./schemas/aws/budget-usage.schema.json": "./schemas/aws/budget-usage.schema.json",
+    "./schemas/aws/dynamodb-item.schema.json": "./schemas/aws/dynamodb-item.schema.json",
+    "./schemas/aws/telemetry-event.schema.json": "./schemas/aws/telemetry-event.schema.json",
     "./schemas/capability-manifest.schema.json": "./schemas/capability-manifest.schema.json",
+    "./schemas/conformance/conformance-case.schema.json": "./schemas/conformance/conformance-case.schema.json",
+    "./schemas/conformance/conformance-report.schema.json": "./schemas/conformance/conformance-report.schema.json",
+    "./schemas/conformance/provider-target-matrix.schema.json": "./schemas/conformance/provider-target-matrix.schema.json",
+    "./schemas/controls/budget-policy.schema.json": "./schemas/controls/budget-policy.schema.json",
+    "./schemas/controls/circuit-breaker-policy.schema.json": "./schemas/controls/circuit-breaker-policy.schema.json",
+    "./schemas/controls/control-decision.schema.json": "./schemas/controls/control-decision.schema.json",
+    "./schemas/controls/kill-switch.schema.json": "./schemas/controls/kill-switch.schema.json",
+    "./schemas/control-plane/state.schema.json": "./schemas/control-plane/state.schema.json",
     "./schemas/decision-request.schema.json": "./schemas/decision-request.schema.json",
     "./schemas/entity-manifest.schema.json": "./schemas/entity-manifest.schema.json",
     "./schemas/eval-case.schema.json": "./schemas/eval-case.schema.json",
     "./schemas/eval-result.schema.json": "./schemas/eval-result.schema.json",
+    "./schemas/evalops/braintrust-dataset.schema.json": "./schemas/evalops/braintrust-dataset.schema.json",
+    "./schemas/evalops/openai-eval-dataset.schema.json": "./schemas/evalops/openai-eval-dataset.schema.json",
+    "./schemas/evidence/evidence-export-input.schema.json": "./schemas/evidence/evidence-export-input.schema.json",
+    "./schemas/evidence/evidence-pack.schema.json": "./schemas/evidence/evidence-pack.schema.json",
+    "./schemas/governance/compatibility-diff.schema.json": "./schemas/governance/compatibility-diff.schema.json",
+    "./schemas/governance/gate-config.schema.json": "./schemas/governance/gate-config.schema.json",
+    "./schemas/governance/gate-report.schema.json": "./schemas/governance/gate-report.schema.json",
+    "./schemas/governance/impact-report.schema.json": "./schemas/governance/impact-report.schema.json",
+    "./schemas/governance/lifecycle-transition.schema.json": "./schemas/governance/lifecycle-transition.schema.json",
+    "./schemas/governance/risk-compilation-result.schema.json": "./schemas/governance/risk-compilation-result.schema.json",
+    "./schemas/memory/governed-memory-fixture.schema.json": "./schemas/memory/governed-memory-fixture.schema.json",
+    "./schemas/memory/governed-memory-record.schema.json": "./schemas/memory/governed-memory-record.schema.json",
+    "./schemas/provenance/generated-content-provenance.schema.json": "./schemas/provenance/generated-content-provenance.schema.json",
+    "./schemas/provenance/provenance-adapter-hook-result.schema.json": "./schemas/provenance/provenance-adapter-hook-result.schema.json",
+    "./schemas/security/context-segment.schema.json": "./schemas/security/context-segment.schema.json",
+    "./schemas/security/redaction-policy.schema.json": "./schemas/security/redaction-policy.schema.json",
+    "./schemas/security/retention-policy.schema.json": "./schemas/security/retention-policy.schema.json",
+    "./schemas/security/source-ref.schema.json": "./schemas/security/source-ref.schema.json",
+    "./schemas/replay/replay-result.schema.json": "./schemas/replay/replay-result.schema.json",
+    "./schemas/replay/replay-trace.schema.json": "./schemas/replay/replay-trace.schema.json",
+    "./schemas/replay/trace-to-golden-options.schema.json": "./schemas/replay/trace-to-golden-options.schema.json",
     "./schemas/tool-result-envelope.schema.json": "./schemas/tool-result-envelope.schema.json",
+    "./schemas/security-packs/coverage-report.schema.json": "./schemas/security-packs/coverage-report.schema.json",
+    "./schemas/security-packs/promptfoo-red-team-config.schema.json": "./schemas/security-packs/promptfoo-red-team-config.schema.json",
+    "./schemas/security-packs/security-case-suite.schema.json": "./schemas/security-packs/security-case-suite.schema.json",
+    "./schemas/security-packs/security-pack.schema.json": "./schemas/security-packs/security-pack.schema.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -113,34 +202,59 @@
   "files": [
     "dist",
     "schemas",
+    "security-packs",
     "examples",
     "conformance",
     "docs",
+    "CODE_OF_CONDUCT.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
+    "GOVERNANCE.md",
+    "ROADMAP.md",
     "SECURITY.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "archive:source": "node scripts/create-source-archive.mjs",
     "build": "tsc -p tsconfig.json",
-    "check": "npm run check:generated && npm run build && npm test && npm run validate && npm run check:package && npm run check:package-public && npm run check:workspace-public && npm run check:release-install",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run check:generated && npm run build && npm run typecheck && npm run lint && npm test && npm run validate && npm run conformance && npm run gate:examples && npm run docs:build && npm run check:package && npm run check:workspace-public",
+    "check:docs": "node scripts/check-docs.mjs",
     "check:generated": "node scripts/check-generated.mjs",
-    "check:package": "node scripts/check-package.mjs",
+    "check:package": "npm run build && npm run check:package:contents && npm run check:package-public && npm run check:release-install",
+    "check:package:contents": "node scripts/check-package.mjs",
     "check:package-public": "node scripts/check-package-public.mjs",
-    "check:optional": "vitest run src/__tests__/aws src/__tests__/mcp-server src/__tests__/promptfoo src/__tests__/langfuse src/__tests__/openai-agents src/__tests__/providers/anthropic src/__tests__/providers/gemini src/__tests__/providers/ai-sdk src/__tests__/providers/langchain src/__tests__/providers/mcp src/__tests__/providers/semantic-kernel src/__tests__/providers/conformance",
+    "check:public": "npm run check:package-public && npm run check:workspace-public && npm run check:secrets",
+    "check:optional": "vitest run src/__tests__/aws src/__tests__/mcp-server src/__tests__/promptfoo src/__tests__/langfuse src/__tests__/evalops src/__tests__/openai-agents src/__tests__/providers/anthropic src/__tests__/providers/gemini src/__tests__/providers/ai-sdk src/__tests__/providers/langchain src/__tests__/providers/mcp src/__tests__/providers/semantic-kernel src/__tests__/providers/conformance src/__tests__/conformance",
     "check:providers": "vitest run src/__tests__/providers",
     "check:providers:live": "npm run test:anthropic:live && npm run test:gemini:live && npm run test:ai-sdk:live && npm run test:langchain:live",
-    "check:providers:mock": "npm run test:anthropic:mock && npm run test:gemini:mock && npm run test:ai-sdk:mock && npm run test:langchain:mock && npm run test:semantic-kernel && npm run test:mcp-provider && npm run test:providers:conformance",
+    "check:providers:mock": "npm run test:anthropic:mock && npm run test:gemini:mock && npm run test:ai-sdk:mock && npm run test:langchain:mock && npm run test:semantic-kernel && npm run test:mcp-provider && npm run test:providers:conformance && npm run test:conformance",
     "check:release": "npm run check && npm run check:optional && npm pack --dry-run --json",
+    "check:certification": "npm run check:generated && npm run build && npm run typecheck && npm run lint && npm test && npm run validate && npm run conformance && npm run gate:examples && npm run docs:build && npm run check:package && npm run check:public && npm run check:runtime && npm run check:optional && npm run check:providers:mock && npm pack --dry-run --json && node scripts/check-certification.mjs",
     "check:release:providers": "npm run check && npm run check:providers:mock && npm run check:release-install && npm pack --dry-run --json",
     "check:release-install": "node scripts/check-release-install.mjs",
+    "check:release-source": "npm run check:workspace-public && npm run check:git-clean && npm run check:source-archive",
     "check:runtime": "vitest run src/__tests__/runtime src/__tests__/openai src/__tests__/observability src/__tests__/evals-live src/__tests__/examples",
+    "check:git-clean": "node scripts/check-git-clean.mjs",
+    "check:source-archive": "node scripts/check-source-archive.mjs",
     "check:workspace-public": "node scripts/check-workspace-public.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "conformance": "node dist/cli.js conformance run examples --format text",
+    "docs:api": "typedoc --options typedoc.json",
+    "docs:build": "npm run docs:api && npm run check:docs",
+    "gate:examples": "node dist/cli.js gate examples --env production",
     "generate:types": "node scripts/generate-types.mjs",
     "inspect": "npm run build --silent && node dist/cli.js inspect examples",
-    "test": "vitest run",
+    "lint": "node scripts/check-repo-lint.mjs",
+    "skills:validate": "npm --prefix agent-skills run validate",
+    "skills:test": "npm --prefix agent-skills run test",
+    "skills:check": "npm --prefix agent-skills run check",
+    "skills:index": "npm --prefix agent-skills run index",
+    "test": "npm run build --silent && vitest run",
     "test:openai:live": "vitest run src/__tests__/openai-live",
+    "test:aws": "vitest run src/__tests__/aws",
+    "test:aws:live": "vitest run src/__tests__/aws-live",
     "test:openai:mock": "vitest run src/__tests__/openai/openai-runtime.test.ts",
     "test:anthropic:live": "vitest run src/__tests__/providers/anthropic-live",
     "test:anthropic:mock": "vitest run src/__tests__/providers/anthropic",
@@ -152,8 +266,20 @@
     "test:mcp-provider": "vitest run src/__tests__/providers/mcp",
     "test:mcp-server": "vitest run src/__tests__/mcp-server",
     "test:providers:conformance": "vitest run src/__tests__/providers/conformance",
+    "test:conformance": "vitest run src/__tests__/conformance",
     "test:semantic-kernel": "vitest run src/__tests__/providers/semantic-kernel",
     "test:gemini:mock": "vitest run src/__tests__/providers/gemini",
+    "test:governance": "vitest run src/__tests__/governance",
+    "test:evalops": "vitest run src/__tests__/evalops",
+    "test:evidence": "vitest run src/__tests__/evidence",
+    "test:provenance": "vitest run src/__tests__/provenance",
+    "test:memory": "vitest run src/__tests__/memory",
+    "test:audit": "vitest run src/__tests__/audit",
+    "test:controls": "vitest run src/__tests__/controls",
+    "test:control-plane": "vitest run src/__tests__/control-plane",
+    "test:replay": "vitest run src/__tests__/replay",
+    "test:security": "vitest run src/__tests__/security",
+    "test:security-packs": "vitest run src/__tests__/security-packs",
     "validate": "npm run build --silent && node dist/cli.js validate examples"
   },
   "engines": {
@@ -164,27 +290,39 @@
     "yaml": "^2.8.0"
   },
   "peerDependencies": {
+    "@anthropic-ai/sdk": ">=0.100.1",
+    "@aws-sdk/client-cloudwatch": ">=3.1061.0",
+    "@aws-sdk/client-cloudwatch-logs": ">=3.1061.0",
     "@aws-sdk/client-dynamodb": ">=3.1061.0",
     "@aws-sdk/client-eventbridge": ">=3.1061.0",
+    "@aws-sdk/client-kms": ">=3.1061.0",
     "@aws-sdk/client-sfn": ">=3.1061.0",
     "@aws-sdk/lib-dynamodb": ">=3.1061.0",
-    "@anthropic-ai/sdk": ">=0.100.1",
     "@google/genai": ">=2.8.0",
-    "@langfuse/client": ">=5.4.1",
     "@langchain/core": ">=1.1.0 <2",
+    "@langfuse/client": ">=5.4.1",
     "@modelcontextprotocol/sdk": ">=1.29.0",
-    "@opentelemetry/api": ">=1.9.1",
     "@openai/agents": ">=0.11.6",
+    "@opentelemetry/api": ">=1.9.1",
     "ai": ">=6.0.0",
     "langchain": ">=1.4.0 <2",
     "openai": ">=4.0.0",
     "zod": ">=4.4.3"
   },
   "peerDependenciesMeta": {
+    "@aws-sdk/client-cloudwatch": {
+      "optional": true
+    },
+    "@aws-sdk/client-cloudwatch-logs": {
+      "optional": true
+    },
     "@aws-sdk/client-dynamodb": {
       "optional": true
     },
     "@aws-sdk/client-eventbridge": {
+      "optional": true
+    },
+    "@aws-sdk/client-kms": {
       "optional": true
     },
     "@aws-sdk/client-sfn": {
@@ -228,14 +366,18 @@
     }
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1061.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.1061.0",
     "@aws-sdk/client-dynamodb": "^3.1061.0",
     "@aws-sdk/client-eventbridge": "^3.1061.0",
+    "@aws-sdk/client-kms": "^3.1061.0",
     "@aws-sdk/client-sfn": "^3.1061.0",
     "@aws-sdk/lib-dynamodb": "^3.1061.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@openai/agents": "^0.11.6",
     "@types/node": "^24.12.4",
     "json-schema-to-typescript": "^15.0.4",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8",
     "zod": "^4.4.3"

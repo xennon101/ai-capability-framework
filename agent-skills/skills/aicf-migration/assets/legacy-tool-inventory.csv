@@ -1,0 +1,3 @@
+tool_id,domain,current_behavior,target_capability,risk_tier,migration_status
+legacy_ticket_lookup,support,reads synthetic support ticket,support.ticket.get,low,planned
+legacy_refund_request,support,prepares synthetic refund review,support.refund.prepare_case,high,planned

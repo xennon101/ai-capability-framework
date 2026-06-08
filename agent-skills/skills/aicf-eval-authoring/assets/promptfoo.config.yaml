@@ -1,0 +1,12 @@
+description: "AICF synthetic eval export template"
+providers:
+  - echo
+prompts:
+  - "Use only the provided AICF capability descriptions."
+tests:
+  - vars:
+      user_message: "Prepare a synthetic support refund review."
+    assert:
+      - type: contains-json
+        value:
+          expected_policy: approval_required

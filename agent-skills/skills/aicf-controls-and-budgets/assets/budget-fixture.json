@@ -1,0 +1,15 @@
+{
+  "runId": "run_example_001",
+  "provider": "openai",
+  "model": "example-model",
+  "usage": {
+    "toolCalls": 4,
+    "providerCalls": 2,
+    "runtimeMs": 1200,
+    "retries": 0
+  },
+  "decision": {
+    "allowed": true,
+    "reasons": ["within_budget"]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security/redaction-policy.schema.json",
+  "title": "AICF Security Redaction Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["defaultMode", "id", "rules"],
+  "properties": {
+    "defaultMode": { "enum": ["allow", "redact", "deny"] },
+    "id": { "type": "string", "minLength": 1 },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "mode"],
+        "properties": {
+          "boundary": { "enum": ["provider", "trace"] },
+          "capabilityIds": { "type": "array", "items": { "type": "string" } },
+          "dataClassifications": { "type": "array", "items": { "$ref": "#/$defs/data_classification" } },
+          "id": { "type": "string", "minLength": 1 },
+          "mode": { "enum": ["allow", "redact", "deny"] },
+          "operations": { "type": "array", "items": { "type": "string" } },
+          "paths": { "type": "array", "items": { "type": "string" } },
+          "providerIds": { "type": "array", "items": { "type": "string" } },
+          "trustLabels": { "type": "array", "items": { "$ref": "#/$defs/trust_label" } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "data_classification": {
+      "enum": [
+        "public",
+        "internal",
+        "customer_pii",
+        "employee_pii",
+        "payment_metadata",
+        "financial",
+        "health",
+        "legal",
+        "security_sensitive",
+        "credential_material"
+      ]
+    },
+    "trust_label": {
+      "enum": [
+        "system_instruction",
+        "developer_instruction",
+        "app_policy",
+        "app_data",
+        "tool_result",
+        "retrieved_document",
+        "user_input",
+        "model_output",
+        "external_api"
+      ]
+    }
+  }
+}

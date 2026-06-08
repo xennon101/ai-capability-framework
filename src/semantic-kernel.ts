@@ -40,6 +40,7 @@ export function buildSemanticKernelFunctions(
       pluginName
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -48,6 +49,7 @@ export function buildSemanticKernelFunctions(
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxFunctionNameLength,
     namePrefix: options.namePrefix,
+    providerId: "semantic-kernel",
     registry
   });
 

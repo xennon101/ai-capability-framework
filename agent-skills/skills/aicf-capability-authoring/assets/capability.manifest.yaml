@@ -1,0 +1,31 @@
+id: example.entity.action
+version: "1.0.0"
+status: draft
+description: "Describe the narrow capability and when a model should select it."
+capability_type: read
+lifecycle:
+  operation: read
+risk:
+  tier: low
+input_schema:
+  type: object
+  additionalProperties: false
+  properties:
+    entity_id:
+      type: string
+  required:
+    - entity_id
+output_schema:
+  type: object
+  additionalProperties: false
+  properties:
+    entity_id:
+      type: string
+    summary:
+      type: string
+  required:
+    - entity_id
+    - summary
+policy:
+  requires_user: true
+  requires_tenant: true

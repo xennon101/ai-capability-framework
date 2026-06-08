@@ -1,5 +1,6 @@
 import type {
   AicfBuiltContext,
+  AicfRuntimeControls,
   AicfRuntimeContext,
   AicfRuntimeToolResultEnvelope,
   RuntimeCapabilitySlice
@@ -83,6 +84,8 @@ export type AicfAnthropicToolChoice =
 
 export type AicfAnthropicRunStatus =
   | "completed"
+  | "budget_exceeded"
+  | "control_denied"
   | "tool_limit_exceeded"
   | "turn_limit_exceeded"
   | "provider_error"
@@ -92,6 +95,7 @@ export interface AicfAnthropicRunRequest {
   builtContext: AicfBuiltContext;
   client: AicfAnthropicMessagesClient;
   contentCapture?: AicfTraceContentCapture;
+  controls?: AicfRuntimeControls;
   executor: AicfToolExecutor;
   maxTokens?: number;
   maxToolCalls?: number;

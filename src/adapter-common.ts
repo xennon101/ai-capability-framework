@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
+import { readOnlyBlocks } from "./controls/index.js";
 import { decideCapability } from "./decision.js";
 import type {
   AdapterExcludedCapability,
@@ -70,6 +71,21 @@ export interface BuildAdapterToolsetOptions<TTool, TBinding extends AdapterToolB
   }): TBinding;
   registry: ManifestRegistry | CapabilitySlice;
   unsupportedSchemaKeywords?: string[];
+  controls?: {
+    evaluate(input: {
+      capability?: LoadedCapabilityManifest | CapabilityManifest;
+      capabilityId?: string;
+      domain?: string;
+      operation: "export";
+      providerId?: string;
+      registry?: ManifestRegistry;
+      riskTier?: CapabilityManifest["risk_tier"];
+    }): {
+      reasons: Array<{ code: string; message: string }>;
+      status: string;
+    };
+  };
+  providerId?: string;
 }
 
 export interface BuiltAdapterToolset<TTool, TBinding extends AdapterToolBinding = AdapterToolBinding> {
@@ -152,6 +168,45 @@ export function buildAdapterToolset<TTool, TBinding extends AdapterToolBinding =
         diagnostics: capabilityDiagnostics,
         path: loadedCapability.path,
         reason: "restricted"
+      });
+      continue;
+    }
+
+    const controlsDecision = options.controls?.evaluate({
+      capability: loadedCapability,
+      capabilityId: capability.id,
+      domain: capability.domain,
+      operation: "export",
+      providerId: options.providerId,
+      registry,
+      riskTier: capability.risk_tier
+    });
+    if (
+      controlsDecision?.status === "denied"
+      || (controlsDecision?.status === "read_only" && readOnlyBlocks({
+        capability: loadedCapability,
+        capabilityId: capability.id,
+        operation: "export",
+        riskTier: capability.risk_tier
+      }))
+    ) {
+      const capabilityDiagnostics = (controlsDecision.reasons.length > 0 ? controlsDecision.reasons : [{
+        code: "control_denied",
+        message: "Capability was denied by runtime controls."
+      }]).map((reason) => ({
+        code: "capability_excluded",
+        details: reason,
+        id: capability.id,
+        kind: "capability",
+        message: `Capability "${capability.id}" was not exported: ${reason.message}`,
+        path: loadedCapability.path
+      })) satisfies AicfDiagnostic[];
+      diagnostics.push(...capabilityDiagnostics);
+      excluded.push({
+        capabilityId: capability.id,
+        diagnostics: capabilityDiagnostics,
+        path: loadedCapability.path,
+        reason: "control_denied"
       });
       continue;
     }

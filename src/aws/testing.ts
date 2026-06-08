@@ -73,6 +73,12 @@ export class FakeDynamoDbDocumentClient extends RecordingAwsClient {
       return {};
     }
 
+    if (record.name === "DeleteCommand") {
+      const key = itemKey(record.input.Key as Record<string, unknown>);
+      this.items.delete(key);
+      return {};
+    }
+
     return {};
   }
 }
@@ -95,8 +101,26 @@ export class FakeStepFunctionsClient extends RecordingAwsClient {
 
 export class FakeEventBridgeClient extends RecordingAwsClient {}
 
+export class FakeCloudWatchClient extends RecordingAwsClient {}
+
+export class FakeCloudWatchLogsClient extends RecordingAwsClient {}
+
+export class FakeKmsClient extends RecordingAwsClient {
+  override async send(command: unknown): Promise<unknown> {
+    const record = commandRecord(command);
+    this.commands.push(record);
+    if (record.name === "GenerateMacCommand") {
+      return {
+        Mac: Buffer.from(`fake-mac:${JSON.stringify(record.input.EncryptionContext ?? {})}`)
+      };
+    }
+    return {};
+  }
+}
+
 function commandRecord(command: unknown): AicfAwsTestingCommandRecord {
   const input = isRecord(command) && isRecord(command.input) ? command.input : {};
+  assertNoUndefinedValues(input);
   return {
     input: clone(input),
     name: command?.constructor?.name ?? "UnknownCommand"
@@ -128,3 +152,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function assertNoUndefinedValues(value: unknown, path = "$"): void {
+  if (value === undefined) {
+    throw new Error(`FakeDynamoDbDocumentClient received undefined command value at ${path}.`);
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertNoUndefinedValues(item, `${path}[${index}]`));
+    return;
+  }
+
+  if (isRecord(value)) {
+    for (const [key, child] of Object.entries(value)) {
+      assertNoUndefinedValues(child, `${path}.${key}`);
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import Ajv2020 from "ajv/dist/2020.js";
+import { controlDecisionToPolicyReasons } from "../../controls/index.js";
 import { createToolEnvelope } from "../../runtime/index.js";
 import type {
   AicfRuntimeToolResultEnvelope,
@@ -33,6 +34,32 @@ export async function executeProviderToolCall(input: ExecuteProviderToolCallInpu
   }
 
   const operation = binding.operation === "prepare" ? "prepare" : "read";
+  const controlsDecision = input.controls?.evaluate({
+    capability,
+    capabilityId: capability.manifest.id,
+    domain: capability.manifest.domain,
+    operation,
+    registry: input.registry,
+    riskTier: capability.manifest.risk_tier,
+    runtimeContext: input.runtimeContext
+  });
+  if (controlsDecision?.status === "denied") {
+    return resultFromEnvelope(input, createToolEnvelope({
+      capabilityId: capability.manifest.id,
+      capabilityVersion: capability.manifest.version,
+      operation,
+      policy: {
+        reasons: controlDecisionToPolicyReasons(controlsDecision),
+        requiredApprovals: [],
+        status: "denied"
+      },
+      requestId: input.runtimeContext.requestId,
+      runId: input.runtimeContext.runId,
+      status: "denied",
+      userMessage: "The provider tool call is not allowed."
+    }));
+  }
+
   const validation = validateArgs(capability, input.providerCall.args);
   if (!validation.valid) {
     return resultFromEnvelope(input, createToolEnvelope({

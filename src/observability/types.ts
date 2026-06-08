@@ -54,3 +54,67 @@ export interface AicfOpenTelemetryOptions {
   tracerApi?: unknown;
   tracerName?: string;
 }
+
+export interface StartRunInput {
+  metadata?: Record<string, JsonValue>;
+  requestId: string;
+  runId: string;
+  startedAt?: string;
+}
+
+export interface CapabilitySliceEvent {
+  capabilityIds: string[];
+  excludedCapabilityIds?: string[];
+  requestId: string;
+  runId: string;
+  selectedCount?: number;
+  timestamp?: string;
+}
+
+export interface ToolCallEvent {
+  argsHash?: string;
+  callId?: string;
+  capabilityId: string;
+  operation?: string;
+  provider?: string;
+  requestId: string;
+  runId: string;
+  status?: string;
+  timestamp?: string;
+}
+
+export interface ProviderCallEvent {
+  model?: string;
+  provider?: string;
+  requestId: string;
+  responseId?: string;
+  runId: string;
+  status?: string;
+  timestamp?: string;
+}
+
+export interface EvalScoreEvent {
+  evalId: string;
+  requestId: string;
+  runId: string;
+  score: number;
+  scorer: string;
+  status?: string;
+  timestamp?: string;
+}
+
+export interface AicfRunSpan {
+  end(output?: { status?: string; timestamp?: string; [key: string]: JsonValue | undefined }): Promise<void> | void;
+  error(error: unknown, metadata?: Record<string, JsonValue>): Promise<void> | void;
+  recordAction(event: Record<string, JsonValue> & { requestId?: string; timestamp?: string }): Promise<void> | void;
+  recordApproval(event: Record<string, JsonValue> & { requestId?: string; timestamp?: string }): Promise<void> | void;
+  recordCapabilitySlice(event: CapabilitySliceEvent): Promise<void> | void;
+  recordPolicyDecision(event: Record<string, JsonValue> & { requestId?: string; timestamp?: string }): Promise<void> | void;
+  recordProviderCall(event: ProviderCallEvent): Promise<void> | void;
+  recordToolCall(event: ToolCallEvent): Promise<void> | void;
+  recordEvalScore(event: EvalScoreEvent): Promise<void> | void;
+}
+
+export interface AicfTracer {
+  startRun(input: StartRunInput): AicfRunSpan;
+}

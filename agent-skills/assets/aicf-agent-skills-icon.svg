@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">AICF Agent Skills icon</title>
+  <desc id="desc">A simple public-safe icon for the AICF Agent Skills package.</desc>
+  <rect width="64" height="64" rx="12" fill="#111827"/>
+  <path d="M18 42V20h28v22H18z" fill="none" stroke="#f9fafb" stroke-width="4"/>
+  <path d="M24 28h16M24 36h10" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+</svg>

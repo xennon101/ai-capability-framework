@@ -28,8 +28,13 @@ const validators: Record<ManifestKind, ValidateFunction> = {
 
 const fixtureValidators: Record<Exclude<LoadedFixture["kind"], "unknown">, ValidateFunction> = {
   adapter_context: fixtureAjv.compile(adapterContextSchema),
+  control_plane_state: fixtureAjv.compile(readSchema("control-plane/state.schema.json")),
   decision_request: fixtureAjv.compile(readSchema("decision-request.schema.json")),
-  eval_result: fixtureAjv.compile(readSchema("eval-result.schema.json"))
+  eval_result: fixtureAjv.compile(readSchema("eval-result.schema.json")),
+  generated_content_provenance: fixtureAjv.compile(readSchema("provenance/generated-content-provenance.schema.json")),
+  governance_gate_config: fixtureAjv.compile(readSchema("governance/gate-config.schema.json")),
+  governed_memory: fixtureAjv.compile(readSchema("memory/governed-memory-fixture.schema.json")),
+  replay_trace: fixtureAjv.compile(readSchema("replay/replay-trace.schema.json"))
 };
 
 const riskRank = {
@@ -102,6 +107,13 @@ export function validateCapabilityInvariants(manifests: LoadedManifest[]): {
 } {
   const errors: AicfDiagnostic[] = [];
   const warnings: AicfDiagnostic[] = [];
+  const capabilityById = new Map<string, LoadedManifest & { manifest: CapabilityManifest }>();
+
+  for (const loaded of manifests) {
+    if (loaded.kind === "capability" && isCapabilityManifestLike(loaded.manifest)) {
+      capabilityById.set(loaded.manifest.id, loaded as LoadedManifest & { manifest: CapabilityManifest });
+    }
+  }
 
   for (const loaded of manifests) {
     if (loaded.kind !== "capability" || !isCapabilityManifestLike(loaded.manifest)) {
@@ -138,6 +150,27 @@ export function validateCapabilityInvariants(manifests: LoadedManifest[]): {
 
     if (capability.capability_type === "write_commit" && !capability.lifecycle.commit) {
       errors.push(diagnostic(loaded, "invalid_capability_lifecycle", "write_commit capabilities must support commit."));
+    }
+
+    const commitCapabilityId = capability.lifecycle.commit_capability_id;
+    if (commitCapabilityId) {
+      if (!capability.lifecycle.prepare) {
+        errors.push(diagnostic(loaded, "invalid_capability_lifecycle", "commit_capability_id is valid only on capabilities that support prepare."));
+      }
+
+      const commitCapability = capabilityById.get(commitCapabilityId);
+      if (!commitCapability) {
+        errors.push(diagnostic(loaded, "invalid_commit_capability_reference", `commit_capability_id "${commitCapabilityId}" does not reference a known capability.`));
+      } else if (
+        commitCapability.manifest.capability_type !== "write_commit"
+        || commitCapability.manifest.lifecycle.commit !== true
+      ) {
+        errors.push(diagnostic(loaded, "invalid_commit_capability_reference", `commit_capability_id "${commitCapabilityId}" must reference a write_commit capability with lifecycle.commit: true.`));
+      }
+    }
+
+    if (capability.capability_type === "write_prepare_only" && capability.lifecycle.approve && !commitCapabilityId) {
+      warnings.push(diagnostic(loaded, "missing_commit_capability_reference", "write_prepare_only capabilities that require approval should declare lifecycle.commit_capability_id when they can later be committed by the host."));
     }
 
     if (capability.capability_type === "external_message_send" && !sideEffects.sends_external_messages) {

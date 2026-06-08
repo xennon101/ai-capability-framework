@@ -9,6 +9,7 @@ import {
   type AicfRuntimeToolResultEnvelope,
   type CapabilitySlice as RuntimeCapabilitySlice
 } from "../runtime/index.js";
+import { controlDecisionToPolicyReasons } from "../controls/index.js";
 import { emitTraceEvent, type AicfRuntimeTraceEvent } from "../observability/index.js";
 import { safeOpenAIError } from "./errors.js";
 import {
@@ -49,6 +50,7 @@ export async function runOpenAIResponses(
   let responseId: string | undefined;
   let usage: Record<string, unknown> | undefined;
   let toolCallCount = 0;
+  const startedAt = Date.now();
 
   const emit = async (
     type: AicfRuntimeTraceEvent["type"],
@@ -56,7 +58,10 @@ export async function runOpenAIResponses(
     message?: string
   ) => {
     await emitTraceEvent({
-      attributes,
+      attributes: {
+        provider: "openai",
+        ...attributes
+      },
       contentCapture: request.contentCapture,
       events: traceEvents,
       message,
@@ -94,6 +99,26 @@ export async function runOpenAIResponses(
     model: request.model
   });
 
+  const startupControl = request.controls?.evaluate({
+    model: request.model,
+    operation: "provider_call",
+    providerId: "openai",
+    registry: request.registry,
+    runtimeContext: request.runtimeContext,
+    usage: {
+      providerCalls: 0,
+      retries: 0,
+      runtimeMs: Date.now() - startedAt,
+      toolCalls: 0
+    }
+  });
+  if (startupControl?.status === "denied") {
+    await emit("runtime.error", { code: "control_denied" });
+    return finish("control_denied", {
+      errors: controlErrors(startupControl)
+    });
+  }
+
   let builtContext: AicfBuiltContext;
   try {
     await emit("context.build.start", {
@@ -124,6 +149,7 @@ export async function runOpenAIResponses(
   });
   selectedCapabilities = await request.router.route({
     builtContext,
+    controls: request.controls,
     includeRestricted: false,
     registry: request.registry,
     userInput: request.userInput
@@ -154,6 +180,26 @@ export async function runOpenAIResponses(
   });
 
   for (let turn = 0; turn < maxTurns; turn += 1) {
+    const providerControl = request.controls?.evaluate({
+      model: request.model,
+      operation: "provider_call",
+      providerId: "openai",
+      registry: request.registry,
+      runtimeContext: request.runtimeContext,
+      usage: {
+        providerCalls: turn + 1,
+        retries: 0,
+        runtimeMs: Date.now() - startedAt,
+        toolCalls: toolCallCount
+      }
+    });
+    if (providerControl?.status === "denied") {
+      await emit("runtime.error", { code: providerControl.budgetDecision?.status === "denied" ? "budget_exceeded" : "control_denied" });
+      return finish(providerControl.budgetDecision?.status === "denied" ? "budget_exceeded" : "control_denied", {
+        errors: controlErrors(providerControl)
+      });
+    }
+
     const responseRequest = openAIResponseRequest({
       input: modelInput,
       instructions,
@@ -205,6 +251,26 @@ export async function runOpenAIResponses(
           code: "tool_limit_exceeded",
           message: "The OpenAI runtime reached the configured tool call limit."
         }]
+      });
+    }
+
+    const toolBudgetControl = request.controls?.evaluate({
+      model: request.model,
+      operation: "provider_call",
+      providerId: "openai",
+      registry: request.registry,
+      runtimeContext: request.runtimeContext,
+      usage: {
+        providerCalls: turn + 1,
+        retries: 0,
+        runtimeMs: Date.now() - startedAt,
+        toolCalls: toolCallCount + calls.length
+      }
+    });
+    if (toolBudgetControl?.status === "denied") {
+      await emit("runtime.error", { code: "budget_exceeded" });
+      return finish("budget_exceeded", {
+        errors: controlErrors(toolBudgetControl)
       });
     }
 
@@ -300,6 +366,33 @@ async function executeToolCall(input: {
   }
 
   const operation = capability.manifest.lifecycle.prepare ? "prepare" : "read";
+  const controlsDecision = input.request.controls?.evaluate({
+    capability,
+    capabilityId: capability.manifest.id,
+    domain: capability.manifest.domain,
+    operation,
+    providerId: "openai",
+    registry: input.request.registry,
+    riskTier: capability.manifest.risk_tier,
+    runtimeContext: input.request.runtimeContext
+  });
+  if (controlsDecision?.status === "denied") {
+    return createToolEnvelope({
+      capabilityId: capability.manifest.id,
+      capabilityVersion: capability.manifest.version,
+      operation,
+      policy: {
+        reasons: controlDecisionToPolicyReasons(controlsDecision),
+        requiredApprovals: [],
+        status: "denied"
+      },
+      requestId: input.request.runtimeContext.requestId,
+      runId: input.request.runtimeContext.runId,
+      status: "denied",
+      userMessage: "The provider tool call is not allowed."
+    });
+  }
+
   return input.request.executor.execute({
     args: parsed.parsed.args,
     builtContext: input.builtContext,
@@ -308,6 +401,14 @@ async function executeToolCall(input: {
     runtimeContext: input.request.runtimeContext,
     source: "model_tool_call"
   });
+}
+
+function controlErrors(decision: {
+  reasons: Array<{ code: string; message: string }>;
+}): Array<{ code: string; message: string }> {
+  return decision.reasons.length > 0
+    ? decision.reasons.map((reason) => ({ code: reason.code, message: reason.message }))
+    : [{ code: "control_denied", message: "The runtime controls denied this operation." }];
 }
 
 function invalidToolCallEnvelope(input: {

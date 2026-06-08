@@ -65,3 +65,16 @@ aicf export promptfoo examples --out ./promptfoo
 
 `importPromptfooResults()` maps basic Promptfoo JSON results back into live eval
 result summaries.
+
+Capability-aware security packs have a focused Promptfoo export under
+`ai-capability-framework/security-packs`. That export generates red-team config
+templates with `echo` as the default provider and placeholders for host runtime
+targets. AICF does not run Promptfoo or call providers when exporting those
+files.
+
+## EvalOps Exports
+
+`ai-capability-framework/evalops` provides dependency-free JSON exporters and
+importers for Braintrust-style and OpenAI-eval-style datasets/results. These
+helpers transform public-safe eval cases and summarized results only. They do
+not upload data, call external services, or require provider SDKs.

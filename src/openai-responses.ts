@@ -33,6 +33,7 @@ export function buildOpenAIResponsesTools(
       type: "function"
     }),
     context: options.context,
+    controls: options.controls,
     defaultNamePrefix,
     includeDeprecated: options.includeDeprecated,
     includeDisabledForTests: options.includeDisabledForTests,
@@ -41,6 +42,7 @@ export function buildOpenAIResponsesTools(
     includeRestricted: options.includeRestricted,
     maxToolNameLength: maxOpenAIToolNameLength,
     namePrefix: options.namePrefix,
+    providerId: "openai",
     registry
   });
 }

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/audit/policy-decision-record.schema.json",
+  "title": "AICF Audit Policy Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "autonomyTier",
+    "capabilityId",
+    "capabilityVersion",
+    "createdAt",
+    "decision",
+    "decisionId",
+    "inputHash",
+    "operation",
+    "policySource",
+    "reasons",
+    "redaction",
+    "riskTier",
+    "runId",
+    "schemaVersion"
+  ],
+  "properties": {
+    "accountRef": { "$ref": "#/$defs/redacted_ref" },
+    "autonomyTier": { "enum": ["A0", "A1", "A2", "A3", "A4", "A5"] },
+    "capabilityId": { "type": "string", "minLength": 1 },
+    "capabilityVersion": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "decision": { "enum": ["allowed", "approval_required", "denied"] },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "inputHash": { "$ref": "#/$defs/sha256_ref" },
+    "operation": { "enum": ["select", "read", "prepare", "approve", "commit"] },
+    "policySource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": { "enum": ["aicf", "auth_platform", "host", "policy_engine"] },
+        "version": { "type": "string" }
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason" }
+    },
+    "redaction": { "$ref": "#/$defs/redaction_summary" },
+    "riskTier": { "enum": ["none", "low", "medium", "high", "critical"] },
+    "runId": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "const": "1.0" },
+    "selectedCapabilitySliceHash": { "$ref": "#/$defs/sha256_ref" },
+    "subjectRef": { "$ref": "#/$defs/redacted_subject_ref" },
+    "tenantRef": { "$ref": "#/$defs/redacted_ref" },
+    "traceRef": { "$ref": "#/$defs/trace_ref" }
+  },
+  "$defs": {
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string" },
+        "severity": { "type": "string" },
+        "source": { "type": "string" }
+      }
+    },
+    "redacted_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refHash"],
+      "properties": {
+        "refHash": { "$ref": "#/$defs/redacted_hash" }
+      }
+    },
+    "redacted_subject_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refHash"],
+      "properties": {
+        "actorType": { "type": "string" },
+        "refHash": { "$ref": "#/$defs/redacted_hash" }
+      }
+    },
+    "redacted_hash": {
+      "type": "string",
+      "pattern": "^(sha256:[a-f0-9]{64}|unsafe:.+)$"
+    },
+    "redaction_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fieldsRedacted", "hashAlgorithm", "mode"],
+      "properties": {
+        "fieldsRedacted": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hashAlgorithm": { "const": "sha256" },
+        "mode": { "enum": ["redacted", "unsafe_unredacted"] }
+      }
+    },
+    "sha256_ref": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "trace_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traceId"],
+      "properties": {
+        "provider": { "type": "string" },
+        "traceId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -24,7 +24,7 @@ npm run validate
 Expected excerpt:
 
 ```text
-Validated 16 manifest(s) and 13 fixture(s).
+Validated 16 manifest(s) and 18 fixture(s).
 ```
 
 This proves the public manifests and fixture files are parseable, schema-valid,

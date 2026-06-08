@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/conformance/conformance-report.schema.json",
+  "title": "AICF Conformance Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "aicfVersion",
+    "providerResults",
+    "capabilityResults",
+    "failures",
+    "warnings",
+    "summary",
+    "passed",
+    "counts",
+    "results"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "aicfVersion": { "type": "string", "minLength": 1 },
+    "providerResults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/provider_result" }
+    },
+    "capabilityResults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability_result" }
+    },
+    "failures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failure" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/warning" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "passed": { "type": "boolean" },
+    "counts": { "$ref": "#/$defs/counts" },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/case_result" }
+    }
+  },
+  "$defs": {
+    "provider": {
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "gemini",
+        "ai-sdk",
+        "mcp",
+        "langchain",
+        "semantic-kernel-mcp",
+        "semantic-kernel-openapi"
+      ]
+    },
+    "dimension": {
+      "type": "string",
+      "enum": [
+        "descriptor_export",
+        "tool_name_mapping",
+        "schema_normalization",
+        "schema_downgrade_reporting",
+        "tool_call_parsing",
+        "tool_arg_validation",
+        "tool_result_envelope",
+        "approval_required_behavior",
+        "commit_tool_not_exposed_by_default",
+        "risk_filtering",
+        "disabled_capability_filtering",
+        "provider_error_normalization",
+        "streaming_or_loop_semantics"
+      ]
+    },
+    "scorer_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scorer", "dimension", "passed", "diagnostics"],
+      "properties": {
+        "scorer": { "type": "string", "minLength": 1 },
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "passed": { "type": "boolean" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "provider_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "label", "passed", "results", "failed", "dimensions"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/provider" },
+        "label": { "type": "string", "minLength": 1 },
+        "passed": { "type": "boolean" },
+        "results": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dimension", "passed", "failed"],
+            "properties": {
+              "dimension": { "$ref": "#/$defs/dimension" },
+              "passed": { "type": "integer", "minimum": 0 },
+              "failed": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "capability_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "provider", "caseIds", "passed", "diagnostics", "dimensions"],
+      "properties": {
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "provider": { "$ref": "#/$defs/provider" },
+        "caseIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "passed": { "type": "boolean" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dimensions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scorer_result" }
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "caseId", "dimension", "message"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/provider" },
+        "caseId": { "type": "string", "minLength": 1 },
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/provider" },
+        "caseId": { "type": "string", "minLength": 1 },
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "warn", "fail", "providers", "results"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "warn": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "providers": { "type": "integer", "minimum": 0 },
+        "results": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "failed", "providers", "results"],
+      "properties": {
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "providers": { "type": "integer", "minimum": 0 },
+        "results": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "case_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "caseId", "capabilityIds", "passed", "diagnostics", "dimensions", "scorers"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/provider" },
+        "caseId": { "type": "string", "minLength": 1 },
+        "capabilityIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "passed": { "type": "boolean" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dimensions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scorer_result" }
+        },
+        "scorers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scorer_result" }
+        },
+        "exportResult": {}
+      }
+    }
+  }
+}

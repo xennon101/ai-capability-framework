@@ -1,0 +1,12 @@
+id: example.entity.action.selects
+description: "Model should select the narrow example capability for a matching request."
+capability_under_test: example.entity.action
+input:
+  user_message: "Show the summary for example entity EX-100."
+expected:
+  selected_capabilities:
+    - example.entity.action
+  forbidden_tool_calls: []
+scorers:
+  - selected_capability_exact
+  - no_forbidden_tool_call

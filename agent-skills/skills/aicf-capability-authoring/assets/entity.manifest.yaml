@@ -1,0 +1,12 @@
+id: example.entity
+version: "1.0.0"
+description: "Synthetic entity used by an example capability."
+fields:
+  entity_id:
+    type: string
+    description: "Synthetic public-safe entity identifier."
+  summary:
+    type: string
+    description: "Short public-safe summary."
+allowed_actions:
+  - read

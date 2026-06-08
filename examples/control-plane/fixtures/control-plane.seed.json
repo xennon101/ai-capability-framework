@@ -1,0 +1,244 @@
+{
+  "schemaVersion": "1.0",
+  "decisions": [
+    {
+      "schemaVersion": "1.0",
+      "decisionId": "decision_support_ticket_get_1",
+      "runId": "run_example_control_plane",
+      "capabilityId": "support.ticket.get",
+      "capabilityVersion": "1.0.0",
+      "operation": "read",
+      "decision": "allowed",
+      "reasons": [],
+      "policySource": {
+        "source": "aicf",
+        "version": "1.0.0-rc.1"
+      },
+      "autonomyTier": "A2",
+      "riskTier": "low",
+      "inputHash": "sha256:example-ticket-input",
+      "subjectRef": {
+        "actorType": "user",
+        "refHash": "sha256:example-subject"
+      },
+      "accountRef": {
+        "refHash": "sha256:example-account"
+      },
+      "tenantRef": {
+        "refHash": "sha256:example-tenant"
+      },
+      "redaction": {
+        "fieldsRedacted": [
+          "account",
+          "subject",
+          "tenant"
+        ],
+        "hashAlgorithm": "sha256",
+        "mode": "redacted"
+      },
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "decisionId": "decision_support_refund_prepare_1",
+      "runId": "run_example_control_plane",
+      "capabilityId": "support.refund.prepare_case",
+      "capabilityVersion": "1.0.0",
+      "operation": "prepare",
+      "decision": "approval_required",
+      "reasons": [
+        {
+          "code": "approval_required",
+          "message": "Refund requests over the threshold require human approval.",
+          "severity": "info",
+          "source": "aicf"
+        }
+      ],
+      "policySource": {
+        "source": "aicf",
+        "version": "1.0.0-rc.1"
+      },
+      "autonomyTier": "A2",
+      "riskTier": "medium",
+      "inputHash": "sha256:example-refund-input",
+      "subjectRef": {
+        "actorType": "user",
+        "refHash": "sha256:example-subject"
+      },
+      "accountRef": {
+        "refHash": "sha256:example-account"
+      },
+      "tenantRef": {
+        "refHash": "sha256:example-tenant"
+      },
+      "redaction": {
+        "fieldsRedacted": [
+          "account",
+          "subject",
+          "tenant"
+        ],
+        "hashAlgorithm": "sha256",
+        "mode": "redacted"
+      },
+      "createdAt": "2026-06-04T00:00:01.000Z"
+    }
+  ],
+  "actions": [
+    {
+      "schemaVersion": "1.0",
+      "actionId": "action_prepared_refund_example_1",
+      "runId": "run_example_control_plane",
+      "capabilityId": "support.refund.prepare_case",
+      "capabilityVersion": "1.0.0",
+      "actionState": "approval_required",
+      "preparedActionId": "prepared_refund_example_1",
+      "policyDecisionId": "decision_support_refund_prepare_1",
+      "inputHash": "sha256:example-refund-input",
+      "previewHash": "sha256:example-refund-preview",
+      "auditRefs": [],
+      "createdAt": "2026-06-04T00:00:02.000Z",
+      "updatedAt": "2026-06-04T00:00:02.000Z"
+    }
+  ],
+  "approvals": [
+    {
+      "schemaVersion": "1.0",
+      "approvalRecordId": "approval_record_example_1",
+      "capabilityId": "support.refund.prepare_case",
+      "preparedActionId": "prepared_refund_example_1",
+      "status": "pending",
+      "requiredReasonCodes": [
+        "approval_required"
+      ],
+      "requestedBy": {
+        "actorType": "user",
+        "refHash": "sha256:example-subject"
+      },
+      "createdAt": "2026-06-04T00:00:03.000Z"
+    }
+  ],
+  "controls": {
+    "killSwitches": [],
+    "budgetPolicies": [
+      {
+        "id": "budget_example_default",
+        "scope": {
+          "type": "global"
+        },
+        "mode": "hard",
+        "maxToolCallsPerRun": 8,
+        "maxProviderCallsPerRun": 8,
+        "maxRuntimeMsPerRun": 60000,
+        "maxRetriesPerRun": 2
+      }
+    ],
+    "circuitBreakerPolicies": [
+      {
+        "id": "circuit_provider_errors_example",
+        "scope": {
+          "type": "provider",
+          "providerId": "openai"
+        },
+        "metric": "provider_error_rate",
+        "threshold": 0.5,
+        "windowSeconds": 300,
+        "action": "open_deny"
+      }
+    ],
+    "circuitBreakerStates": [
+      {
+        "policyId": "circuit_provider_errors_example",
+        "status": "closed",
+        "lastEvaluatedAt": "2026-06-04T00:00:00.000Z",
+        "observedRate": 0
+      }
+    ],
+    "circuitBreakerEvents": []
+  },
+  "replayTraces": [
+    {
+      "schemaVersion": "1.0",
+      "traceId": "support_refund_approval_required_trace",
+      "runId": "run_example_control_plane",
+      "createdAt": "2026-06-04T00:00:04.000Z",
+      "runtimeVersion": "1.0.0-rc.1",
+      "provider": {
+        "id": "openai",
+        "model": "mock-responses"
+      },
+      "capabilitySlice": {
+        "capabilityIds": [
+          "support.ticket.get",
+          "support.refund.prepare_case"
+        ],
+        "excludedCapabilityIds": [
+          "support.refund.commit_case"
+        ],
+        "hash": "sha256:example-support-slice"
+      },
+      "capabilityVersions": {
+        "support.ticket.get": "1.0.0",
+        "support.refund.prepare_case": "1.0.0"
+      },
+      "context": {
+        "contextHash": "sha256:example-support-context",
+        "userInputSummary": "Synthetic user asks to prepare a refund case.",
+        "decisionContext": {
+          "permissions": [
+            "ticket.read",
+            "refund.case.create"
+          ],
+          "autonomyTier": "A2",
+          "riskCeiling": "medium"
+        }
+      },
+      "toolCalls": [],
+      "toolResults": [],
+      "policyDecisions": [
+        {
+          "decisionId": "decision_support_refund_prepare_1",
+          "capabilityId": "support.refund.prepare_case",
+          "operation": "prepare",
+          "decision": "approval_required",
+          "reasons": [
+            {
+              "code": "approval_required",
+              "message": "Refund requests over the threshold require human approval.",
+              "severity": "info",
+              "source": "aicf"
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "actionId": "action_prepared_refund_example_1",
+          "capabilityId": "support.refund.prepare_case",
+          "preparedActionId": "prepared_refund_example_1",
+          "actionState": "approval_required",
+          "resultHash": "sha256:example-refund-preview"
+        }
+      ],
+      "approvals": [
+        {
+          "approvalRecordId": "approval_record_example_1",
+          "preparedActionId": "prepared_refund_example_1",
+          "capabilityId": "support.refund.prepare_case",
+          "status": "pending",
+          "requiredReasonCodes": [
+            "approval_required"
+          ]
+        }
+      ],
+      "redaction": {
+        "fieldsRedacted": [
+          "account",
+          "subject",
+          "tenant"
+        ],
+        "hashAlgorithm": "sha256",
+        "mode": "redacted"
+      }
+    }
+  ]
+}

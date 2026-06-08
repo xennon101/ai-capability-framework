@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/evidence/evidence-pack.schema.json",
+  "title": "AICF Evidence Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "project",
+    "aicfVersion",
+    "capabilityInventory",
+    "riskInventory",
+    "providerInventory",
+    "policyInventory",
+    "evalSummary",
+    "securitySummary",
+    "conformanceSummary",
+    "approvalSummary",
+    "retentionSummary",
+    "humanReviewPolicySummary",
+    "mappings",
+    "gaps",
+    "disclaimers",
+    "redaction"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "project": { "$ref": "#/$defs/project_ref" },
+    "aicfVersion": { "type": "string", "minLength": 1 },
+    "capabilityInventory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability_inventory_item" }
+    },
+    "riskInventory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/risk_inventory_item" }
+    },
+    "providerInventory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/provider_inventory_item" }
+    },
+    "policyInventory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/policy_inventory_item" }
+    },
+    "evalSummary": { "$ref": "#/$defs/eval_summary" },
+    "securitySummary": { "$ref": "#/$defs/security_summary" },
+    "conformanceSummary": { "$ref": "#/$defs/conformance_summary" },
+    "approvalSummary": { "$ref": "#/$defs/approval_summary" },
+    "incidentSummary": { "$ref": "#/$defs/incident_summary" },
+    "retentionSummary": { "$ref": "#/$defs/retention_summary" },
+    "humanReviewPolicySummary": { "$ref": "#/$defs/human_review_summary" },
+    "modelUpgradeHistory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/model_upgrade_record" }
+    },
+    "mappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/risk_mapping" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/coverage_gap" }
+    },
+    "disclaimers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/disclaimer" }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content", "omitted"],
+      "properties": {
+        "content": { "const": "redacted_refs_and_hashes_only" },
+        "omitted": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "approval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "total", "approved", "pending", "rejected"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "total": { "type": "integer", "minimum": 0 },
+        "approved": { "type": "integer", "minimum": 0 },
+        "pending": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capability_inventory_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "capabilityType", "riskTier", "status", "autonomyTier", "lifecycle"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "capabilityType": { "type": "string", "minLength": 1 },
+        "riskTier": { "$ref": "#/$defs/evidence_risk_tier" },
+        "status": { "type": "string", "minLength": 1 },
+        "autonomyTier": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "minLength": 1 },
+        "lifecycle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "select": { "type": "boolean" },
+            "read": { "type": "boolean" },
+            "prepare": { "type": "boolean" },
+            "commit": { "type": "boolean" },
+            "verify": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "conformance_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "providers", "total"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "providers": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "gaps": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage_gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity", "source"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "blocking"] },
+        "source": { "type": "string", "minLength": 1 }
+      }
+    },
+    "coverage_status": {
+      "enum": ["available", "gap", "not_supplied"]
+    },
+    "disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "text"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    },
+    "eval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "total"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "gaps": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "human_review_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approvalRequiredCapabilities", "humanReviewRequiredCapabilities"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "approvalRequiredCapabilities": { "type": "integer", "minimum": 0 },
+        "humanReviewRequiredCapabilities": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "incident_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "total", "open", "resolved"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "total": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "model_upgrade_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changedAt", "toModel", "reason"],
+      "properties": {
+        "changedAt": { "type": "string", "minLength": 1 },
+        "fromModel": { "type": "string", "minLength": 1 },
+        "toModel": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "policy_inventory_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "approvalRequired", "auditRequired", "idempotencyRequired", "permissions", "policyRules"],
+      "properties": {
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "approvalRequired": { "type": "boolean" },
+        "auditRequired": { "type": "boolean" },
+        "idempotencyRequired": { "type": "boolean" },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "policyRules": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "project_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "environment": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provider_inventory_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "label", "status"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/coverage_status" }
+      }
+    },
+    "retention_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "rawPromptRetention", "rawProviderPayloadRetention"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "rawPromptRetention": { "enum": ["none", "short_diagnostic", "custom"] },
+        "rawProviderPayloadRetention": { "enum": ["none", "short_diagnostic", "custom"] },
+        "traceMetadataRetentionDays": { "type": "integer", "minimum": 0 },
+        "auditRecordRetentionDays": { "type": "integer", "minimum": 0 },
+        "evalDatasetRetentionDays": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "risk_inventory_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilityId", "declaredRiskTier", "inferredRiskTier", "passed", "requiredControls", "warnings"],
+      "properties": {
+        "capabilityId": { "type": "string", "minLength": 1 },
+        "declaredRiskTier": { "$ref": "#/$defs/evidence_risk_tier" },
+        "inferredRiskTier": { "$ref": "#/$defs/evidence_risk_tier" },
+        "passed": { "type": "boolean" },
+        "requiredControls": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "risk_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["framework", "category", "control"],
+      "properties": {
+        "framework": { "enum": ["aicf", "nist_ai_rmf", "owasp_llm_top_10", "custom"] },
+        "category": { "type": "string", "minLength": 1 },
+        "control": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence_risk_tier": {
+      "enum": ["none", "low", "medium", "high", "critical"]
+    },
+    "security_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "missingRequired", "total"],
+      "properties": {
+        "status": { "$ref": "#/$defs/coverage_status" },
+        "missingRequired": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "gaps": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

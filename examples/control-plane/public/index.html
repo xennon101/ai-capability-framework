@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AICF Control Plane</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">AI Capability Framework</p>
+        <h1>Control Plane</h1>
+      </div>
+      <button id="exportEvidence" type="button">Export Evidence</button>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="Control plane sections">
+        <button class="nav active" data-view="catalogue" type="button">Catalogue</button>
+        <button class="nav" data-view="status" type="button">Status</button>
+        <button class="nav" data-view="ledger" type="button">Ledger</button>
+        <button class="nav" data-view="approvals" type="button">Approvals</button>
+        <button class="nav" data-view="controls" type="button">Controls</button>
+        <button class="nav" data-view="replay" type="button">Replay</button>
+        <button class="nav" data-view="evidence" type="button">Evidence</button>
+      </aside>
+
+      <section class="content">
+        <div id="notice" class="notice" hidden></div>
+
+        <section id="catalogue" class="view active">
+          <div class="section-header">
+            <h2>Capability Catalogue</h2>
+            <input id="capabilityFilter" type="search" placeholder="Filter capabilities" aria-label="Filter capabilities">
+          </div>
+          <div class="grid two">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Risk</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="capabilityRows"></tbody>
+              </table>
+            </div>
+            <article id="capabilityDetail" class="panel"></article>
+          </div>
+        </section>
+
+        <section id="status" class="view">
+          <div class="section-header">
+            <h2>Lifecycle, Risk, Eval, Security, Conformance</h2>
+          </div>
+          <div class="grid three">
+            <article class="panel" id="evalStatus"></article>
+            <article class="panel" id="conformanceStatus"></article>
+            <article class="panel" id="riskStatus"></article>
+          </div>
+        </section>
+
+        <section id="ledger" class="view">
+          <div class="section-header">
+            <h2>Policy Decision Ledger</h2>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Decision</th>
+                <th>Capability</th>
+                <th>Operation</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="decisionRows"></tbody>
+          </table>
+        </section>
+
+        <section id="approvals" class="view">
+          <div class="section-header">
+            <h2>Actions And Approvals</h2>
+          </div>
+          <div class="grid two">
+            <article class="panel">
+              <h3>Actions</h3>
+              <div id="actionsList"></div>
+            </article>
+            <article class="panel">
+              <h3>Approval Queue</h3>
+              <div id="approvalsList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="controls" class="view">
+          <div class="section-header">
+            <h2>Kill Switches, Budgets, Circuit Breakers</h2>
+            <button id="createGlobalKillSwitch" type="button">Create Global Read-Only</button>
+          </div>
+          <div class="grid three">
+            <article class="panel" id="killSwitches"></article>
+            <article class="panel" id="budgets"></article>
+            <article class="panel" id="circuitBreakers"></article>
+          </div>
+        </section>
+
+        <section id="replay" class="view">
+          <div class="section-header">
+            <h2>Redacted Replay Index</h2>
+          </div>
+          <div id="replayList" class="list"></div>
+        </section>
+
+        <section id="evidence" class="view">
+          <div class="section-header">
+            <h2>Evidence Export</h2>
+          </div>
+          <pre id="evidenceOutput"></pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

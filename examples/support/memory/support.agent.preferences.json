@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "records": [
+    {
+      "allowedUseCases": [
+        "support_response_personalization",
+        "support_refund_preparation"
+      ],
+      "confidence": "high",
+      "consentBasis": "synthetic-example-opt-in",
+      "contentSummary": "The support user prefers concise refund case summaries with policy references first.",
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "disallowedUseCases": [
+        "cross_tenant_support"
+      ],
+      "id": "support.memory.concise_refund_summary",
+      "lastConfirmedAt": "2026-06-01T00:00:00.000Z",
+      "purpose": "Support response preference",
+      "retentionPolicy": {
+        "id": "synthetic_memory_90d"
+      },
+      "scope": "user",
+      "sensitivity": [
+        "internal"
+      ],
+      "sourceRef": {
+        "contentHash": "sha256:example-support-memory-summary",
+        "freshness": "fresh",
+        "retrievedAt": "2026-06-01T00:00:00.000Z",
+        "sourceId": "support-preference-example",
+        "sourceType": "manual_review",
+        "trust": "app_data"
+      },
+      "subjectRef": {
+        "actorType": "user",
+        "refHash": "sha256:example-support-user"
+      }
+    }
+  ]
+}

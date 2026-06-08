@@ -2,6 +2,7 @@ import type {
   AicfCapabilityRouter,
   AicfBuiltContext,
   AicfContextBuilder,
+  AicfRuntimeControls,
   AicfRuntimeContext,
   AicfRuntimeToolResultEnvelope,
   AicfRuntimeUserInput,
@@ -31,6 +32,8 @@ export interface AicfOpenAIResponseLike {
 
 export type AicfOpenAIRunStatus =
   | "completed"
+  | "budget_exceeded"
+  | "control_denied"
   | "tool_limit_exceeded"
   | "turn_limit_exceeded"
   | "provider_error"
@@ -41,6 +44,7 @@ export type AicfOpenAIRuntimeEvent = AicfRuntimeTraceEvent;
 export interface AicfOpenAIRunRequest {
   client: AicfOpenAIResponsesClient;
   contentCapture?: AicfTraceContentCapture;
+  controls?: AicfRuntimeControls;
   contextBuilder: AicfContextBuilder;
   executor: AicfToolExecutor;
   maxToolCalls?: number;

@@ -7,12 +7,18 @@ runtime behavior. Import it from:
 import {
   CollectingTraceSink,
   CompositeTraceSink,
+  InMemoryTracer,
   OpenTelemetryTraceSink
 } from "ai-capability-framework/observability";
 ```
 
 The package root and runtime subpath do not require OpenTelemetry, Langfuse, or
 any provider SDK.
+
+Sanitized runtime traces can be replayed or converted into draft evals through
+`ai-capability-framework/replay`. Replay fixtures should contain metadata,
+hashes, model-safe envelopes, and redaction summaries, not raw prompts or raw
+provider payloads.
 
 ## Trace Events
 
@@ -30,11 +36,19 @@ Content capture modes:
 - `metadata`: keep size/key summaries only.
 - `redacted_content`: include redacted content after sensitive-value scrubbing.
 
+When trace attributes include AICF security classification metadata, the
+optional `ai-capability-framework/security` redaction defaults are applied
+before collection. This preserves existing capture modes while adding
+fail-closed handling for credentials and sensitive data classes.
+
 ## Trace Sinks
 
 - `NoopTraceSink` discards events.
 - `CollectingTraceSink` stores sanitized events in memory for tests.
 - `CompositeTraceSink` fans out to multiple sinks and isolates sink failures.
+- `NoopTracer`, `InMemoryTracer`, `TraceSinkTracer`, and
+  `OpenTelemetryTracerAdapter` provide a run/span-style API over the same
+  sanitized event model.
 - `OpenTelemetryTraceSink` accepts a tracer-like API object and maps useful
   `gen_ai.*` attributes plus stable `aicf.*` attributes.
 
@@ -59,6 +73,10 @@ is optional and version drift does not affect Core imports.
 
 Langfuse dataset helpers convert AICF eval cases into public-safe dataset items
 and back. They do not upload data by themselves.
+
+`LangfuseTracerAdapter` wraps the same sink behavior with the run/span-style
+tracer API. It still accepts a client-like object and does not require the
+Langfuse SDK.
 
 The runtime support/billing example is intentionally no-model and no-trace by
 default. Hosts can add `CollectingTraceSink` or another sink around the same

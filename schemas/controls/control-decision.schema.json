@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/controls/control-decision.schema.json",
+  "title": "AICF Control Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "reasons", "warnings", "matchedKillSwitches", "matchedCircuitBreakers"],
+  "properties": {
+    "status": { "enum": ["allowed", "denied", "force_approval", "read_only", "warn"] },
+    "effectiveMode": { "enum": ["deny", "force_approval", "read_only"] },
+    "matchedKillSwitches": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "matchedCircuitBreakers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason" }
+    },
+    "budgetDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "matchedPolicyIds", "reasons"],
+      "properties": {
+        "status": { "enum": ["allowed", "denied", "warn"] },
+        "matchedPolicyIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reason" }
+        },
+        "remaining": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity", "source"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "controlId": { "type": "string" },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "source": { "enum": ["kill_switch", "circuit_breaker", "budget"] }
+      }
+    }
+  }
+}

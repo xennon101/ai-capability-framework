@@ -2,17 +2,20 @@ import path from "node:path";
 
 export const forbiddenPathSegments = new Set([
   ".git",
+  ".aicf",
   ".idea",
   ".vscode",
   "_private",
   "coverage",
   "dist-test",
+  "dist-source",
   "drafts",
   "generated-docs",
   "local",
   "logs",
   "node_modules",
   "private",
+  "promptfoo-results",
   "prompts",
   "test-results",
   "traces"
@@ -23,6 +26,7 @@ export const forbiddenExtensions = new Set([
   ".docx",
   ".log",
   ".pdf",
+  ".pptx",
   ".sqlite",
   ".tgz",
   ".xlsx",
@@ -69,7 +73,10 @@ export function publicArtifactFailures(files, options = {}) {
       failures.push(`Environment file included: ${file}`);
     }
 
+    const isIntentionalSecurityPack = file === "security-packs/provider_payload_exposure.yaml";
     if (
+      !isIntentionalSecurityPack
+      && (
       lowerFile.includes("provider-payload")
       || lowerFile.includes("raw-payload")
       || lowerFile.includes("raw_provider")
@@ -78,6 +85,7 @@ export function publicArtifactFailures(files, options = {}) {
       || lowerFile.includes("raw-trace")
       || lowerFile.includes("raw_trace")
       || lowerFile.includes("provider_payload")
+      )
     ) {
       failures.push(`Private or provider payload-looking path included: ${file}`);
     }

@@ -1,0 +1,15 @@
+schemaVersion: "1.0"
+defaultMode: metadata_only
+rules:
+  - id: credential-material
+    classification: credential_material
+    providerBoundary: deny
+    traceBoundary: deny
+  - id: payment-metadata
+    classification: payment_metadata
+    providerBoundary: summarize
+    traceBoundary: summarize
+  - id: public-summary
+    classification: public
+    providerBoundary: allow
+    traceBoundary: allow_metadata

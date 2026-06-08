@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/provenance/provenance-adapter-hook-result.schema.json",
+  "title": "AICF Provenance Adapter Hook Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "adapterId", "status"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "adapterId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["attached", "skipped", "failed"] },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "sidecar": { "$ref": "#/$defs/provenance_json_object" },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error"] }
+      }
+    },
+    "provenance_json": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/provenance_json" }
+        },
+        { "$ref": "#/$defs/provenance_json_object" }
+      ]
+    },
+    "provenance_json_object": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/provenance_json" }
+    }
+  }
+}

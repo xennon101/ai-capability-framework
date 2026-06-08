@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/controls/circuit-breaker-policy.schema.json",
+  "title": "AICF Circuit Breaker Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scope", "metric", "threshold", "windowSeconds", "action"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "scope": { "$ref": "kill-switch.schema.json#/$defs/control_scope" },
+    "metric": {
+      "enum": [
+        "validation_failure_rate",
+        "policy_denial_rate",
+        "provider_error_rate",
+        "approval_rejection_rate",
+        "tool_loop_exceeded_rate",
+        "budget_exceeded_rate",
+        "security_test_failure_rate"
+      ]
+    },
+    "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+    "windowSeconds": { "type": "integer", "minimum": 1 },
+    "action": { "enum": ["open_deny", "open_force_approval", "open_read_only"] }
+  }
+}

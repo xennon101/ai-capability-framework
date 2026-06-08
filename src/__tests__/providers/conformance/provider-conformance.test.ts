@@ -15,6 +15,7 @@ import {
   exportProviderTools,
   formatProviderConformanceReport,
   listProviderTargets,
+  normalizeProviderConformanceTarget,
   runProviderConformanceSuite,
   type ProviderConformanceTarget
 } from "../../../providers/conformance/index.js";
@@ -36,13 +37,26 @@ describe("provider conformance matrix", () => {
       "ai-sdk",
       "langchain",
       "mcp",
-      "semantic-kernel"
+      "semantic-kernel-mcp",
+      "semantic-kernel-openapi"
     ]);
+    expect(normalizeProviderConformanceTarget("semantic-kernel")).toBe("semantic-kernel-openapi");
+    expect(normalizeProviderConformanceTarget("vercel-ai-sdk")).toBe("ai-sdk");
+    expect(normalizeProviderConformanceTarget("vercel_ai_sdk")).toBe("ai-sdk");
   });
 
   it("exports read and prepare tools for every provider without commit tools", async () => {
     const registry = await loadExampleRegistry();
-    const providers: ProviderConformanceTarget[] = ["openai", "anthropic", "gemini", "ai-sdk", "langchain", "mcp", "semantic-kernel"];
+    const providers: ProviderConformanceTarget[] = [
+      "openai",
+      "anthropic",
+      "gemini",
+      "ai-sdk",
+      "langchain",
+      "mcp",
+      "semantic-kernel-mcp",
+      "semantic-kernel-openapi"
+    ];
 
     for (const provider of providers) {
       const exported = exportProviderTools({
@@ -72,10 +86,13 @@ describe("provider conformance matrix", () => {
     });
 
     expect(report.passed).toBe(true);
-    expect(report.counts.providers).toBe(7);
+    expect(report.schemaVersion).toBe("1.0");
+    expect(report.summary.providers).toBe(8);
+    expect(report.counts.providers).toBe(8);
     expect(report.results.length).toBeGreaterThan(0);
     expect(formatProviderConformanceReport(report, "text")).toContain("Provider conformance passed");
     expect(JSON.parse(formatProviderConformanceReport(report, "json"))).toMatchObject({
+      schemaVersion: "1.0",
       passed: true
     });
   });

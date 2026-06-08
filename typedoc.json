@@ -1,0 +1,31 @@
+{
+  "entryPoints": [
+    "src/index.ts",
+    "src/runtime/index.ts",
+    "src/openai/index.ts",
+    "src/observability/index.ts",
+    "src/governance/index.ts",
+    "src/audit/index.ts",
+    "src/security/index.ts",
+    "src/controls/index.ts",
+    "src/control-plane/index.ts",
+    "src/replay/index.ts",
+    "src/security-packs/index.ts",
+    "src/conformance/index.ts",
+    "src/evalops/index.ts",
+    "src/evidence/index.ts",
+    "src/memory/index.ts",
+    "src/provenance/index.ts",
+    "src/providers/index.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "hideGenerator": true,
+  "name": "AI Capability Framework API",
+  "out": "generated-docs/api",
+  "readme": "docs/api.md",
+  "skipErrorChecking": true,
+  "treatWarningsAsErrors": false,
+  "tsconfig": "tsconfig.json"
+}

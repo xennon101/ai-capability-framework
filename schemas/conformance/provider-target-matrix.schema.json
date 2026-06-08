@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/conformance/provider-target-matrix.schema.json",
+  "title": "AICF Provider Target Matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "targets"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider", "canonicalProvider", "label", "adapterKind", "runtimeBoundary", "requiresContext", "requiresServerUrl"],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["openai", "anthropic", "gemini", "ai-sdk", "mcp", "langchain", "semantic-kernel-mcp", "semantic-kernel-openapi"]
+          },
+          "canonicalProvider": {
+            "type": "string",
+            "enum": ["openai", "anthropic", "gemini", "ai-sdk", "mcp", "langchain", "semantic-kernel-mcp", "semantic-kernel-openapi"]
+          },
+          "label": { "type": "string", "minLength": 1 },
+          "adapterKind": { "type": "string", "enum": ["descriptor", "openapi"] },
+          "runtimeBoundary": {
+            "type": "string",
+            "enum": ["descriptor_only", "bounded_loop", "host_framework_bridge", "openapi_metadata"]
+          },
+          "requiresContext": { "type": "boolean" },
+          "requiresServerUrl": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

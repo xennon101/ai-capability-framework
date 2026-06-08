@@ -103,6 +103,13 @@ lifecycle:
   commit: false
   verify: true
   audit: true
+idempotency:
+  required: true
+  key_fields:
+    - participant_id
+    - attendee_email
+    - requested_date
+    - topic
 observability:
   log_inputs: redacted
   log_outputs: summary

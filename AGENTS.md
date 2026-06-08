@@ -95,3 +95,8 @@ the AI Capability Framework.
   schemas.
 - `docs/` contains concise public guidance for using the framework.
 - `_private/` is local-only preserved source material and must stay ignored.
+
+## AICF Agent Skills
+
+- Reusable Codex/Agent Skills for AICF development live in `agent-skills/`.
+- Run `npm run skills:check` before changing or releasing those skills.

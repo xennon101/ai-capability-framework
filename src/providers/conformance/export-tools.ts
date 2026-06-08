@@ -8,6 +8,7 @@ import { exportSemanticKernelOpenApiPlugin } from "../semantic-kernel/index.js";
 import { buildMcpProviderToolDescriptors } from "../mcp/index.js";
 import type { AdapterToolBinding, AicfDiagnostic, CapabilitySlice } from "../../types.js";
 import type { RuntimeCapabilitySlice } from "../../runtime/index.js";
+import { normalizeProviderConformanceTarget } from "./provider-matrix.js";
 import type {
   ProviderToolExportBinding,
   ProviderToolExportRequest,
@@ -15,15 +16,16 @@ import type {
 } from "./types.js";
 
 export function exportProviderTools(request: ProviderToolExportRequest): ProviderToolExportResult {
+  const provider = normalizeProviderConformanceTarget(request.provider) ?? request.provider;
   const slice = selectedCoreSlice(request);
   const diagnostics: AicfDiagnostic[] = [...slice.diagnostics];
   let artifact: unknown;
   let bindings: ProviderToolExportBinding[] = [];
   let providerToolNames: string[] = [];
 
-  switch (request.provider) {
+  switch (provider) {
     case "openai": {
-      const toolset = buildOpenAIResponsesTools(slice, { context: request.context });
+      const toolset = buildOpenAIResponsesTools(slice, { context: request.context, includeRestricted: request.includeRestricted });
       artifact = stripDiagnostics(toolset, request.includeDiagnostics);
       diagnostics.push(...toolset.diagnostics);
       bindings = coreBindings(toolset.bindings);
@@ -31,7 +33,7 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
       break;
     }
     case "anthropic": {
-      const toolset = buildAnthropicClaudeTools(slice, { context: request.context });
+      const toolset = buildAnthropicClaudeTools(slice, { context: request.context, includeRestricted: request.includeRestricted });
       artifact = stripDiagnostics(toolset, request.includeDiagnostics);
       diagnostics.push(...toolset.diagnostics);
       bindings = coreBindings(toolset.bindings);
@@ -39,7 +41,7 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
       break;
     }
     case "gemini": {
-      const toolset = buildGeminiFunctionDeclarations(slice, { context: request.context });
+      const toolset = buildGeminiFunctionDeclarations(slice, { context: request.context, includeRestricted: request.includeRestricted });
       artifact = stripDiagnostics(toolset, request.includeDiagnostics);
       diagnostics.push(...toolset.diagnostics);
       bindings = coreBindings(toolset.bindings);
@@ -47,7 +49,7 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
       break;
     }
     case "ai-sdk": {
-      const toolset = buildAiSdkTools(slice, { context: request.context });
+      const toolset = buildAiSdkTools(slice, { context: request.context, includeRestricted: request.includeRestricted });
       artifact = stripDiagnostics(toolset, request.includeDiagnostics);
       diagnostics.push(...toolset.diagnostics);
       bindings = coreBindings(toolset.bindings);
@@ -55,7 +57,7 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
       break;
     }
     case "langchain": {
-      const toolset = buildLangChainToolDescriptors(slice, { context: request.context });
+      const toolset = buildLangChainToolDescriptors(slice, { context: request.context, includeRestricted: request.includeRestricted });
       artifact = stripDiagnostics(toolset, request.includeDiagnostics);
       diagnostics.push(...toolset.diagnostics);
       bindings = coreBindings(toolset.bindings);
@@ -74,11 +76,23 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
       providerToolNames = toolset.tools.map((tool) => tool.name);
       break;
     }
-    case "semantic-kernel": {
+    case "semantic-kernel-mcp": {
+      const toolset = buildMcpProviderToolDescriptors({
+        includeRestricted: request.includeRestricted,
+        registry: request.registry,
+        slice: runtimeSliceFromCoreSlice(slice)
+      });
+      artifact = stripDiagnostics(toolset, request.includeDiagnostics);
+      diagnostics.push(...toolset.diagnostics);
+      bindings = providerBindings(toolset.bindings);
+      providerToolNames = toolset.tools.map((tool) => tool.name);
+      break;
+    }
+    case "semantic-kernel-openapi": {
       if (!request.serverUrl) {
         diagnostics.push({
           code: "invalid_context",
-          message: "Semantic Kernel provider export requires serverUrl.",
+          message: "Semantic Kernel OpenAPI provider export requires serverUrl.",
           path: "serverUrl"
         });
         artifact = {};
@@ -103,7 +117,7 @@ export function exportProviderTools(request: ProviderToolExportRequest): Provide
     bindings,
     diagnostics,
     exportedCount: providerToolNames.length,
-    provider: request.provider,
+    provider,
     providerToolNames
   };
 }

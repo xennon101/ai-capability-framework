@@ -32,3 +32,12 @@ missing facts, approval state, and idempotency keys.
 AICF includes a deterministic eval runner for scoring public-safe candidate
 result fixtures against eval manifests. See [the eval runner guide](eval-runner.md)
 for fixture shape, scorer behavior, and CLI usage.
+
+Sanitized replay traces can be converted into review-required eval drafts when
+you want to turn observed behavior into a regression case. See
+[Replay and trace-to-golden](evals/replay-and-trace-to-golden.md).
+
+Capability-aware security packs can generate synthetic eval-style cases for
+risks such as approval bypass, unsafe commit attempts, prompt injection,
+provider payload exposure, and cross-tenant access. See
+[security packs](security/security-packs.md).

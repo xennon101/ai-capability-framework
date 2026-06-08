@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "providers": [
+    "openai",
+    "anthropic",
+    "gemini",
+    "ai-sdk",
+    "mcp",
+    "langchain",
+    "semantic-kernel-openapi"
+  ],
+  "dimensions": [
+    "descriptor_export",
+    "schema_normalization",
+    "tool_call_parsing",
+    "model_safe_envelope",
+    "commit_not_exported"
+  ]
+}

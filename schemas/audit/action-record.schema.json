@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/audit/action-record.schema.json",
+  "title": "AICF Audit Action Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "actionId",
+    "actionState",
+    "auditRefs",
+    "capabilityId",
+    "capabilityVersion",
+    "createdAt",
+    "inputHash",
+    "runId",
+    "schemaVersion",
+    "updatedAt"
+  ],
+  "properties": {
+    "actionId": { "type": "string", "minLength": 1 },
+    "actionState": {
+      "enum": [
+        "proposed",
+        "prepared",
+        "approval_required",
+        "approved",
+        "rejected",
+        "committing",
+        "committed",
+        "failed",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "approvalRecordId": { "type": "string" },
+    "auditRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "capabilityId": { "type": "string", "minLength": 1 },
+    "capabilityVersion": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "idempotencyKeyHash": { "$ref": "#/$defs/sha256_ref" },
+    "inputHash": { "$ref": "#/$defs/sha256_ref" },
+    "policyDecisionId": { "type": "string" },
+    "preparedActionId": { "type": "string" },
+    "previewHash": { "$ref": "#/$defs/sha256_ref" },
+    "resultHash": { "$ref": "#/$defs/sha256_ref" },
+    "runId": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "const": "1.0" },
+    "traceRef": { "$ref": "#/$defs/trace_ref" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256_ref": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "trace_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traceId"],
+      "properties": {
+        "provider": { "type": "string" },
+        "traceId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

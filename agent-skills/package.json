@@ -1,0 +1,55 @@
+{
+  "name": "@aicf/agent-skills",
+  "version": "1.0.0",
+  "description": "Agent Skills for building, integrating, testing, auditing, and releasing AICF-based AI capability systems.",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "homepage": "https://github.com/xennon101/ai-capability-framework/tree/main/agent-skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xennon101/ai-capability-framework.git",
+    "directory": "agent-skills"
+  },
+  "bugs": {
+    "url": "https://github.com/xennon101/ai-capability-framework/issues"
+  },
+  "keywords": [
+    "aicf",
+    "agent-skills",
+    "codex",
+    "capabilities",
+    "evals",
+    "governance",
+    "runtime",
+    "tool-calling"
+  ],
+  "files": [
+    ".codex-plugin",
+    "skills",
+    "scripts",
+    "docs",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "bin": {
+    "aicf-skills": "./scripts/aicf-skills.mjs"
+  },
+  "scripts": {
+    "validate": "node scripts/validate-skills.mjs ./skills",
+    "check:public": "node scripts/check-skills-public.mjs .",
+    "check:triggers": "node scripts/check-trigger-coverage.mjs ./skills ./tests/fixtures/trigger-prompts.json",
+    "index": "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md",
+    "check:index": "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check",
+    "test": "node --test tests/*.test.mjs",
+    "check:release": "node scripts/check-release-readiness.mjs",
+    "check": "npm run validate && npm run check:triggers && npm run check:index && npm run test && npm run check:public && npm run check:release",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {}
+}

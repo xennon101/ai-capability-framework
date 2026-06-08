@@ -58,6 +58,7 @@ export type {
   AicfRedactionPolicy,
   AicfRecordApprovalInput,
   AicfRuntimeContext,
+  AicfRuntimeControls,
   AicfRuntimeEnvironment,
   AicfRuntimeErrorCode,
   AicfRuntimeEnvelopeError,

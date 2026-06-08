@@ -21,6 +21,11 @@ stored prepared action, approval, and idempotency checks. Host applications stil
 own real auth, payment/account state, durable storage, approval workflows, audit
 retention, and provider calls.
 
+Optional runtime controls live in `ai-capability-framework/controls`. A host can
+pass a controls evaluator into routing, execution, lifecycle, or provider
+runtime calls to apply kill switches, read-only mode, force approval, circuit
+breakers, and per-run budgets. The reference stores are in-memory/local only.
+
 The optional OpenAI Responses runtime lives in
 `ai-capability-framework/openai`, not this runtime subpath. It uses these
 runtime contracts to run a bounded non-streaming model/tool loop with
@@ -56,6 +61,16 @@ Default redaction removes values under obviously sensitive keys such as
 passwords, tokens, secrets, API keys, cookies, sessions, card numbers, CVV
 values, and private keys. It intentionally does not claim broad PII detection.
 
+For provider-boundary and trace-boundary trust labels, taint metadata, data
+classifications, and retention checks, use the optional
+`ai-capability-framework/security` subpath. Runtime context items can be mapped
+to security context segments without changing existing runtime behavior.
+
+For host-owned memory or user preferences, use
+`ai-capability-framework/memory` before adding memory summaries to host context.
+It filters by use case, scope, consent, expiry, and sensitivity, then converts
+allowed records to runtime context items. It does not retrieve or store memory.
+
 ## Capability Router
 
 `DefaultCapabilityRouter` builds a compact runtime capability slice without
@@ -71,6 +86,9 @@ The router scores remaining capabilities with lexical matching over public
 capability metadata and workflow hints, then sorts by score, risk, and
 capability ID. Model-facing slices expose only `select` and `prepare`
 operations.
+
+When controls are supplied, routing excludes denied capabilities and capabilities
+that are incompatible with active read-only controls.
 
 Use `formatCapabilitySliceForModel()` to render concise model-facing capability
 guidance without private diagnostics, internal policy rules, or full output
@@ -119,6 +137,12 @@ resources, own auth, or make AWS part of the runtime subpath import.
 Audit events are structured summaries for attempts, denials, approval-required
 pauses, successes, and failures. They must not contain raw traces, provider
 payloads, secrets, or customer data.
+
+For canonical evidence records, pass an optional
+`ai-capability-framework/audit` ledger to `AicfToolExecutor` and
+`AicfActionLifecycleManager`. The ledger writes schema-valid policy decision,
+action, approval, and idempotency records with redacted refs and hashed inputs.
+Without a configured ledger, runtime behavior is unchanged.
 
 See [action lifecycle](action-lifecycle.md) for the prepare, approval, commit,
 idempotency, and audit flow. See [policy broker](policy-broker.md) for runtime

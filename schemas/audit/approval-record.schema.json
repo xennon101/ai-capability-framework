@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/audit/approval-record.schema.json",
+  "title": "AICF Audit Approval Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approvalRecordId",
+    "capabilityId",
+    "createdAt",
+    "preparedActionId",
+    "requestedBy",
+    "requiredReasonCodes",
+    "schemaVersion",
+    "status"
+  ],
+  "properties": {
+    "approvalRecordId": { "type": "string", "minLength": 1 },
+    "capabilityId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "decidedAt": { "type": "string", "format": "date-time" },
+    "decidedBy": { "$ref": "#/$defs/redacted_subject_ref" },
+    "decisionReason": { "type": "string" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "preparedActionId": { "type": "string", "minLength": 1 },
+    "requestedBy": { "$ref": "#/$defs/redacted_subject_ref" },
+    "requiredReasonCodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "schemaVersion": { "const": "1.0" },
+    "status": { "enum": ["pending", "approved", "rejected", "expired", "cancelled"] },
+    "traceRef": { "$ref": "#/$defs/trace_ref" }
+  },
+  "$defs": {
+    "redacted_subject_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refHash"],
+      "properties": {
+        "actorType": { "type": "string" },
+        "refHash": {
+          "type": "string",
+          "pattern": "^(sha256:[a-f0-9]{64}|unsafe:.+)$"
+        }
+      }
+    },
+    "trace_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traceId"],
+      "properties": {
+        "provider": { "type": "string" },
+        "traceId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

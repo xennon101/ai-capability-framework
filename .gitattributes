@@ -5,3 +5,37 @@
 *.yml text eol=lf
 *.mjs text eol=lf
 
+_private/ export-ignore
+private/ export-ignore
+local/ export-ignore
+.local/ export-ignore
+.aicf/ export-ignore
+drafts/ export-ignore
+archive/ export-ignore
+archives/ export-ignore
+backups/ export-ignore
+scratch/ export-ignore
+tmp/ export-ignore
+node_modules/ export-ignore
+dist/ export-ignore
+dist-source/ export-ignore
+build/ export-ignore
+coverage/ export-ignore
+.cache/ export-ignore
+.turbo/ export-ignore
+.next/ export-ignore
+out/ export-ignore
+playwright-report/ export-ignore
+test-results/ export-ignore
+promptfoo-results/ export-ignore
+logs/ export-ignore
+traces/ export-ignore
+*.log export-ignore
+*.tgz export-ignore
+*.zip export-ignore
+*.docx export-ignore
+*.pdf export-ignore
+*.pptx export-ignore
+*.xlsx export-ignore
+.env export-ignore
+.env.* export-ignore

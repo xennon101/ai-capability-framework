@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicf.dev/schemas/aws/telemetry-event.schema.json",
+  "title": "AICF AWS Telemetry Event",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "type"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "type": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "timestamp": { "type": "string", "format": "date-time" }
+  },
+  "not": {
+    "anyOf": [
+      { "required": ["rawPrompt"] },
+      { "required": ["rawProviderPayload"] },
+      { "required": ["rawTranscript"] },
+      { "required": ["secret"] },
+      { "required": ["token"] }
+    ]
+  }
+}

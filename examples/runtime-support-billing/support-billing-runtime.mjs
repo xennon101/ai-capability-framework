@@ -211,7 +211,7 @@ async function buildCommitContext() {
       allowPermissionChanges: false,
       allowSideEffects: true,
       autonomyTier: "A0",
-      maxRiskTier: "high"
+      maxRiskTier: "critical"
     },
     environment: "test",
     facts: {

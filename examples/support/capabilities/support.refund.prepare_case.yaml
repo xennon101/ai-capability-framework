@@ -102,8 +102,15 @@ lifecycle:
   preview: true
   approve: true
   commit: false
+  commit_capability_id: support.refund.commit_case
   verify: true
   audit: true
+idempotency:
+  required: true
+  key_fields:
+    - ticket_id
+    - order_id
+    - reason_code
 observability:
   log_inputs: redacted
   log_outputs: summary

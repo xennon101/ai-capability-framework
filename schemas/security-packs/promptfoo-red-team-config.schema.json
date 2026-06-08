@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security-packs/promptfoo-red-team-config.schema.json",
+  "title": "AICF Promptfoo Red Team Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "prompts", "providers", "tests"],
+  "properties": {
+    "description": { "type": "string", "minLength": 1 },
+    "prompts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "vars", "assert"],
+        "properties": {
+          "description": { "type": "string", "minLength": 1 },
+          "vars": { "type": "object" },
+          "assert": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

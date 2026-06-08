@@ -1,4 +1,6 @@
 import type { CapabilityManifest } from "../generated/manifest-types.js";
+import type { AicfRuntimeLedgerRecorder } from "../audit/types.js";
+import type { AicfRuntimeControls } from "../controls/types.js";
 import type {
   DecisionOperation,
   DecisionRequest,
@@ -9,6 +11,8 @@ import type {
   ManifestRegistry,
   RiskTier
 } from "../types.js";
+
+export type { AicfRuntimeControls } from "../controls/types.js";
 
 export type {
   JsonObject,
@@ -185,6 +189,7 @@ export interface CapabilityRouteRequest {
   maxCapabilities?: number;
   maxRiskTier?: Exclude<RiskTier, "none">;
   registry: ManifestRegistry;
+  controls?: AicfRuntimeControls;
   userInput: AicfRuntimeUserInput;
 }
 
@@ -257,9 +262,11 @@ export interface AicfPreparedAction {
   argsRedacted: Record<string, unknown>;
   capabilityId: string;
   capabilityVersion?: string;
+  commitCapabilityId?: string;
   createdAt: string;
   expiresAt: string;
   idempotencyKey?: string;
+  ledgerActionId?: string;
   metadata?: Record<string, unknown>;
   policyDecision: AicfPolicyDecision;
   preview: AicfPreparedActionPreview;
@@ -369,6 +376,7 @@ export type AicfToolResultStatus =
   | "approval_required"
   | "prepared"
   | "committed"
+  | "verified"
   | "failed";
 
 export type AicfToolResultOperation = "select" | "read" | "prepare" | "commit" | "verify";
@@ -527,6 +535,8 @@ export interface AicfActionLifecycleManagerOptions {
     get(capabilityId: string): AicfCapabilityHandler | undefined;
   };
   idempotencyStore: AicfIdempotencyStore;
+  ledger?: AicfRuntimeLedgerRecorder;
+  controls?: AicfRuntimeControls;
   policyBroker: AicfPolicyBroker;
   preparedActionStore: AicfPreparedActionStore;
   registry: ManifestRegistry;
@@ -537,6 +547,7 @@ export interface AicfPrepareActionInput {
   builtContext: AicfBuiltContext;
   capabilityId: string;
   idempotencyKey?: string;
+  ledgerActionId?: string;
   runtimeContext: AicfRuntimeContext;
 }
 
@@ -565,6 +576,12 @@ export interface AicfCommitActionInput {
   runtimeContext: AicfRuntimeContext;
 }
 
+export interface AicfVerifyActionInput {
+  builtContext?: AicfBuiltContext;
+  committedAction: AicfCommittedAction;
+  runtimeContext: AicfRuntimeContext;
+}
+
 export interface AicfToolExecutionRequest {
   args: Record<string, unknown>;
   builtContext: AicfBuiltContext;
@@ -584,6 +601,8 @@ export interface AicfToolExecutorOptions {
     get(capabilityId: string): AicfCapabilityHandler | undefined;
   };
   includeDiagnosticsForModel?: boolean;
+  ledger?: AicfRuntimeLedgerRecorder;
+  controls?: AicfRuntimeControls;
   policyBroker: AicfPolicyBroker;
   registry: ManifestRegistry;
   throwOnMissingHandler?: boolean;

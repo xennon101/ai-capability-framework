@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security-packs/coverage-report.schema.json",
+  "title": "AICF Security Pack Coverage Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generatedAt", "passed", "missingRequired", "capabilities"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "passed": { "type": "boolean" },
+    "missingRequired": { "type": "integer", "minimum": 0 },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capabilityId", "riskTier", "assignedPacks", "recommendedPacks", "requiredPacks", "missingRequiredPacks", "validWaivers", "warnings"],
+        "properties": {
+          "capabilityId": { "type": "string", "minLength": 1 },
+          "riskTier": { "enum": ["none", "low", "medium", "high", "critical"] },
+          "assignedPacks": { "type": "array", "items": { "type": "string" } },
+          "recommendedPacks": { "type": "array", "items": { "type": "string" } },
+          "requiredPacks": { "type": "array", "items": { "type": "string" } },
+          "missingRequiredPacks": { "type": "array", "items": { "type": "string" } },
+          "validWaivers": { "type": "array", "items": { "type": "object" } },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

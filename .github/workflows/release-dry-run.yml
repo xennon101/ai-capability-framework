@@ -1,0 +1,55 @@
+name: Release Dry Run
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-dry-run:
+    name: Release artifact dry run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run final certification gate
+        run: npm run check:certification
+
+      - name: Create source review archive
+        run: npm run archive:source
+
+      - name: Check source review archive
+        run: npm run check:source-archive
+
+      - name: Select npm dist tag
+        id: dist-tag
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dry-run npm publish
+        run: npm publish --dry-run --access public --tag "${{ steps.dist-tag.outputs.tag }}"

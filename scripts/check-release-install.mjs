@@ -40,10 +40,23 @@ try {
         ["runtime", "ai-capability-framework/runtime", "DefaultCapabilityRouter"],
         ["openai", "ai-capability-framework/openai", "runOpenAIResponses"],
         ["observability", "ai-capability-framework/observability", "CollectingTraceSink"],
+        ["governance", "ai-capability-framework/governance", "compileCapabilityRisk"],
+        ["governance-gate", "ai-capability-framework/governance", "runGovernanceGate"],
+        ["audit", "ai-capability-framework/audit", "DefaultAuditLedger"],
+        ["security", "ai-capability-framework/security", "redactForTrace"],
+        ["controls", "ai-capability-framework/controls", "DefaultControlsEvaluator"],
+        ["control-plane", "ai-capability-framework/control-plane", "createControlPlaneService"],
+        ["replay", "ai-capability-framework/replay", "runReplay"],
+        ["security-packs", "ai-capability-framework/security-packs", "listSecurityPacks"],
+        ["conformance", "ai-capability-framework/conformance", "runConformanceSuite"],
         ["langfuse", "ai-capability-framework/langfuse", "LangfuseTraceSink"],
         ["evals-live", "ai-capability-framework/evals-live", "runLiveEvalSuite"],
+        ["evalops", "ai-capability-framework/evalops", "exportBraintrustDataset"],
+        ["evidence", "ai-capability-framework/evidence", "createEvidencePack"],
+        ["memory", "ai-capability-framework/memory", "selectGovernedMemory"],
+        ["provenance", "ai-capability-framework/provenance", "createGeneratedContentProvenance"],
         ["promptfoo", "ai-capability-framework/promptfoo", "exportPromptfooSuite"],
-        ["aws", "ai-capability-framework/aws", "DynamoDbPreparedActionStore"],
+        ["aws", "ai-capability-framework/aws", "DynamoDbControlPlaneStore"],
         ["mcp-server", "ai-capability-framework/mcp-server", "AicfMcpServer"],
         ["providers", "ai-capability-framework/providers", "createProviderToolNameMap"],
         ["providers/ai-sdk", "ai-capability-framework/providers/ai-sdk", "buildAiSdkTools"],
@@ -60,6 +73,72 @@ try {
         if (!imported[exportName]) {
           throw new Error(\`Missing expected \${label} export: \${exportName}\`);
         }
+      }
+
+      const governance = await import("ai-capability-framework/governance");
+      const gateConfig = await governance.loadGovernanceGateConfig(process.cwd());
+      if (gateConfig.config.schema_version !== "1.0") {
+        throw new Error("Governance gate config fallback did not load.");
+      }
+      const gateText = governance.formatGovernanceGateReport({
+        checks: [],
+        environment: "production",
+        exitCode: 0,
+        failures: [],
+        generatedAt: "1970-01-01T00:00:00.000Z",
+        manifestRoot: ".",
+        passed: true,
+        schema_version: "1.0",
+        summary: { failed: 0, passed: 0, skipped: 0, warnings: 0 },
+        warnings: []
+      }, "text");
+      if (!gateText.includes("AICF governance gate passed")) {
+        throw new Error("Governance gate formatter did not return expected text.");
+      }
+
+      const evidence = await import("ai-capability-framework/evidence");
+      const evidenceValidation = evidence.validateEvidencePack({
+        aicfVersion: "1.0.0-rc.1",
+        approvalSummary: { approved: 0, pending: 0, rejected: 0, status: "not_supplied", total: 0 },
+        capabilityInventory: [],
+        conformanceSummary: { failed: 0, gaps: 1, passed: 0, providers: 0, status: "not_supplied", total: 0, warnings: 0 },
+        disclaimers: evidence.evidenceDisclaimers(),
+        evalSummary: { failed: 0, gaps: 0, passed: 0, status: "not_supplied", total: 0, warnings: 0 },
+        gaps: [],
+        generatedAt: "1970-01-01T00:00:00.000Z",
+        humanReviewPolicySummary: { approvalRequiredCapabilities: 0, humanReviewRequiredCapabilities: 0, status: "available" },
+        mappings: [],
+        policyInventory: [],
+        project: { id: "release-install", name: "Release Install" },
+        providerInventory: [],
+        redaction: { content: "redacted_refs_and_hashes_only", omitted: ["raw prompts"] },
+        retentionSummary: { rawPromptRetention: "none", rawProviderPayloadRetention: "none", status: "available" },
+        riskInventory: [],
+        schemaVersion: "1.0",
+        securitySummary: { failed: 0, gaps: 0, missingRequired: 0, passed: 0, status: "not_supplied", total: 0, warnings: 0 }
+      });
+      if (!evidenceValidation.valid) {
+        throw new Error("Evidence pack schema validation failed in release install smoke test.");
+      }
+
+      const provenance = await import("ai-capability-framework/provenance");
+      const provenanceRecord = provenance.createGeneratedContentProvenance({
+        capabilityRefs: [{ capabilityId: "release.install.example", operation: "read", version: "1.0.0" }],
+        contentId: "release-install-provenance",
+        contentType: "text",
+        createdAt: "1970-01-01T00:00:00.000Z",
+        generatedBy: "model_assisted_human",
+        modelRefs: ["release-install-model"],
+        providerRefs: [{ providerId: "mock", runId: "release-install-run" }],
+        sourceRefs: [{
+          contentHash: provenance.hashProvenanceValue("release install source"),
+          sourceId: "release-install-source",
+          sourceType: "tool_result",
+          trust: "tool_result"
+        }]
+      });
+      if (!provenance.validateGeneratedContentProvenance(provenanceRecord).valid) {
+        throw new Error("Generated content provenance schema validation failed in release install smoke test.");
       }
 
       const openai = await import("ai-capability-framework/openai");

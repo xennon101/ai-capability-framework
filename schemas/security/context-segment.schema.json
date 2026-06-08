@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security/context-segment.schema.json",
+  "title": "AICF Security Context Segment",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [{
+    "if": {
+      "properties": {
+        "instructionsAllowed": { "const": true }
+      },
+      "required": ["instructionsAllowed"]
+    },
+    "then": {
+      "properties": {
+        "trust": {
+          "enum": ["system_instruction", "developer_instruction", "app_policy"]
+        }
+      }
+    }
+  }],
+  "required": ["content", "dataClassifications", "id", "instructionsAllowed", "label", "trust"],
+  "properties": {
+    "content": true,
+    "dataClassifications": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/data_classification" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "id": { "type": "string", "minLength": 1 },
+    "instructionsAllowed": { "type": "boolean" },
+    "label": { "type": "string", "minLength": 1 },
+    "retentionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceRef": { "$ref": "source-ref.schema.json" },
+    "taint": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "trust"],
+        "properties": {
+          "createdAt": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string", "minLength": 1 },
+          "sourceRef": { "$ref": "source-ref.schema.json" },
+          "trust": { "$ref": "#/$defs/trust_label" }
+        }
+      }
+    },
+    "trust": { "$ref": "#/$defs/trust_label" }
+  },
+  "$defs": {
+    "data_classification": {
+      "enum": [
+        "public",
+        "internal",
+        "customer_pii",
+        "employee_pii",
+        "payment_metadata",
+        "financial",
+        "health",
+        "legal",
+        "security_sensitive",
+        "credential_material"
+      ]
+    },
+    "trust_label": {
+      "enum": [
+        "system_instruction",
+        "developer_instruction",
+        "app_policy",
+        "app_data",
+        "tool_result",
+        "retrieved_document",
+        "user_input",
+        "model_output",
+        "external_api"
+      ]
+    }
+  }
+}

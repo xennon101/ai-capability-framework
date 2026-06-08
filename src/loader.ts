@@ -92,7 +92,15 @@ export function fixtureKindFromPath(filePath: string): LoadedFixture["kind"] {
   const parts = normalized.split("/");
   const fileName = parts.at(-1) ?? "";
 
+  if (fileName === "aicf.config.json" || fileName === "aicf.config.yaml" || fileName === "aicf.config.yml") {
+    return "governance_gate_config";
+  }
+
+  if (parts.includes("control-plane") && parts.includes("fixtures")) return "control_plane_state";
   if (parts.includes("eval-results")) return "eval_result";
+  if (parts.includes("memory")) return "governed_memory";
+  if (parts.includes("provenance")) return "generated_content_provenance";
+  if (parts.includes("replay")) return "replay_trace";
   if (parts.includes("decisions")) return "decision_request";
   if (parts.includes("openai") && fileName.startsWith("context.") && fileName.endsWith(".json")) {
     return "adapter_context";

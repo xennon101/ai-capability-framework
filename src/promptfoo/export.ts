@@ -10,10 +10,15 @@ export function exportPromptfooSuite(
     ? [...options.evalCases, ...redTeamEvalCases()]
     : options.evalCases;
   const config = {
+    description: "AICF public-safe eval suite. Replace echo/provider placeholders in a host-owned test environment.",
     prompts: ["prompts/aicf-runtime.md"],
     providers: [providerName],
     tests: "file://vars/aicf-evals.json"
   };
+  const providerTargets = options.providerTargets ?? [{
+    id: providerName,
+    label: providerName === "echo" ? "API-key-free echo placeholder" : "Host-provided Promptfoo provider"
+  }];
   const vars = evalCases.map((evalCase) => ({
     assert: assertionsForEval(evalCase),
     description: evalCase.id,
@@ -52,7 +57,19 @@ export function exportPromptfooSuite(
           "",
           "This suite is generated from public-safe AICF eval cases.",
           "It defaults to the Promptfoo echo provider so it can be inspected without API keys.",
-          "Host applications can replace the provider with their own runtime provider."
+          "Host applications can replace the provider with their own runtime provider.",
+          "",
+          "## Provider Targets",
+          "",
+          ...providerTargets.map((target) => `- ${target.id}: ${target.label ?? "host-provided provider target"}`),
+          "",
+          `Target endpoint placeholder: ${options.targetUrlPlaceholder ?? "https://example.com/aicf/runtime"}`,
+          "",
+          "## CI",
+          "",
+          `Suggested CI command: ${options.ciCommand ?? "promptfoo eval -c promptfooconfig.yaml"}`,
+          "",
+          "Do not commit credentials, raw provider payloads, prompts, traces, or private diagnostics."
         ].join("\n"),
         path: "README.md"
       }

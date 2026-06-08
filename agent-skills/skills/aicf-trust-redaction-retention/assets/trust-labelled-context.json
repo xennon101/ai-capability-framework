@@ -1,0 +1,18 @@
+{
+  "segments": [
+    {
+      "id": "ctx_public_policy",
+      "trustLabel": "app_policy",
+      "instructionsAllowed": true,
+      "classification": "internal",
+      "summary": "Synthetic policy summary for capability routing."
+    },
+    {
+      "id": "ctx_user_text",
+      "trustLabel": "user_input",
+      "instructionsAllowed": false,
+      "classification": "public",
+      "summary": "Synthetic user request text."
+    }
+  ]
+}

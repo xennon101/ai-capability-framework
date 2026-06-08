@@ -1,5 +1,6 @@
 import type {
   AicfBuiltContext,
+  AicfRuntimeControls,
   AicfRuntimeContext,
   AicfRuntimeToolResultEnvelope,
   RuntimeCapabilitySlice
@@ -58,6 +59,8 @@ export type AicfGeminiFunctionCallingMode = "AUTO" | "ANY" | "NONE" | "VALIDATED
 
 export type AicfGeminiRunStatus =
   | "completed"
+  | "budget_exceeded"
+  | "control_denied"
   | "tool_limit_exceeded"
   | "turn_limit_exceeded"
   | "provider_error"
@@ -68,6 +71,7 @@ export interface AicfGeminiRunRequest {
   builtContext: AicfBuiltContext;
   client: AicfGeminiClient;
   contentCapture?: AicfTraceContentCapture;
+  controls?: AicfRuntimeControls;
   contents: Array<Record<string, unknown>> | string;
   executor: AicfToolExecutor;
   functionCallingMode?: AicfGeminiFunctionCallingMode;

@@ -43,6 +43,7 @@ export async function runAnthropicMessages(
   let usage: Record<string, unknown> | undefined;
   let toolCallCount = 0;
   let iterations = 0;
+  const startedAt = Date.now();
 
   const emit = async (
     type: AicfRuntimeTraceEvent["type"],
@@ -95,6 +96,26 @@ export async function runAnthropicMessages(
 
   for (let turn = 0; turn < maxToolIterations; turn += 1) {
     iterations = turn + 1;
+    const providerControl = request.controls?.evaluate({
+      model: request.model,
+      operation: "provider_call",
+      providerId: "anthropic",
+      registry: request.registry,
+      runtimeContext: request.runtimeContext,
+      usage: {
+        providerCalls: turn + 1,
+        retries: 0,
+        runtimeMs: Date.now() - startedAt,
+        toolCalls: toolCallCount
+      }
+    });
+    if (providerControl?.status === "denied") {
+      await emit("runtime.error", { code: providerControl.budgetDecision?.status === "denied" ? "budget_exceeded" : "control_denied" });
+      return finish(providerControl.budgetDecision?.status === "denied" ? "budget_exceeded" : "control_denied", {
+        errors: controlErrors(providerControl)
+      });
+    }
+
     const createInput = anthropicCreateInput({
       messages,
       request,
@@ -146,6 +167,26 @@ export async function runAnthropicMessages(
       });
     }
 
+    const toolBudgetControl = request.controls?.evaluate({
+      model: request.model,
+      operation: "provider_call",
+      providerId: "anthropic",
+      registry: request.registry,
+      runtimeContext: request.runtimeContext,
+      usage: {
+        providerCalls: turn + 1,
+        retries: 0,
+        runtimeMs: Date.now() - startedAt,
+        toolCalls: toolCallCount + toolUseBlocks.length
+      }
+    });
+    if (toolBudgetControl?.status === "denied") {
+      await emit("runtime.error", { code: "budget_exceeded" });
+      return finish("budget_exceeded", {
+        errors: controlErrors(toolBudgetControl)
+      });
+    }
+
     const providerResults: AicfProviderToolResult[] = [];
     for (const block of toolUseBlocks) {
       if (!hasText(block.id)) {
@@ -180,6 +221,7 @@ export async function runAnthropicMessages(
       const result = parsed.valid
         ? await executeProviderToolCall({
             builtContext: request.builtContext,
+            controls: request.controls,
             executor: request.executor,
             providerCall,
             registry: request.registry,
@@ -220,6 +262,14 @@ export async function runAnthropicMessages(
       message: "The Anthropic runtime reached the configured tool iteration limit."
     }]
   });
+}
+
+function controlErrors(decision: {
+  reasons: Array<{ code: string; message: string }>;
+}): Array<{ code: string; message: string }> {
+  return decision.reasons.length > 0
+    ? decision.reasons.map((reason) => ({ code: reason.code, message: reason.message }))
+    : [{ code: "control_denied", message: "The runtime controls denied this operation." }];
 }
 
 function anthropicCreateInput(input: {

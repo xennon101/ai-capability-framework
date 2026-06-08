@@ -1,0 +1,18 @@
+id: support.ticket.get.provider_matrix
+providerTargets:
+  - openai
+  - anthropic
+  - gemini
+  - ai-sdk
+  - mcp
+capabilityId: support.ticket.get
+expected:
+  descriptorExported: true
+  commitExported: false
+  argsValidation: canonical_aicf
+  modelSafeEnvelope: true
+scorers:
+  - tool_name_valid
+  - binding_matches_capability
+  - no_commit_export
+  - safe_error_envelope

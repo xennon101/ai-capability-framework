@@ -7,6 +7,7 @@ import type {
 } from "../../types.js";
 import type {
   AicfBuiltContext,
+  AicfRuntimeControls,
   AicfRuntimeContext,
   AicfRuntimeToolResultEnvelope,
   AicfToolExecutionRequest,
@@ -140,6 +141,7 @@ export interface BuildProviderToolResultInput {
 
 export interface ExecuteProviderToolCallInput {
   builtContext: AicfBuiltContext;
+  controls?: AicfRuntimeControls;
   executor: AicfToolExecutor;
   providerCall: AicfProviderToolCall;
   registry: ManifestRegistry;

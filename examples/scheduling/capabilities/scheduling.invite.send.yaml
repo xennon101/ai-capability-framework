@@ -92,6 +92,16 @@ observability:
   trace_attributes:
     domain: scheduling
     risk_tier: high
+extensions:
+  governance:
+    retention_policy: synthetic_audit_365d
+    security_packs:
+      - approval_bypass
+      - cross_tenant_access
+      - prompt_injection_direct
+      - provider_payload_exposure
+      - tool_exfiltration
+      - unsafe_commit_attempt
 evals:
   red_team:
     - ../evals/scheduling.invite.send.requires_approval.yaml

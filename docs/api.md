@@ -8,6 +8,18 @@ If you are reading AICF for the first time, start with
 [Start here](start-here.md) and the [OpenAI walkthrough](openai-walkthrough.md).
 This page is the reference once the basic flow is familiar.
 
+Recommended path:
+
+1. [Installation](getting-started/installation.md)
+2. [Quickstart](getting-started/quickstart.md)
+3. [Concepts](getting-started/concepts.md)
+4. [Capability manifests](core/capability-manifests.md)
+5. [Runtime overview](runtime/runtime-overview.md)
+6. [Providers](providers.md)
+7. [Evals](evals/overview.md)
+8. [Governance](governance/overview.md) and [security](security/overview.md)
+9. [Release process](public-framework/release-process.md)
+
 Import from the package root:
 
 ```ts
@@ -43,6 +55,119 @@ host-controlled action lifecycle, in-memory reference stores, audit events, and
 runtime envelope helpers. It still does not call providers or expose commit
 through model tool execution.
 
+Governance analysis utilities are available from:
+
+```ts
+import { compileCapabilityRisk } from "ai-capability-framework/governance";
+```
+
+The governance subpath evaluates lifecycle transitions, inferred risk,
+compatibility diffs, and registry impact. It does not mutate manifests, execute
+handlers, call models, or replace a host policy engine.
+
+Canonical audit ledger contracts are available from:
+
+```ts
+import { DefaultAuditLedger } from "ai-capability-framework/audit";
+```
+
+The audit subpath provides public-safe ledger record constructors, redaction and
+hash helpers, store interfaces, in-memory reference stores, and an optional
+runtime recorder. It does not store raw prompts, provider payloads, stack
+traces, secrets, or unredacted user/account/tenant IDs.
+
+Trust, taint, redaction, and retention helpers are available from:
+
+```ts
+import { redactForProvider } from "ai-capability-framework/security";
+```
+
+The security subpath labels context segments, preserves public-safe provenance,
+keeps untrusted data separate from instructions, applies provider/trace
+redaction policies, and evaluates conservative retention defaults. It does not
+replace host DLP, privacy review, or retention infrastructure.
+
+Governed memory helpers are available from:
+
+```ts
+import { selectGovernedMemory } from "ai-capability-framework/memory";
+```
+
+The memory subpath validates host-owned memory summaries, decides whether they
+may become model context for a specific use case, and converts selected records
+to security/runtime context. It does not store, recall, infer, or update memory.
+
+Capability-aware security test packs are available from:
+
+```ts
+import { generateSecurityCases } from "ai-capability-framework/security-packs";
+```
+
+The security-packs subpath lists built-in risk packs, generates public-safe
+security cases, assesses pack coverage, and exports API-key-free Promptfoo
+red-team config templates. It does not run Promptfoo, call models, claim
+certification, or replace a host security review. See
+[capability-aware security packs](security/security-packs.md).
+
+Runtime kill switches, circuit breakers, and budgets are available from:
+
+```ts
+import { DefaultControlsEvaluator } from "ai-capability-framework/controls";
+```
+
+The controls subpath evaluates optional runtime controls for capability export,
+routing, tool execution, lifecycle commit, and provider loops. It includes
+in-memory and local JSON reference stores only; host applications own production
+control storage, operator auth, incident workflows, and rollout policy.
+
+The optional governance control plane is available from:
+
+```ts
+import { createControlPlaneService } from "ai-capability-framework/control-plane";
+```
+
+The control-plane subpath provides a framework-neutral request router, service
+helpers, in-memory/file-backed reference stores, safe evidence export, and a
+local example UI for reviewing capabilities, governance status, ledgers,
+approvals, controls, and redacted replay metadata. It does not provide
+production auth, production storage, hosted SaaS behavior, model calls, provider
+SDK execution, or side-effect execution.
+
+Compliance evidence export is available from:
+
+```ts
+import { createEvidencePack } from "ai-capability-framework/evidence";
+```
+
+The evidence subpath creates public-safe JSON or Markdown evidence packs from
+manifests and optional supplied reports. It records missing coverage as gaps and
+includes required disclaimers. It does not certify compliance, call providers,
+store evidence, or include raw prompts, provider payloads, secrets, stack
+traces, or unredacted IDs. See [evidence export](evidence.md).
+
+Generated-content provenance hooks are available from:
+
+```ts
+import { createGeneratedContentProvenance } from "ai-capability-framework/provenance";
+```
+
+The provenance subpath creates refs-and-hashes metadata for customer-facing
+generated content and passes validated metadata to host-supplied adapter hooks.
+It does not implement C2PA signing, process documents or media, call providers,
+store records, or include raw prompts, provider payloads, transcripts, secrets,
+stack traces, or unredacted IDs. See [content provenance hooks](provenance.md).
+
+Runtime replay and trace-to-golden helpers are available from:
+
+```ts
+import { runReplay, createGoldenFromTrace } from "ai-capability-framework/replay";
+```
+
+The replay subpath validates sanitized replay traces, runs deterministic replay
+modes, and drafts review-required eval cases. It does not store raw prompts,
+raw provider payloads, raw traces, credentials, or private diagnostics, and it
+does not call live providers unless the host supplies an explicit live runner.
+
 The optional OpenAI Responses runtime is available from its own subpath:
 
 ```ts
@@ -61,13 +186,18 @@ Observability and eval-ops imports are also isolated:
 import { CollectingTraceSink } from "ai-capability-framework/observability";
 import { LangfuseTraceSink } from "ai-capability-framework/langfuse";
 import { runLiveEvalSuite } from "ai-capability-framework/evals-live";
+import { exportBraintrustDataset } from "ai-capability-framework/evalops";
 import { exportPromptfooSuite } from "ai-capability-framework/promptfoo";
 ```
 
 AWS reference integrations are isolated in their own optional subpath:
 
 ```ts
-import { DynamoDbPreparedActionStore } from "ai-capability-framework/aws";
+import {
+  DynamoDbControlPlaneStore,
+  DynamoDbPolicyDecisionStore,
+  StepFunctionsApprovalAdapter
+} from "ai-capability-framework/aws";
 ```
 
 The AWS subpath is for durable-store and workflow handoff references. Root,
@@ -200,6 +330,9 @@ Runtime imports are intentionally separate from the Core root API:
   redaction.
 - `DefaultRedactionPolicy` redacts values under sensitive keyed fields.
 - `DefaultCapabilityRouter` creates deterministic runtime capability slices.
+- `DefaultControlsEvaluator` can be supplied to routing, executor, lifecycle,
+  and provider runtime calls to deny, force approval, apply read-only mode, or
+  enforce per-run budgets.
 - `formatCapabilitySliceForModel(input)` renders compact model-facing
   capability guidance.
 - `DefaultPolicyBroker` combines Core decisions with runtime context checks and
@@ -220,6 +353,148 @@ See [the runtime guide](runtime.md) for execution boundaries and host
 responsibilities, [action lifecycle](action-lifecycle.md) for prepare, approval,
 and commit semantics, and [policy broker](policy-broker.md) for runtime policy
 behavior.
+
+## Governance Subpath APIs
+
+Governance imports are intentionally separate from the Core root API:
+
+```ts
+import {
+  analyzeCapabilityImpact,
+  compareCapabilityVersions,
+  compileCapabilityRisk,
+  evaluateLifecycleTransition,
+  formatGovernanceGateReport,
+  loadGovernanceGateConfig,
+  runGovernanceGate
+} from "ai-capability-framework/governance";
+```
+
+- `compileCapabilityRisk(capability, options?)` compares declared risk with an
+  inferred minimum and reports required controls.
+- `evaluateLifecycleTransition(registry, request, context?)` returns an
+  allow/block decision for draft, review, approved, canary, production,
+  deprecated, disabled, and removed governance statuses.
+- `compareCapabilityVersions(before, after)` classifies manifest changes as
+  compatible, minor-required, or breaking.
+- `analyzeCapabilityImpact(registry, capabilityId, options?)` reports directly
+  affected capabilities, entities, evals, providers, policy references, and
+  coverage gaps.
+- `loadGovernanceGateConfig(pathOrRoot, options?)` loads `aicf.config.yaml` or
+  JSON config with safe defaults when no config exists.
+- `runGovernanceGate(input)` coordinates validation, semantic invariants, risk,
+  lifecycle, optional compatibility baselines, impact, eval coverage,
+  security-pack coverage, configured provider conformance, and artifact hygiene.
+- `formatGovernanceGateReport(report, format)` formats gate results for CLI or
+  CI logs.
+
+The CLI equivalents live under `aicf governance ...` and `aicf gate ...`. See
+[governance](governance/index.md) and [governance gate](governance/gate.md).
+
+## Audit Subpath APIs
+
+Audit imports are intentionally separate from the Core root API:
+
+```ts
+import {
+  DefaultAuditLedger,
+  createActionRecord,
+  createPolicyDecisionRecord,
+  hashAuditValue
+} from "ai-capability-framework/audit";
+```
+
+- `createPolicyDecisionRecord(input)` creates a schema-valid decision evidence
+  record with hashed inputs and redacted subject/account/tenant refs.
+- `createActionRecord(input)`, `createApprovalRecord(input)`, and
+  `createIdempotencyRecord(input)` create the corresponding canonical records.
+- `InMemoryPolicyDecisionStore`, `InMemoryActionStore`,
+  `InMemoryApprovalLedgerStore`, and `InMemoryIdempotencyLedgerStore` are
+  reference stores for tests and examples only.
+- `DefaultAuditLedger` composes the stores and implements the optional
+  `AicfRuntimeLedgerRecorder` used by the runtime executor and lifecycle
+  manager.
+
+The schemas live under `schemas/audit/`. See [audit ledger](audit/index.md).
+
+## Security Subpath APIs
+
+Security imports are intentionally separate from the Core root API:
+
+```ts
+import {
+  createContextSegment,
+  createSourceRef,
+  defaultRetentionPolicy,
+  defaultSecurityRedactionPolicy,
+  markTainted,
+  redactForProvider,
+  redactForTrace,
+  validateContextSegment
+} from "ai-capability-framework/security";
+```
+
+- `createContextSegment(input)` creates labelled context for provider and trace
+  boundaries.
+- `validateContextSegment(segment)` rejects untrusted segments that try to carry
+  instructions.
+- `markTainted(segment)` and `mergeTaint(left, right)` preserve the fact that
+  content is not trusted tool input until validated by the host.
+- `redactForProvider(value, context, policy?)` and
+  `redactForTrace(value, context, policy?)` apply redaction policy.
+- `defaultRetentionPolicy()` and `evaluateRetentionPolicy(policy, context)`
+  enforce conservative raw-content defaults.
+
+The schemas live under `schemas/security/`. See
+[trust, taint, redaction, and retention](security/trust-taint-redaction.md).
+
+## Memory Subpath APIs
+
+Memory imports are intentionally separate from the Core root API:
+
+```ts
+import {
+  evaluateMemoryExposure,
+  memoryRecordToContextSegment,
+  memoryRecordToRuntimeContextItem,
+  selectGovernedMemory,
+  validateGovernedMemoryRecord
+} from "ai-capability-framework/memory";
+```
+
+- `validateGovernedMemoryRecord(record)` checks the public memory contract.
+- `evaluateMemoryExposure(record, context)` returns allow/deny reasons for a
+  specific exact use case and runtime scope.
+- `selectGovernedMemory(records, context)` filters and deterministically sorts
+  allowed records.
+- `memoryRecordToContextSegment(record)` returns a security `ContextSegment`
+  with `instructionsAllowed: false`.
+- `memoryRecordToRuntimeContextItem(record)` returns a model-context item for a
+  host runtime builder.
+
+The schemas live under `schemas/memory/`. See
+[governed memory and preferences](memory.md).
+
+## Controls Subpath APIs
+
+Controls imports are intentionally separate from the Core root API:
+
+```ts
+import {
+  DefaultControlsEvaluator,
+  InMemoryControlsStore,
+  evaluateBudget
+} from "ai-capability-framework/controls";
+```
+
+- `DefaultControlsEvaluator` evaluates kill switches, circuit breaker state, and
+  budgets.
+- `InMemoryControlsStore` and `LocalJsonControlsStore` are reference/local
+  utilities, not production stores.
+- `evaluateKillSwitches`, `evaluateCircuitBreakers`, and `evaluateBudget` are
+  pure helpers for tests and host integration.
+
+The schemas live under `schemas/controls/`. See [runtime controls](controls/index.md).
 
 ## OpenAI Runtime Subpath APIs
 
@@ -256,6 +531,9 @@ through AICF runtime policy and lifecycle controls. See
 
 - `CollectingTraceSink`, `NoopTraceSink`, `CompositeTraceSink`, and
   `OpenTelemetryTraceSink` consume sanitized AICF runtime trace events.
+- `NoopTracer`, `InMemoryTracer`, `TraceSinkTracer`, and
+  `OpenTelemetryTracerAdapter` provide run/span-style observability over the
+  same safe event model.
 - `LangfuseTraceSink` adapts trace events to a client-like Langfuse object.
 - `createLangfuseDatasetItemsFromEvalCases()` and
   `createEvalCaseFromLangfuseDatasetItem()` convert public-safe eval cases.
@@ -268,11 +546,14 @@ through AICF runtime policy and lifecycle controls. See
   Promptfoo.
 - `importPromptfooResults(input)` maps basic Promptfoo JSON results to live eval
   summaries.
+- `exportBraintrustDataset()`, `importBraintrustResults()`,
+  `exportOpenAIEvalDataset()`, and `importOpenAIEvalResults()` live in
+  `ai-capability-framework/evalops` and transform public-safe eval data only.
 
 These APIs are optional and do not make root imports depend on OpenTelemetry,
 Langfuse, Promptfoo, or live model calls. See
-[observability runtime](observability-runtime.md) and
-[live evals](live-evals.md).
+[observability runtime](observability-runtime.md), [live evals](live-evals.md),
+and [EvalOps](evalops.md).
 
 ## AWS Reference APIs
 
@@ -283,16 +564,26 @@ peer dependency when used.
 - `DynamoDbPreparedActionStore`, `DynamoDbApprovalStore`,
   `DynamoDbIdempotencyStore`, and `DynamoDbAuditSink` implement the runtime
   store/sink interfaces with caller-provided DynamoDB document clients.
+- `DynamoDbPolicyDecisionStore`, `DynamoDbActionStore`,
+  `DynamoDbApprovalLedgerStore`, and `DynamoDbIdempotencyLedgerStore`
+  implement canonical audit ledger stores.
+- `DynamoDbControlsStore`, `DynamoDbBudgetUsageStore`,
+  `DynamoDbReplayTraceMetadataStore`, and `DynamoDbControlPlaneStore` provide
+  AWS-backed controls and control-plane state.
 - `StepFunctionsApprovalAdapter` starts and resumes host-owned approval
   workflows with safe prepared-action summaries.
 - `EventBridgeRuntimeEventPublisher` publishes sanitized AICF trace or audit
   events to EventBridge.
+- `CloudWatchTelemetryPublisher` and `KmsRedactionProvider` provide sanitized
+  AWS telemetry and deterministic redaction refs.
 - `FakeDynamoDbDocumentClient`, `FakeStepFunctionsClient`, and
-  `FakeEventBridgeClient` support API-key-free tests.
+  `FakeEventBridgeClient` plus CloudWatch, CloudWatch Logs, and KMS fakes
+  support API-key-free tests.
 
 These adapters do not provision AWS infrastructure, own approval UI, call
 models, or expose commit to model tool execution. See
-[AWS runtime](aws-runtime.md).
+[AWS runtime](aws-runtime.md) and
+[AWS production reference](aws/production-reference.md).
 
 ## MCP Provider Descriptor APIs
 
@@ -346,6 +637,14 @@ commit tools, or log raw provider payloads. See
 
 ## Provider Conformance APIs
 
+- `listConformanceTargets()` returns supported provider and bridge targets.
+- `exportConformanceProviderTools(input)` exports descriptor JSON for a target
+  from a selected AICF capability slice.
+- `runConformanceSuite(input)` runs deterministic mock conformance cases and
+  returns the canonical F7 report shape.
+- `buildConformanceMatrix(input)` returns the canonical target matrix.
+- `formatConformanceReport(report, format)` and
+  `formatConformanceMatrix(matrix, format)` format CLI-ready output.
 - `listProviderTargets()` returns supported provider and bridge targets.
 - `exportProviderTools(input)` exports descriptor JSON for a target from a
   selected AICF capability slice.
@@ -353,9 +652,21 @@ commit tools, or log raw provider payloads. See
   cases.
 - `formatProviderConformanceReport(report, format)` formats conformance output.
 
-The conformance subpath is isolated under
-`ai-capability-framework/providers/conformance` and does not call live
-providers. See [provider conformance](provider-conformance.md).
+Use `ai-capability-framework/conformance` for new code. The older
+`ai-capability-framework/providers/conformance` subpath remains a compatibility
+alias. Both are descriptor/mock-only and do not call live providers. See
+[cross-provider conformance](providers/conformance.md).
+
+CLI commands:
+
+```bash
+aicf conformance run examples --format json
+aicf conformance matrix examples --format markdown
+aicf providers conformance examples --format text
+```
+
+API changes for manifests using `schema_version: "0.1"` should be reflected in
+the changelog and release notes before a release tag is created.
 
 ## Anthropic Runtime Subpath APIs
 
@@ -451,6 +762,28 @@ commit capabilities. MCP is the preferred path when available; OpenAPI export is
 the fallback for hosts that already expose an AICF executor HTTP route. See
 [Semantic Kernel compatibility](semantic-kernel-runtime.md).
 
+## Evidence Subpath APIs
+
+```ts
+import {
+  createEvidencePack,
+  exportEvidencePack,
+  formatEvidencePackMarkdown,
+  validateEvidencePack
+} from "ai-capability-framework/evidence";
+```
+
+- `createEvidencePack(input)` summarizes manifests and optional supplied
+  governance/eval/security/conformance/control-plane reports.
+- `exportEvidencePack(input, format)` returns JSON or Markdown content plus the
+  pack object.
+- `formatEvidencePackMarkdown(pack)` renders review-friendly Markdown.
+- `validateEvidencePack(pack)` checks the public evidence schema.
+
+Evidence packs are review summaries with required disclaimers and explicit
+coverage gaps. They are not certification, audit opinions, legal opinions,
+security guarantees, or compliance attestations.
+
 ## Schema Subpaths
 
 The package exports stable schema subpaths, including:
@@ -478,6 +811,11 @@ aicf semantic-kernel-functions <path> --context <context.json> [--include-restri
 aicf eval <path> --results <results.json> [--format text|json]
 aicf eval-live <path> --cases <cases.json> --model <model> [--format text|json]
 aicf export promptfoo <path> --out <dir> [--provider <provider>] [--include-red-team-defaults]
+aicf security list-packs [--format text|json]
+aicf security generate <path> --pack <id> --out <file> [--format yaml|json]
+aicf security export-promptfoo <path> --out <file> [--provider <provider>] [--pack <id>]
+aicf gate <manifest-root> --env <name> [--config <file>] [--baseline <path>] [--format text|json]
+aicf evidence export <manifest-root> --out <file> [--format json|markdown]
 ```
 
 Denied decisions exit `0` when the decision was evaluated successfully. Eval
@@ -495,3 +833,8 @@ Changes to TypeScript exports, CLI output, or schema semantics must be covered
 by tests before release. Public API or schema changes must also update
 `CHANGELOG.md`, the migration notes when relevant, and the GitHub release notes
 checklist in `docs/release.md`.
+
+Final release readiness uses repository scripts rather than TypeScript APIs:
+`npm run check`, `npm run check:public`, and `npm run check:certification`.
+The final gate is documented in
+[Final v1 certification](public-framework/v1-certification.md).

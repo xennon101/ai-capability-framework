@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
+import { controlDecisionToPolicyReasons } from "../controls/index.js";
 import { createToolEnvelope, runtimeErrorToEnvelopeError } from "./envelope.js";
+import { AicfRuntimeError } from "./errors.js";
 import { writeAuditEvent } from "./audit.js";
+import { actionIdForPreparedAction, resultRefFromValue } from "../audit/records.js";
 import type {
   AicfActionLifecycleManagerOptions,
   AicfApprovalDecision,
@@ -12,6 +15,7 @@ import type {
   AicfPreparedAction,
   AicfRecordApprovalInput,
   AicfRuntimeToolResultEnvelope,
+  AicfVerifyActionInput,
   LoadedCapabilityManifest
 } from "./types.js";
 
@@ -53,6 +57,23 @@ export class AicfActionLifecycleManager {
       });
     }
 
+    const controlsDecision = this.options.controls?.evaluate({
+      capability,
+      capabilityId: capability.manifest.id,
+      domain: capability.manifest.domain,
+      operation: "prepare",
+      registry: this.options.registry,
+      riskTier: capability.manifest.risk_tier,
+      runtimeContext: input.runtimeContext
+    });
+    if (controlsDecision?.status === "denied") {
+      return this.denied(input, capability, "prepare", {
+        reasons: controlDecisionToPolicyReasons(controlsDecision),
+        requiredApprovals: [],
+        status: "denied"
+      });
+    }
+
     const handler = this.options.handlers.get(input.capabilityId);
     if (!handler?.prepare) {
       return this.unavailable(input, input.capabilityId, "No prepare handler is registered.");
@@ -63,7 +84,7 @@ export class AicfActionLifecycleManager {
       return this.validationError(input, capability, "prepare", inputValidation.errors);
     }
 
-    const policy = await this.options.policyBroker.evaluate({
+    let policy = await this.options.policyBroker.evaluate({
       args: input.args,
       builtContext: input.builtContext,
       capability,
@@ -72,6 +93,30 @@ export class AicfActionLifecycleManager {
       operation: "prepare",
       runtimeContext: input.runtimeContext
     });
+    if (controlsDecision?.status === "force_approval" && policy.status === "allowed") {
+      policy = {
+        ...policy,
+        reasons: [
+          ...policy.reasons,
+          ...controlDecisionToPolicyReasons(controlsDecision)
+        ],
+        requiredApprovals: [
+          ...policy.requiredApprovals,
+          {
+            approvalType: "operator_review",
+            reason: "runtime_control_force_approval"
+          }
+        ],
+        status: "approval_required"
+      };
+    }
+    const policyRecord = await writeLedger(this.options.ledger, () => this.options.ledger?.recordPolicyDecision({
+      args: input.args,
+      capability: capability.manifest,
+      operation: "prepare",
+      policyDecision: policy,
+      runtimeContext: input.runtimeContext
+    }));
 
     if (policy.status === "denied") {
       await writeAuditEvent(this.options.auditSink, {
@@ -100,9 +145,11 @@ export class AicfActionLifecycleManager {
         argsRedacted: redactArgs(input.args),
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
+        commitCapabilityId: capability.manifest.lifecycle.commit_capability_id,
         createdAt: now,
         expiresAt,
         idempotencyKey: input.idempotencyKey,
+        ledgerActionId: input.ledgerActionId,
         metadata: {
           aicf: {
             accountId: input.runtimeContext.account.accountId,
@@ -142,6 +189,25 @@ export class AicfActionLifecycleManager {
       }
 
       await this.options.preparedActionStore.create(preparedAction);
+      await writeLedger(this.options.ledger, () => this.options.ledger?.recordAction({
+        actionId: input.ledgerActionId,
+        actionState: policy.status === "approval_required" ? "approval_required" : "prepared",
+        args: input.args,
+        capability: capability.manifest,
+        policyDecisionId: policyRecord?.decisionId,
+        preparedAction,
+        preview,
+        runId: input.runtimeContext.runId
+      }));
+      if (policy.status === "approval_required") {
+        await writeLedger(this.options.ledger, () => this.options.ledger?.recordApproval({
+          capabilityId: capability.manifest.id,
+          preparedAction,
+          requiredReasonCodes: policy.requiredApprovals.map((approval) => approval.reason),
+          runtimeContext: input.runtimeContext,
+          status: "pending"
+        }));
+      }
       await writeAuditEvent(this.options.auditSink, {
         actionState: preparedAction.state,
         capabilityId: capability.manifest.id,
@@ -186,7 +252,41 @@ export class AicfActionLifecycleManager {
   async recordApproval(input: AicfRecordApprovalInput): Promise<AicfApprovalDecision> {
     const preparedAction = await this.options.preparedActionStore.get(input.preparedActionId);
     if (!preparedAction) {
-      throw new Error("Prepared action was not found.");
+      throw new AicfRuntimeError({
+        code: "capability_not_found",
+        safeMessage: "Prepared action was not found."
+      });
+    }
+
+    if (isExpired(preparedAction.expiresAt)) {
+      const now = new Date().toISOString();
+      await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
+        nextState: "expired",
+        preparedActionId: preparedAction.preparedActionId,
+        updatedAt: now
+      });
+      await writeAuditEvent(this.options.auditSink, {
+        actionState: "expired",
+        capabilityId: preparedAction.capabilityId,
+        operation: "prepare",
+        preparedActionId: input.preparedActionId,
+        runtimeContext: input.runtimeContext,
+        status: "denied",
+        type: "approval_record"
+      });
+      throw new AicfRuntimeError({
+        code: "approval_expired",
+        safeMessage: "Prepared action has expired."
+      });
+    }
+
+    if (!["prepared", "approval_pending"].includes(preparedAction.state)) {
+      throw new AicfRuntimeError({
+        code: "policy_denied",
+        details: { state: preparedAction.state },
+        safeMessage: "Prepared action cannot receive approval in its current state."
+      });
     }
 
     const approval: AicfApprovalDecision = {
@@ -213,10 +313,26 @@ export class AicfActionLifecycleManager {
 
     await this.options.approvalStore.create(approval);
     await this.options.preparedActionStore.updateState({
+      expectedState: preparedAction.state,
       nextState: approval.approved ? "approved" : "rejected",
       preparedActionId: input.preparedActionId,
       updatedAt: approval.decidedAt ?? new Date().toISOString()
     });
+    const approvalRecord = await writeLedger(this.options.ledger, () => this.options.ledger?.recordApproval({
+      approval,
+      capabilityId: preparedAction.capabilityId,
+      preparedAction,
+      runtimeContext: input.runtimeContext,
+      status: approval.approved ? "approved" : "rejected"
+    }));
+    await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(
+      ledgerActionIdForPreparedAction(preparedAction),
+      {
+        actionState: approval.approved ? "approved" : "rejected",
+        approvalRecordId: approvalRecord?.approvalRecordId,
+        updatedAt: approval.decidedAt ?? new Date().toISOString()
+      }
+    ));
     await writeAuditEvent(this.options.auditSink, {
       actionState: approval.approved ? "approved" : "rejected",
       capabilityId: preparedAction.capabilityId,
@@ -232,7 +348,10 @@ export class AicfActionLifecycleManager {
 
   async commit(input: AicfCommitActionInput): Promise<AicfRuntimeToolResultEnvelope> {
     const preparedAction = await this.options.preparedActionStore.get(input.preparedActionId);
-    const capabilityId = input.commitCapabilityId ?? preparedAction?.capabilityId ?? "unknown";
+    const commitResolution = preparedAction ? this.resolveCommitCapabilityId(input, preparedAction) : {
+      capabilityId: input.commitCapabilityId ?? "unknown"
+    };
+    const capabilityId = commitResolution.capabilityId ?? input.commitCapabilityId ?? preparedAction?.capabilityId ?? "unknown";
     const capability = this.options.registry.capabilityById.get(capabilityId);
     await writeAuditEvent(this.options.auditSink, {
       capabilityId,
@@ -247,6 +366,10 @@ export class AicfActionLifecycleManager {
       return this.basicDenied(input, capabilityId, "commit", "Prepared action was not found.");
     }
 
+    if (commitResolution.error) {
+      return this.basicDenied(input, capabilityId, "commit", commitResolution.error);
+    }
+
     if (!capability) {
       return this.basicUnavailable(input, capabilityId, "commit", "Commit capability was not found.");
     }
@@ -255,8 +378,26 @@ export class AicfActionLifecycleManager {
       return this.basicDenied(input, capability.manifest.id, "commit", "Capability does not support commit.");
     }
 
+    const controlsDecision = this.options.controls?.evaluate({
+      capability,
+      capabilityId: capability.manifest.id,
+      domain: capability.manifest.domain,
+      operation: "commit",
+      registry: this.options.registry,
+      riskTier: capability.manifest.risk_tier,
+      runtimeContext: input.runtimeContext
+    });
+    if (controlsDecision?.status === "denied") {
+      return this.deniedCommit(input, capability, {
+        reasons: controlDecisionToPolicyReasons(controlsDecision),
+        requiredApprovals: [],
+        status: "denied"
+      });
+    }
+
     if (isExpired(preparedAction.expiresAt)) {
       await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
         nextState: "expired",
         preparedActionId: preparedAction.preparedActionId,
         updatedAt: new Date().toISOString()
@@ -266,11 +407,6 @@ export class AicfActionLifecycleManager {
 
     if (["rejected", "expired", "cancelled", "failed"].includes(preparedAction.state)) {
       return this.basicDenied(input, capability.manifest.id, "commit", `Prepared action is ${preparedAction.state}.`);
-    }
-
-    const handler = this.options.handlers.get(capability.manifest.id);
-    if (!handler?.commit) {
-      return this.basicUnavailable(input, capability.manifest.id, "commit", "No commit handler is registered.");
     }
 
     const approval = await this.resolveApproval(input, preparedAction);
@@ -318,6 +454,18 @@ export class AicfActionLifecycleManager {
         },
         scope: idempotencyScope
       });
+      if (reservation.reserved) {
+        await writeLedger(this.options.ledger, () => this.options.ledger?.recordIdempotency({
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          key: idempotencyKey,
+          metadata: {
+            capabilityId: capability.manifest.id,
+            preparedActionId: preparedAction.preparedActionId
+          },
+          scope: idempotencyScope,
+          status: "reserved"
+        }));
+      }
       if (!reservation.reserved) {
         if (reservation.existing) {
           await writeAuditEvent(this.options.auditSink, {
@@ -349,6 +497,15 @@ export class AicfActionLifecycleManager {
       }
     }
 
+    if (["committed", "verified"].includes(preparedAction.state)) {
+      return this.basicDenied(input, capability.manifest.id, "commit", `Prepared action is ${preparedAction.state}.`);
+    }
+
+    const handler = this.options.handlers.get(capability.manifest.id);
+    if (!handler?.commit) {
+      return this.basicUnavailable(input, capability.manifest.id, "commit", "No commit handler is registered.");
+    }
+
     const commitArgs = {
       approval_id: approval.approvalId,
       prepared_action_id: preparedAction.preparedActionId
@@ -364,10 +521,23 @@ export class AicfActionLifecycleManager {
       preparedAction,
       runtimeContext: input.runtimeContext
     });
+    const policyRecord = await writeLedger(this.options.ledger, () => this.options.ledger?.recordPolicyDecision({
+      args: commitArgs,
+      capability: capability.manifest,
+      operation: "commit",
+      policyDecision: policy,
+      runtimeContext: input.runtimeContext
+    }));
 
     if (policy.status !== "allowed") {
       return this.deniedCommit(input, capability, policy);
     }
+    const actionId = ledgerActionIdForPreparedAction(preparedAction);
+    await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
+      actionState: "committing",
+      policyDecisionId: policyRecord?.decisionId,
+      updatedAt: new Date().toISOString()
+    }));
 
     try {
       const result = await handler.commit({
@@ -375,10 +545,16 @@ export class AicfActionLifecycleManager {
         preparedAction,
         runtimeContext: input.runtimeContext
       });
-      const data = result.data ?? commitResultData(result);
-      const outputValidation = validateAgainstSchema(capability, data, "output");
-      if (!outputValidation.valid) {
+
+      if (result.status === "failed") {
+        await this.options.preparedActionStore.updateState({
+          expectedState: preparedAction.state,
+          nextState: "failed",
+          preparedActionId: preparedAction.preparedActionId,
+          updatedAt: new Date().toISOString()
+        });
         await writeAuditEvent(this.options.auditSink, {
+          actionState: "failed",
           capabilityId: capability.manifest.id,
           operation: "commit",
           preparedActionId: preparedAction.preparedActionId,
@@ -386,14 +562,42 @@ export class AicfActionLifecycleManager {
           status: "failed",
           type: "action_commit"
         });
-        return this.basicFailed(input, capability.manifest.id, "commit", "Commit output failed schema validation.", outputValidation.errors);
-      }
-
-      if (result.status === "failed") {
+        await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
+          actionState: "failed",
+          resultHash: resultRefFromValue(result, "commit_result").resultHash,
+          updatedAt: new Date().toISOString()
+        }));
         return this.basicFailed(input, capability.manifest.id, "commit", result.userMessage ?? "Commit failed.", []);
       }
 
+      const data = result.data ?? commitResultData(result);
+      const outputValidation = validateAgainstSchema(capability, data, "output");
+      if (!outputValidation.valid) {
+        await this.options.preparedActionStore.updateState({
+          expectedState: preparedAction.state,
+          nextState: "failed",
+          preparedActionId: preparedAction.preparedActionId,
+          updatedAt: new Date().toISOString()
+        });
+        await writeAuditEvent(this.options.auditSink, {
+          actionState: "failed",
+          capabilityId: capability.manifest.id,
+          operation: "commit",
+          preparedActionId: preparedAction.preparedActionId,
+          runtimeContext: input.runtimeContext,
+          status: "failed",
+          type: "action_commit"
+        });
+        await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
+          actionState: "failed",
+          resultHash: resultRefFromValue(outputValidation.errors, "validation_errors").resultHash,
+          updatedAt: new Date().toISOString()
+        }));
+        return this.basicFailed(input, capability.manifest.id, "commit", "Commit output failed schema validation.", outputValidation.errors);
+      }
+
       await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
         nextState: "committed",
         preparedActionId: preparedAction.preparedActionId,
         updatedAt: new Date().toISOString()
@@ -408,7 +612,25 @@ export class AicfActionLifecycleManager {
           },
           scope: idempotencyScope
         });
+        await writeLedger(this.options.ledger, () => this.options.ledger?.recordIdempotency({
+          key: idempotencyKey,
+          metadata: {
+            capabilityId: capability.manifest.id,
+            preparedActionId: preparedAction.preparedActionId
+          },
+          resultRef: resultRefFromValue({
+            ...data,
+            committedActionId: result.committedActionId
+          }, "commit_result"),
+          scope: idempotencyScope,
+          status: "completed"
+        }));
       }
+      await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
+        actionState: "committed",
+        resultHash: resultRefFromValue(data, "commit_result").resultHash,
+        updatedAt: new Date().toISOString()
+      }));
 
       await writeAuditEvent(this.options.auditSink, {
         actionState: "committed",
@@ -437,7 +659,14 @@ export class AicfActionLifecycleManager {
         userMessage: result.userMessage ?? "The action was committed."
       });
     } catch (error) {
+      await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
+        nextState: "failed",
+        preparedActionId: preparedAction.preparedActionId,
+        updatedAt: new Date().toISOString()
+      });
       await writeAuditEvent(this.options.auditSink, {
+        actionState: "failed",
         capabilityId: capability.manifest.id,
         operation: "commit",
         preparedActionId: preparedAction.preparedActionId,
@@ -445,12 +674,236 @@ export class AicfActionLifecycleManager {
         status: "failed",
         type: "action_commit"
       });
+      await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
+        actionState: "failed",
+        resultHash: resultRefFromValue({ error: "commit_handler_failed" }, "error").resultHash,
+        updatedAt: new Date().toISOString()
+      }));
       return this.basicFailed(input, capability.manifest.id, "commit", "The commit handler failed.", [runtimeErrorToEnvelopeError(error)]);
     }
   }
 
-  async verify(): Promise<AicfRuntimeToolResultEnvelope> {
-    throw new Error("verify is not implemented in R2.");
+  async verify(input: AicfVerifyActionInput): Promise<AicfRuntimeToolResultEnvelope> {
+    const capabilityId = input.committedAction.capabilityId;
+    const capability = this.options.registry.capabilityById.get(capabilityId);
+    await writeAuditEvent(this.options.auditSink, {
+      actionState: input.committedAction.state,
+      capabilityId,
+      operation: "verify",
+      preparedActionId: input.committedAction.preparedActionId,
+      runtimeContext: input.runtimeContext,
+      status: "attempted",
+      type: "action_verify"
+    });
+
+    if (!capability) {
+      return createToolEnvelope({
+        capabilityId,
+        errors: [{
+          code: "capability_not_found",
+          message: "Capability was not found."
+        }],
+        operation: "verify",
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "unavailable",
+        userMessage: "The capability is unavailable."
+      });
+    }
+
+    if (capability.manifest.lifecycle.verify !== true) {
+      return createToolEnvelope({
+        capabilityId: capability.manifest.id,
+        capabilityVersion: capability.manifest.version,
+        errors: [{
+          code: "lifecycle_not_supported",
+          message: "Capability does not support verify."
+        }],
+        operation: "verify",
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "denied",
+        userMessage: "The action cannot be verified by this capability."
+      });
+    }
+
+    const controlsDecision = this.options.controls?.evaluate({
+      capability,
+      capabilityId: capability.manifest.id,
+      domain: capability.manifest.domain,
+      operation: "verify",
+      registry: this.options.registry,
+      riskTier: capability.manifest.risk_tier,
+      runtimeContext: input.runtimeContext
+    });
+    if (controlsDecision?.status === "denied") {
+      return createToolEnvelope({
+        capabilityId: capability.manifest.id,
+        capabilityVersion: capability.manifest.version,
+        operation: "verify",
+        policy: {
+          reasons: controlDecisionToPolicyReasons(controlsDecision),
+          requiredApprovals: [],
+          status: "denied"
+        },
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "denied",
+        userMessage: "The action is not allowed."
+      });
+    }
+
+    const handler = this.options.handlers.get(capability.manifest.id);
+    if (!handler?.verify) {
+      return createToolEnvelope({
+        capabilityId: capability.manifest.id,
+        capabilityVersion: capability.manifest.version,
+        errors: [{
+          code: "handler_not_found",
+          message: "No verify handler is registered."
+        }],
+        operation: "verify",
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "unavailable",
+        userMessage: "The capability is unavailable."
+      });
+    }
+
+    try {
+      const result = await handler.verify({
+        committedAction: input.committedAction,
+        runtimeContext: input.runtimeContext
+      });
+
+      if (result.status === "not_supported") {
+        return createToolEnvelope({
+          capabilityId: capability.manifest.id,
+          capabilityVersion: capability.manifest.version,
+          errors: [{
+            code: "lifecycle_not_supported",
+            message: "Verify is not supported."
+          }],
+          operation: "verify",
+          requestId: input.runtimeContext.requestId,
+          runId: input.runtimeContext.runId,
+          status: "unavailable",
+          userMessage: "The action cannot be verified."
+        });
+      }
+
+      if (result.status === "failed") {
+        await writeAuditEvent(this.options.auditSink, {
+          actionState: "failed",
+          capabilityId: capability.manifest.id,
+          operation: "verify",
+          preparedActionId: input.committedAction.preparedActionId,
+          runtimeContext: input.runtimeContext,
+          status: "failed",
+          type: "action_verify"
+        });
+        return createToolEnvelope({
+          action: {
+            committedActionId: input.committedAction.committedActionId,
+            preparedActionId: input.committedAction.preparedActionId,
+            state: "failed"
+          },
+          capabilityId: capability.manifest.id,
+          capabilityVersion: capability.manifest.version,
+          data: result.data,
+          errors: [{
+            code: "handler_failed",
+            message: result.message ?? "The action could not be verified."
+          }],
+          operation: "verify",
+          requestId: input.runtimeContext.requestId,
+          runId: input.runtimeContext.runId,
+          status: "failed",
+          userMessage: result.message ?? "The action could not be verified."
+        });
+      }
+
+      await writeAuditEvent(this.options.auditSink, {
+        actionState: "verified",
+        capabilityId: capability.manifest.id,
+        operation: "verify",
+        preparedActionId: input.committedAction.preparedActionId,
+        runtimeContext: input.runtimeContext,
+        status: "succeeded",
+        type: "action_verify"
+      });
+      return createToolEnvelope({
+        action: {
+          committedActionId: input.committedAction.committedActionId,
+          preparedActionId: input.committedAction.preparedActionId,
+          state: "verified"
+        },
+        capabilityId: capability.manifest.id,
+        capabilityVersion: capability.manifest.version,
+        data: result.data,
+        operation: "verify",
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "verified",
+        userMessage: result.message ?? "The action was verified."
+      });
+    } catch (error) {
+      await writeAuditEvent(this.options.auditSink, {
+        actionState: "failed",
+        capabilityId: capability.manifest.id,
+        operation: "verify",
+        preparedActionId: input.committedAction.preparedActionId,
+        runtimeContext: input.runtimeContext,
+        status: "failed",
+        type: "action_verify"
+      });
+      return createToolEnvelope({
+        capabilityId: capability.manifest.id,
+        capabilityVersion: capability.manifest.version,
+        errors: [runtimeErrorToEnvelopeError(error)],
+        operation: "verify",
+        requestId: input.runtimeContext.requestId,
+        runId: input.runtimeContext.runId,
+        status: "failed",
+        userMessage: "The verify handler failed."
+      });
+    }
+  }
+
+  private resolveCommitCapabilityId(
+    input: AicfCommitActionInput,
+    preparedAction: AicfPreparedAction
+  ): { capabilityId?: string; error?: string } {
+    const requestedCommitCapabilityId = input.commitCapabilityId;
+    const linkedCommitCapabilityId = preparedAction.commitCapabilityId;
+
+    if (requestedCommitCapabilityId && linkedCommitCapabilityId && requestedCommitCapabilityId !== linkedCommitCapabilityId) {
+      return {
+        capabilityId: requestedCommitCapabilityId,
+        error: "Prepared action is not linked to the requested commit capability."
+      };
+    }
+
+    if (requestedCommitCapabilityId && requestedCommitCapabilityId !== preparedAction.capabilityId && requestedCommitCapabilityId !== linkedCommitCapabilityId) {
+      return {
+        capabilityId: requestedCommitCapabilityId,
+        error: "Prepared action is not linked to the requested commit capability."
+      };
+    }
+
+    if (!requestedCommitCapabilityId && linkedCommitCapabilityId) {
+      return { capabilityId: linkedCommitCapabilityId };
+    }
+
+    const capabilityId = requestedCommitCapabilityId ?? preparedAction.capabilityId;
+    if (capabilityId !== preparedAction.capabilityId && capabilityId !== linkedCommitCapabilityId) {
+      return {
+        capabilityId,
+        error: "Prepared action does not declare a matching commit capability."
+      };
+    }
+
+    return { capabilityId };
   }
 
   private async resolveApproval(
@@ -713,4 +1166,23 @@ function commitResultData(result: AicfCommitResult): Record<string, unknown> {
     committedActionId: result.committedActionId,
     status: result.status
   };
+}
+
+function ledgerActionIdForPreparedAction(preparedAction: AicfPreparedAction): string {
+  return preparedAction.ledgerActionId ?? actionIdForPreparedAction(preparedAction.preparedActionId);
+}
+
+async function writeLedger<T>(
+  ledger: unknown,
+  operation: () => Promise<T | undefined> | T | undefined
+): Promise<T | undefined> {
+  if (!ledger) {
+    return undefined;
+  }
+
+  try {
+    return await operation();
+  } catch {
+    return undefined;
+  }
 }

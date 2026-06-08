@@ -172,6 +172,7 @@
         "preview": { "type": "boolean" },
         "approve": { "type": "boolean" },
         "commit": { "type": "boolean" },
+        "commit_capability_id": { "type": "string", "minLength": 1 },
         "verify": { "type": "boolean" },
         "audit": { "type": "boolean" }
       }

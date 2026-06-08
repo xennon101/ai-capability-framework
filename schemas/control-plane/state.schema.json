@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/control-plane/state.schema.json",
+  "title": "AICF Control Plane Seed State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "decisions",
+    "actions",
+    "approvals",
+    "controls",
+    "replayTraces"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/object" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/object" }
+    },
+    "approvals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/object" }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "killSwitches",
+        "budgetPolicies",
+        "circuitBreakerPolicies",
+        "circuitBreakerStates",
+        "circuitBreakerEvents"
+      ],
+      "properties": {
+        "killSwitches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        },
+        "budgetPolicies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        },
+        "circuitBreakerPolicies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        },
+        "circuitBreakerStates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        },
+        "circuitBreakerEvents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        }
+      }
+    },
+    "replayTraces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/object" }
+    }
+  },
+  "$defs": {
+    "object": {
+      "type": "object"
+    }
+  }
+}

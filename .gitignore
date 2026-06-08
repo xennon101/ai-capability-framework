@@ -4,6 +4,7 @@ _private/
 private/
 local/
 .local/
+.aicf/
 drafts/
 archive/
 archives/
@@ -42,6 +43,8 @@ docs/PRODUCT_REQUIREMENTS_AND_TECH_SPEC.md
 # Generated, runtime, and dependency output.
 node_modules/
 dist/
+dist-source/
+generated-docs/
 build/
 coverage/
 .cache/
@@ -60,4 +63,3 @@ logs/
 *.pptx
 *.xlsx
 *.pdf
-

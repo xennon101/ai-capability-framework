@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/security/source-ref.schema.json",
+  "title": "AICF Security Source Reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sourceId", "sourceType", "trust"],
+  "properties": {
+    "contentHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "freshness": { "enum": ["fresh", "stale", "unknown"] },
+    "retrievedAt": { "type": "string", "format": "date-time" },
+    "sourceId": { "type": "string", "minLength": 1 },
+    "sourceType": {
+      "enum": [
+        "user_message",
+        "uploaded_file",
+        "retrieved_document",
+        "app_record",
+        "tool_result",
+        "external_api",
+        "policy",
+        "manual_review",
+        "model_output"
+      ]
+    },
+    "trust": { "$ref": "#/$defs/trust_label" },
+    "uri": { "type": "string" }
+  },
+  "$defs": {
+    "trust_label": {
+      "enum": [
+        "system_instruction",
+        "developer_instruction",
+        "app_policy",
+        "app_data",
+        "tool_result",
+        "retrieved_document",
+        "user_input",
+        "model_output",
+        "external_api"
+      ]
+    }
+  }
+}

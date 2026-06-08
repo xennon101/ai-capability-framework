@@ -1,4 +1,5 @@
 import { isRestrictedCapability } from "../adapter-common.js";
+import { readOnlyBlocks } from "../controls/index.js";
 import type { CapabilityManifest } from "../generated/manifest-types.js";
 import type { LoadedCapabilityManifest, RiskTier } from "../types.js";
 import type {
@@ -127,6 +128,11 @@ function exclusionReason(
     return "Restricted side-effect capability was excluded.";
   }
 
+  const controlsReason = controlsExclusionReason(request, loadedCapability);
+  if (controlsReason) {
+    return controlsReason;
+  }
+
   const contextReason = requiredContextReason(capability, request.builtContext.runtimeContext);
   if (contextReason) {
     return contextReason;
@@ -143,6 +149,40 @@ function exclusionReason(
 
   if (request.allowedCapabilityTypes && !request.allowedCapabilityTypes.includes(capability.capability_type)) {
     return "Capability type was not allowed.";
+  }
+
+  return null;
+}
+
+function controlsExclusionReason(
+  request: CapabilityRouteRequest,
+  loadedCapability: LoadedCapabilityManifest
+): string | null {
+  if (!request.controls) {
+    return null;
+  }
+
+  const decision = request.controls.evaluate({
+    capability: loadedCapability,
+    capabilityId: loadedCapability.manifest.id,
+    domain: loadedCapability.manifest.domain,
+    operation: "export",
+    registry: request.registry,
+    riskTier: loadedCapability.manifest.risk_tier,
+    runtimeContext: request.builtContext.runtimeContext
+  });
+
+  if (decision.status === "denied") {
+    return decision.reasons[0]?.message ?? "Capability was denied by runtime controls.";
+  }
+
+  if (decision.status === "read_only" && readOnlyBlocks({
+    capability: loadedCapability,
+    capabilityId: loadedCapability.manifest.id,
+    operation: "export",
+    runtimeContext: request.builtContext.runtimeContext
+  })) {
+    return decision.reasons[0]?.message ?? "Read-only controls exclude this capability.";
   }
 
   return null;
@@ -310,4 +350,3 @@ function hasText(value: string | undefined): boolean {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-

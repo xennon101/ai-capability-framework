@@ -7,6 +7,7 @@ Import AWS APIs from:
 
 ```ts
 import {
+  DynamoDbControlPlaneStore,
   DynamoDbPreparedActionStore,
   StepFunctionsApprovalAdapter
 } from "ai-capability-framework/aws";
@@ -21,13 +22,21 @@ require the relevant optional AWS SDK peer only when those operations run.
 
 ## DynamoDB Stores
 
-The AWS subpath provides DynamoDB implementations for the R2 runtime store
-interfaces:
+The AWS subpath provides DynamoDB implementations for runtime, audit, controls,
+and control-plane state:
 
 - `DynamoDbPreparedActionStore`
 - `DynamoDbApprovalStore`
 - `DynamoDbIdempotencyStore`
 - `DynamoDbAuditSink`
+- `DynamoDbPolicyDecisionStore`
+- `DynamoDbActionStore`
+- `DynamoDbApprovalLedgerStore`
+- `DynamoDbIdempotencyLedgerStore`
+- `DynamoDbControlsStore`
+- `DynamoDbControlPlaneStore`
+- `DynamoDbReplayTraceMetadataStore`
+- `DynamoDbBudgetUsageStore`
 
 Each store accepts a caller-provided DynamoDB document client:
 
@@ -46,6 +55,9 @@ existing store interfaces do not need AWS-specific arguments.
 
 Prepared action payloads store redacted args and public runtime summaries, not
 raw user prompts, provider payloads, or private traces.
+
+See [DynamoDB single-table shape](aws/dynamodb-single-table.md) for the
+production-reference item model.
 
 ## Step Functions Approval Handoff
 
@@ -68,6 +80,8 @@ build approval screens, send notifications, own identity, verify approvers, or
 decide policy. Host applications remain responsible for approval UI, auth,
 workflow definitions, and task-token handling.
 
+See [Step Functions approval handoff](aws/step-functions-approval.md).
+
 ## EventBridge Publishing
 
 `EventBridgeRuntimeEventPublisher` publishes sanitized AICF trace or audit
@@ -85,6 +99,17 @@ await publisher.publish(event);
 Trace content is emitted in metadata mode by default. Raw prompts, raw provider
 payloads, secrets, tokens, cookies, and payment data should not be included in
 runtime events.
+
+`CloudWatchTelemetryPublisher` and `KmsRedactionProvider` are also available for
+sanitized AWS telemetry and deterministic redaction refs. See
+[CloudWatch telemetry](aws/cloudwatch-telemetry.md) and
+[KMS redaction references](aws/kms-redaction.md).
+
+## Production Reference
+
+The full AWS production-reference guide is in
+[docs/aws/production-reference.md](aws/production-reference.md). DynamoDB is the
+only durable database adapter implemented for v1; RDS is deferred.
 
 ## Testing
 

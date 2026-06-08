@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   createEvalCaseFromLangfuseDatasetItem,
   createLangfuseDatasetItemsFromEvalCases,
-  LangfuseTraceSink
+  createLangfuseTraceReference,
+  LangfuseTracerAdapter,
+  LangfuseTraceSink,
+  publishLangfuseDatasetItems
 } from "../../langfuse/index.js";
 import type { EvalCase } from "../../index.js";
 
@@ -78,10 +81,60 @@ describe("Langfuse optional adapter", () => {
     expect(roundTrip.scorers[0]?.type).toBe("tool_selection_includes");
   });
 
+  it("supports tracer adapter, dataset publishing, and trace references", async () => {
+    const calls: Array<{ method: string; payload: unknown }> = [];
+    const client = {
+      createDatasetItem: (payload: unknown) => calls.push({ method: "createDatasetItem", payload }),
+      flush: () => calls.push({ method: "flush", payload: undefined }),
+      generation: (payload: unknown) => calls.push({ method: "generation", payload }),
+      score: (payload: unknown) => calls.push({ method: "score", payload }),
+      trace: (payload: unknown) => calls.push({ method: "trace", payload })
+    };
+    const adapter = new LangfuseTracerAdapter({ client });
+    const span = adapter.startRun({ requestId: "req_langfuse", runId: "run_langfuse" });
+
+    await span.recordProviderCall({
+      model: "gpt-4.1-mini",
+      provider: "openai",
+      requestId: "req_langfuse",
+      runId: "run_langfuse"
+    });
+    await span.recordEvalScore({
+      evalId: "support.ticket.get.valid",
+      requestId: "req_langfuse",
+      runId: "run_langfuse",
+      score: 1,
+      scorer: "tool_selection_includes"
+    });
+    await publishLangfuseDatasetItems(client, [{
+      expectedOutput: {
+        rawPrompt: "secret prompt"
+      },
+      id: "support.ticket.get.valid",
+      input: {
+        user_message: "Read ticket TCK-100."
+      },
+      metadata: {
+        traceReference: createLangfuseTraceReference({
+          aicfRunId: "run_langfuse",
+          aicfTraceId: "trace_1",
+          langfuseTraceId: "lf_trace_1"
+        })
+      }
+    }]);
+    await adapter.flush();
+
+    expect(calls.map((call) => call.method)).toContain("createDatasetItem");
+    expect(calls.map((call) => call.method)).toContain("score");
+    expect(JSON.stringify(calls)).not.toContain("secret prompt");
+    expect(JSON.stringify(calls)).toContain("aicf_trace_to_golden");
+  });
+
   it("exports built Langfuse subpath APIs", async () => {
     const langfuse = await import("../../../dist/langfuse/index.js") as Record<string, unknown>;
 
     expect(langfuse.LangfuseTraceSink).toEqual(expect.any(Function));
+    expect(langfuse.LangfuseTracerAdapter).toEqual(expect.any(Function));
     expect(langfuse.createLangfuseDatasetItemsFromEvalCases).toEqual(expect.any(Function));
   });
 });
