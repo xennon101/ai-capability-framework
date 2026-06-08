@@ -1,10 +1,15 @@
 ---
 name: aicf-skill-pack-maintenance
-description: Create, update, validate, test, and release the AICF Agent Skills Pack itself, including SKILL.md frontmatter, trigger descriptions, references, assets, plugin metadata, and public distribution.
+description:
+  Create, update, validate, test, and release the AICF Agent Skills Pack itself,
+  including SKILL.md frontmatter, trigger descriptions, references, assets, plugin
+  metadata, and public distribution.
 license: MIT
-compatibility: Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or migrating to AICF.
+compatibility:
+  Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
+  migrating to AICF.
 metadata:
-  aicf.skill.version: "1.0.0"
+  aicf.skill.version: "1.0.0-rc.4"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "skill-pack-maintenance"
   aicf.skill.scope: "builder"
@@ -15,12 +20,16 @@ metadata:
 
 ## Purpose
 
-Guide safe maintenance of the AICF Agent Skills package, including skill structure, trigger coverage, references, assets, plugin metadata, package checks, and release readiness.
+Guide safe maintenance of the AICF Agent Skills package, including skill structure,
+trigger coverage, references, assets, plugin metadata, package checks, and release
+readiness.
 
 ## Use this skill when
 
-- Creating, updating, validating, testing, or releasing skills inside the AICF Agent Skills package.
-- Editing `SKILL.md` frontmatter, trigger descriptions, references, assets, plugin metadata, or package docs.
+- Creating, updating, validating, testing, or releasing skills inside the AICF Agent
+  Skills package.
+- Editing `SKILL.md` frontmatter, trigger descriptions, references, assets, plugin
+  metadata, or package docs.
 - Investigating skill overlap, missing fixtures, or public package failures.
 
 ## Do not use this skill when
@@ -31,18 +40,25 @@ Guide safe maintenance of the AICF Agent Skills package, including skill structu
 
 ## Inputs to inspect first
 
-- Package README, plugin manifest, validation scripts, trigger fixtures, generated index, and changed skill folders.
-- References for [skill authoring rules](references/skill-authoring-rules.md), [trigger evaluation](references/trigger-evaluation.md), [overlap prevention](references/overlap-prevention.md), and [plugin packaging](references/plugin-packaging.md).
+- Package README, plugin manifest, validation scripts, trigger fixtures, generated
+  index, and changed skill folders.
+- References for [skill authoring rules](references/skill-authoring-rules.md),
+  [trigger evaluation](references/trigger-evaluation.md),
+  [overlap prevention](references/overlap-prevention.md), and
+  [plugin packaging](references/plugin-packaging.md).
 
 ## Workflow
 
-1. Identify whether the change is skill content, validation tooling, package metadata, docs, or release hygiene.
+1. Identify whether the change is skill content, validation tooling, package metadata,
+   docs, or release hygiene.
 2. Keep `SKILL.md` concise and move detailed guidance to one-level references.
-3. Ensure frontmatter name, description, license, compatibility, and AICF metadata pass validation.
+3. Ensure frontmatter name, description, license, compatibility, and AICF metadata pass
+   validation.
 4. Add or update positive and negative trigger fixtures for every real skill.
 5. Regenerate the skill index after metadata or trigger changes.
 6. Run package validation, trigger coverage, tests, public scan, and pack dry-run.
-7. Preserve the package as an independent nested package unless the root repo intentionally changes shape.
+7. Preserve the package as an independent nested package unless the root repo
+   intentionally changes shape.
 
 Use [skill template](assets/skill-template.md) for new skills.
 
@@ -54,7 +70,8 @@ Use [skill template](assets/skill-template.md) for new skills.
 
 ## Validation
 
-- Run `npm run validate`, `npm run check:triggers`, `npm run index`, `npm run test`, `npm run check:public`, and `npm run check` from the skills package.
+- Run `npm run validate`, `npm run check:triggers`, `npm run index`, `npm run test`,
+  `npm run check:public`, and `npm run check` from the skills package.
 - Run root skill script hooks when relevant.
 - Confirm package dry-run excludes local/private artifacts.
 
@@ -67,4 +84,5 @@ Use [skill template](assets/skill-template.md) for new skills.
 
 ## Handoff format
 
-Report skills changed, fixture/index changes, commands run, public-safety result, and any remaining release blockers.
+Report skills changed, fixture/index changes, commands run, public-safety result, and
+any remaining release blockers.

@@ -22,6 +22,6 @@ Export Semantic Kernel OpenAPI compatibility metadata:
 node dist/cli.js providers export-semantic-kernel-openapi examples --context examples/support/openai/context.support_agent.json --server-url https://aicf.example.com
 ```
 
-The conformance harness is descriptor/mock-only. It does not call live models,
-use credentials, execute provider SDK loops, persist raw payloads, or expose
-commit capabilities.
+The conformance harness is descriptor/mock-only. It does not call live models, use
+credentials, execute provider SDK loops, persist raw payloads, or expose commit
+capabilities.

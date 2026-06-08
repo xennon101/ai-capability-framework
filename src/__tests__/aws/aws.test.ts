@@ -103,6 +103,52 @@ describe("AWS DynamoDB runtime stores", () => {
     });
   });
 
+  it("persists prepared action commit and verification update fields", async () => {
+    const client = new FakeDynamoDbDocumentClient();
+    const store = new DynamoDbPreparedActionStore({
+      documentClient: client,
+      now: fixedNow,
+      tableName
+    });
+    const action = preparedAction();
+
+    await store.create(action);
+    await store.updateState({
+      committedActionId: "commit_1",
+      committedAt: "2026-06-04T12:03:00.000Z",
+      commitResultHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      expectedState: "approval_pending",
+      nextState: "committed",
+      preparedActionId: action.preparedActionId,
+      updatedAt: "2026-06-04T12:04:00.000Z",
+      verification: {
+        resultHash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        status: "verified",
+        verifiedAt: "2026-06-04T12:05:00.000Z"
+      }
+    });
+    const updated = await store.get(action.preparedActionId);
+    const updateCommand = client.commands.find((command) => command.name === "UpdateCommand");
+
+    expect(updateCommand?.input.ExpressionAttributeValues).toEqual(expect.objectContaining({
+      ":committedActionId": "commit_1",
+      ":committedAt": "2026-06-04T12:03:00.000Z",
+      ":commitResultHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      ":expectedState": "approval_pending",
+      ":verification": expect.objectContaining({ status: "verified" })
+    }));
+    expect(JSON.stringify(updateCommand?.input.ExpressionAttributeValues)).not.toContain("undefined");
+    expect(updated).toMatchObject({
+      committedActionId: "commit_1",
+      commitResultHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      state: "committed",
+      verification: {
+        resultHash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        status: "verified"
+      }
+    });
+  });
+
   it("stores approval decisions and supports approval/prepared-action lookups", async () => {
     const client = new FakeDynamoDbDocumentClient();
     const store = new DynamoDbApprovalStore({

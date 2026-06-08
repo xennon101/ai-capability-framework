@@ -1,13 +1,13 @@
 # Evidence Export
 
-The evidence subpath creates public-safe review packs from AICF manifests and
-supplied runtime/eval reports. Evidence packs are summaries for human review;
-they are not certification, audit opinions, legal opinions, security
-guarantees, or compliance attestations.
+The evidence subpath creates public-safe review packs from AICF manifests and supplied
+runtime/eval reports. Evidence packs are summaries for human review; they are not
+certification, audit opinions, legal opinions, security guarantees, or compliance
+attestations.
 
-Evidence export does not call models, run providers, execute handlers, store
-records, or inspect raw traces. It only summarizes the registry and optional
-reports that the host supplies.
+Evidence export does not call models, run providers, execute handlers, store records, or
+inspect raw traces. It only summarizes the registry and optional reports that the host
+supplies.
 
 ## CLI
 
@@ -38,8 +38,8 @@ node dist/cli.js evidence export examples \
   --security-report security-report.json
 ```
 
-If optional reports are missing, the pack records that as a coverage gap instead
-of implying evidence exists.
+If optional reports are missing, the pack records that as a coverage gap instead of
+implying evidence exists.
 
 ## TypeScript
 
@@ -68,23 +68,22 @@ const markdown = formatEvidencePackMarkdown(pack);
 An evidence pack includes:
 
 - capability, risk, provider, and policy inventories;
-- eval, security-pack, provider-conformance, approval, retention, and human
-  review summaries;
+- eval, security-pack, provider-conformance, approval, retention, and human review
+  summaries;
 - optional incident and model-upgrade summaries supplied by the host;
 - explicit coverage gaps;
 - required disclaimers;
 - redaction metadata describing what was omitted.
 
-The pack includes hashes, redacted refs, statuses, counts, reasons, and
-coverage metadata only. It must not include raw prompts, raw provider payloads,
-raw transcripts, secrets, stack traces, unredacted tenant/account/user IDs, or
-sensitive tool output.
+The pack includes hashes, redacted refs, statuses, counts, reasons, and coverage
+metadata only. It must not include raw prompts, raw provider payloads, raw transcripts,
+secrets, stack traces, unredacted tenant/account/user IDs, or sensitive tool output.
 
 For customer-facing generated documents or media, use
-`ai-capability-framework/provenance` to create a separate sidecar record that
-links content to provider, model, capability, source, approval, and trace refs.
-Evidence packs summarize review posture; provenance records describe a specific
-generated content artifact.
+`ai-capability-framework/provenance` to create a separate sidecar record that links
+content to provider, model, capability, source, approval, and trace refs. Evidence packs
+summarize review posture; provenance records describe a specific generated content
+artifact.
 
 ## Control Plane
 
@@ -94,11 +93,11 @@ The control-plane evidence endpoint remains available:
 POST /api/aicf/evidence/export
 ```
 
-It preserves its existing response shape and also exposes a canonical F13
-evidence pack under `canonicalEvidence`.
+It preserves its existing response shape and also exposes a canonical F13 evidence pack
+under `canonicalEvidence`.
 
 ## Host Responsibilities
 
 Your app owns production evidence collection, approval identity, retention,
-legal/compliance review, external audit workflow, and any regulated reporting.
-AICF only creates a structured, public-safe summary from the data you provide.
+legal/compliance review, external audit workflow, and any regulated reporting. AICF only
+creates a structured, public-safe summary from the data you provide.

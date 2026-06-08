@@ -28,7 +28,6 @@ import {
   parseOpenAIResponsesToolCall,
   parseSemanticKernelFunctionCall,
   runEvalSuite,
-  runCli,
   scoreEvalCase,
   selectCapabilitySlice,
   toModelFacingToolResult,
@@ -50,6 +49,7 @@ import {
   type LoadedEvalCase,
   type LoadedManifest
 } from "../index.js";
+import { runCli } from "../cli.js";
 
 describe("AICF core", () => {
   it("loads and validates the public examples", async () => {
@@ -322,6 +322,72 @@ describe("AICF CLI", () => {
     expect(stdout.value).toContain("Eval suite failed:");
     expect(stderr.value).toBe("");
   });
+
+  it("guards live eval CLI behind provider selection and explicit live opt-in", async () => {
+    const originalFlag = process.env.RUN_REAL_AICF_LIVE_EVALS;
+    const originalOpenAIKey = process.env.OPENAI_API_KEY;
+    const missingProviderStderr = createWritableBuffer();
+    const missingFlagStderr = createWritableBuffer();
+    const unsupportedStderr = createWritableBuffer();
+    const aiSdkStderr = createWritableBuffer();
+
+    delete process.env.RUN_REAL_AICF_LIVE_EVALS;
+    delete process.env.OPENAI_API_KEY;
+    const missingProvider = await runCli([
+      "eval-live",
+      "examples",
+      "--cases",
+      "examples/eval-results/public.results.passing.json",
+      "--model",
+      "test-model"
+    ], { stderr: missingProviderStderr, stdout: createWritableBuffer() });
+    const missingFlag = await runCli([
+      "eval-live",
+      "examples",
+      "--cases",
+      "examples/eval-results/public.results.passing.json",
+      "--provider",
+      "openai",
+      "--model",
+      "test-model"
+    ], { stderr: missingFlagStderr, stdout: createWritableBuffer() });
+
+    process.env.RUN_REAL_AICF_LIVE_EVALS = "1";
+    const unsupported = await runCli([
+      "eval-live",
+      "examples",
+      "--cases",
+      "examples/eval-results/public.results.passing.json",
+      "--provider",
+      "unknown",
+      "--model",
+      "test-model"
+    ], { stderr: unsupportedStderr, stdout: createWritableBuffer() });
+    const aiSdk = await runCli([
+      "eval-live",
+      "examples",
+      "--cases",
+      "examples/eval-results/public.results.passing.json",
+      "--provider",
+      "ai-sdk",
+      "--model",
+      "test-model"
+    ], { stderr: aiSdkStderr, stdout: createWritableBuffer() });
+
+    if (originalFlag === undefined) delete process.env.RUN_REAL_AICF_LIVE_EVALS;
+    else process.env.RUN_REAL_AICF_LIVE_EVALS = originalFlag;
+    if (originalOpenAIKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalOpenAIKey;
+
+    expect(missingProvider).toBe(1);
+    expect(missingProviderStderr.value).toContain("Missing required --provider");
+    expect(missingFlag).toBe(1);
+    expect(missingFlagStderr.value).toContain("RUN_REAL_AICF_LIVE_EVALS=1");
+    expect(unsupported).toBe(1);
+    expect(unsupportedStderr.value).toContain("Unsupported live eval provider");
+    expect(aiSdk).toBe(1);
+    expect(aiSdkStderr.value).toContain("host-supplied generateText");
+  });
 });
 
 describe("AICF release readiness", () => {
@@ -356,7 +422,6 @@ describe("AICF release readiness", () => {
       "parseMcpToolCall",
       "parseOpenAIResponsesToolCall",
       "parseSemanticKernelFunctionCall",
-      "runCli",
       "runEvalSuite",
       "scoreEvalCase",
       "selectCapabilitySlice",
@@ -377,6 +442,18 @@ describe("AICF release readiness", () => {
     for (const exportName of expectedExports) {
       expect(builtPackage[exportName], exportName).toEqual(expect.any(Function));
     }
+    expect(builtPackage.runCli).toBeUndefined();
+  });
+
+  it("built CLI subpath module exports the programmatic runner", async () => {
+    const builtCli = await import("../../dist/cli.js") as Record<string, unknown>;
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(builtCli.runCli).toEqual(expect.any(Function));
+    expect(await (builtCli.runCli as typeof runCli)(["help"], { stderr, stdout })).toBe(0);
+    expect(stdout.value).toContain("Usage: aicf <command> [path]");
+    expect(stderr.value).toBe("");
   });
 
   it("built CLI binary exists and help lists all public commands", async () => {
@@ -531,6 +608,7 @@ describe("AICF release readiness", () => {
       "docs/observability/overview.md",
       "docs/public-framework/compatibility-policy.md",
       "docs/public-framework/deprecation-policy.md",
+      "docs/public-framework/license-decision.md",
       "docs/public-framework/release-process.md",
       "docs/public-framework/security-disclosure.md",
       "docs/public-framework/v1-certification.md",
@@ -681,7 +759,13 @@ describe("AICF release readiness", () => {
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:runtime");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:optional");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:providers:mock");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run skills:ci");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run skills:check");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run skills:pack:dry");
     expect(packageJson.scripts["check:certification"]).toContain("node scripts/check-certification.mjs");
+    expect(packageJson.scripts["skills:ci"]).toBe("npm --prefix agent-skills ci");
+    expect(packageJson.scripts["skills:pack:dry"]).toBe("npm --prefix agent-skills run pack:dry");
+    expect(packageJson.scripts["skills:publish:dry"]).toBe("npm publish ./agent-skills --dry-run --access public");
     expect(packageJson.scripts["check:git-clean"]).toBe("node scripts/check-git-clean.mjs");
     expect(packageJson.scripts["check:source-archive"]).toBe("node scripts/check-source-archive.mjs");
     expect(packageJson.scripts["check:release-source"]).toContain("npm run check:workspace-public");
@@ -802,6 +886,7 @@ describe("AICF release readiness", () => {
     const normalizedStartHere = startHere.replace(/\s+/g, " ");
     const normalizedOpenaiWalkthrough = openaiWalkthrough.replace(/\s+/g, " ");
     const normalizedEvalRunner = evalRunner.replace(/\s+/g, " ");
+    const normalizedGovernanceGate = governanceGate.replace(/\s+/g, " ");
     const normalizedRelease = release.replace(/\s+/g, " ");
     expect(normalizedReadme).toContain("provider-agnostic AI capability framework");
     expect(normalizedReadme).toContain("OpenAI, Anthropic Claude, Google Gemini, Vercel AI SDK, Model Context Protocol, LangChain/LangGraph, and Semantic Kernel");
@@ -814,8 +899,8 @@ describe("AICF release readiness", () => {
     expect(normalizedOpenaiWalkthrough).toContain("The model does not call `support.refund.commit_case`");
     expect(normalizedOpenaiWalkthrough).toContain("host applications remain responsible for provider credentials, model selection, auth, side effects, approvals, storage, and audit");
     expect(normalizedEvalRunner).toContain("without calling models");
-    expect(governanceGate).toContain("does not call models");
-    expect(governanceGate).toContain("does not call live integrations");
+    expect(normalizedGovernanceGate).toContain("does not call models");
+    expect(normalizedGovernanceGate).toContain("does not call live integrations");
     expect(providers).toContain("Provider SDK validation does not replace AICF validation");
     expect(normalizedRelease).toContain("root and runtime imports remain provider-SDK-free");
     expect(normalizedRelease).toContain("commit capabilities are not exported by default");

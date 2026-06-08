@@ -1,12 +1,11 @@
 # Runtime Support Billing Example
 
-This public-safe example shows the AICF runtime path with synthetic support and
-refund capabilities.
+This public-safe example shows the AICF runtime path with synthetic support and refund
+capabilities.
 
-It uses the existing manifests under `examples/support/`, mock handlers,
-in-memory reference stores, and deterministic runtime context. It does not call
-models, call providers, use real billing systems, store traces, or include
-customer data.
+It uses the existing manifests under `examples/support/`, mock handlers, in-memory
+reference stores, and deterministic runtime context. It does not call models, call
+providers, use real billing systems, store traces, or include customer data.
 
 Run it from the repository after building:
 
@@ -24,6 +23,6 @@ The mock flow demonstrates:
 - recording a host approval;
 - committing only through `AicfActionLifecycleManager` with idempotency.
 
-Commit capability metadata remains in the registry, but commit is not exposed in
-the model-facing capability slice. The commit step is a host-controlled runtime
-call after a stored prepared action and approval decision exist.
+Commit capability metadata remains in the registry, but commit is not exposed in the
+model-facing capability slice. The commit step is a host-controlled runtime call after a
+stored prepared action and approval decision exist.

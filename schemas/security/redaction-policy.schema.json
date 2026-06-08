@@ -17,7 +17,10 @@
         "properties": {
           "boundary": { "enum": ["provider", "trace"] },
           "capabilityIds": { "type": "array", "items": { "type": "string" } },
-          "dataClassifications": { "type": "array", "items": { "$ref": "#/$defs/data_classification" } },
+          "dataClassifications": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/data_classification" }
+          },
           "id": { "type": "string", "minLength": 1 },
           "mode": { "enum": ["allow", "redact", "deny"] },
           "operations": { "type": "array", "items": { "type": "string" } },

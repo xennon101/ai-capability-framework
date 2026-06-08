@@ -47,7 +47,14 @@
           "enum": ["allowed", "approval_required", "denied"]
         },
         "action_state": {
-          "enum": ["none", "prepared", "approval_required", "committed", "denied", "refused"]
+          "enum": [
+            "none",
+            "prepared",
+            "approval_required",
+            "committed",
+            "denied",
+            "refused"
+          ]
         },
         "committed_capabilities": {
           "type": "array",

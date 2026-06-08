@@ -14,9 +14,15 @@ export function decideExamplePolicy(input: {
   tenantPresent: boolean;
 }): ExamplePolicyDecision {
   if (!input.tenantPresent) {
-    return { allowed: false, approvalRequired: false, reasons: ["missing_tenant_context"] };
+    return {
+      allowed: false,
+      approvalRequired: false,
+      reasons: ["missing_tenant_context"]
+    };
   }
-  if (!input.permissions.includes(`capability:${input.capabilityId}:${input.operation}`)) {
+  if (
+    !input.permissions.includes(`capability:${input.capabilityId}:${input.operation}`)
+  ) {
     return { allowed: false, approvalRequired: false, reasons: ["missing_permission"] };
   }
   return { allowed: true, approvalRequired: false, reasons: ["policy_allowed"] };

@@ -33,6 +33,9 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Check dependency licenses
+        run: npm run check:licenses
+
       - name: Scan for high-confidence secrets
         run: npm run check:secrets
 

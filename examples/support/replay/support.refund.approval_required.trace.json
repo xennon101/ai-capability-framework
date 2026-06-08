@@ -10,13 +10,8 @@
     "promptTemplateVersion": "support-refund-v1"
   },
   "capabilitySlice": {
-    "capabilityIds": [
-      "support.ticket.get",
-      "support.refund.prepare_case"
-    ],
-    "excludedCapabilityIds": [
-      "support.refund.commit_case"
-    ],
+    "capabilityIds": ["support.ticket.get", "support.refund.prepare_case"],
+    "excludedCapabilityIds": ["support.refund.commit_case"],
     "hash": "sha256:example-support-slice"
   },
   "capabilityVersions": {
@@ -28,10 +23,7 @@
     "contextHash": "sha256:example-support-context",
     "userInputSummary": "Synthetic user asks to prepare a refund case for ticket TCK-1002.",
     "decisionContext": {
-      "permissions": [
-        "ticket.read",
-        "refund.case.create"
-      ],
+      "permissions": ["ticket.read", "refund.case.create"],
       "autonomyTier": "A2",
       "riskCeiling": "medium",
       "tenantId": "tenant_example_support",
@@ -168,9 +160,7 @@
       "preparedActionId": "prepared_refund_example_1",
       "capabilityId": "support.refund.prepare_case",
       "status": "pending",
-      "requiredReasonCodes": [
-        "approval_required"
-      ]
+      "requiredReasonCodes": ["approval_required"]
     }
   ],
   "finalResponse": {

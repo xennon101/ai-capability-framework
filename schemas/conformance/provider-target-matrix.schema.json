@@ -13,21 +13,52 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["provider", "canonicalProvider", "label", "adapterKind", "runtimeBoundary", "requiresContext", "requiresServerUrl"],
+        "required": [
+          "provider",
+          "canonicalProvider",
+          "label",
+          "adapterKind",
+          "runtimeBoundary",
+          "requiresContext",
+          "requiresServerUrl"
+        ],
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["openai", "anthropic", "gemini", "ai-sdk", "mcp", "langchain", "semantic-kernel-mcp", "semantic-kernel-openapi"]
+            "enum": [
+              "openai",
+              "anthropic",
+              "gemini",
+              "ai-sdk",
+              "mcp",
+              "langchain",
+              "semantic-kernel-mcp",
+              "semantic-kernel-openapi"
+            ]
           },
           "canonicalProvider": {
             "type": "string",
-            "enum": ["openai", "anthropic", "gemini", "ai-sdk", "mcp", "langchain", "semantic-kernel-mcp", "semantic-kernel-openapi"]
+            "enum": [
+              "openai",
+              "anthropic",
+              "gemini",
+              "ai-sdk",
+              "mcp",
+              "langchain",
+              "semantic-kernel-mcp",
+              "semantic-kernel-openapi"
+            ]
           },
           "label": { "type": "string", "minLength": 1 },
           "adapterKind": { "type": "string", "enum": ["descriptor", "openapi"] },
           "runtimeBoundary": {
             "type": "string",
-            "enum": ["descriptor_only", "bounded_loop", "host_framework_bridge", "openapi_metadata"]
+            "enum": [
+              "descriptor_only",
+              "bounded_loop",
+              "host_framework_bridge",
+              "openapi_metadata"
+            ]
           },
           "requiresContext": { "type": "boolean" },
           "requiresServerUrl": { "type": "boolean" }

@@ -1,4 +1,6 @@
-type ExampleHandler = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+type ExampleHandler = (
+  args: Record<string, unknown>
+) => Promise<Record<string, unknown>>;
 
 export class ExampleHandlerRegistry {
   private readonly handlers = new Map<string, ExampleHandler>();

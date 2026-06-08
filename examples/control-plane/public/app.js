@@ -14,9 +14,13 @@ navButtons.forEach((button) => {
   });
 });
 
-document.querySelector("#capabilityFilter").addEventListener("input", () => renderCatalogue());
+document
+  .querySelector("#capabilityFilter")
+  .addEventListener("input", () => renderCatalogue());
 document.querySelector("#exportEvidence").addEventListener("click", exportEvidence);
-document.querySelector("#createGlobalKillSwitch").addEventListener("click", createGlobalKillSwitch);
+document
+  .querySelector("#createGlobalKillSwitch")
+  .addEventListener("click", createGlobalKillSwitch);
 
 await refresh();
 
@@ -44,7 +48,9 @@ function renderCatalogue() {
   const filter = document.querySelector("#capabilityFilter").value.toLowerCase();
   const rows = document.querySelector("#capabilityRows");
   rows.innerHTML = "";
-  for (const capability of snapshot.capabilities.filter((entry) => entry.id.toLowerCase().includes(filter))) {
+  for (const capability of snapshot.capabilities.filter((entry) =>
+    entry.id.toLowerCase().includes(filter)
+  )) {
     const row = document.createElement("tr");
     row.dataset.capabilityId = capability.id;
     row.innerHTML = `
@@ -68,11 +74,16 @@ async function renderCapabilityDetail() {
     detailPanel.textContent = "No capability selected.";
     return;
   }
-  const detail = await api(`/api/aicf/capabilities/${encodeURIComponent(selectedCapabilityId)}`);
+  const detail = await api(
+    `/api/aicf/capabilities/${encodeURIComponent(selectedCapabilityId)}`
+  );
   detailPanel.innerHTML = `
     <h3>${escapeHtml(detail.id)}</h3>
     <p>${escapeHtml(detail.description)}</p>
-    <p><strong>Lifecycle:</strong> ${Object.entries(detail.lifecycle).filter(([, value]) => value === true || typeof value === "string").map(([key, value]) => `${escapeHtml(key)}=${escapeHtml(String(value))}`).join(", ")}</p>
+    <p><strong>Lifecycle:</strong> ${Object.entries(detail.lifecycle)
+      .filter(([, value]) => value === true || typeof value === "string")
+      .map(([key, value]) => `${escapeHtml(key)}=${escapeHtml(String(value))}`)
+      .join(", ")}</p>
     <p><strong>Risk:</strong> declared ${escapeHtml(detail.risk.declaredRiskTier)}, inferred ${escapeHtml(detail.risk.inferredMinimumRiskTier)}</p>
     <p><strong>Input fields:</strong> ${detail.inputProperties.map((name) => `<span class="pill">${escapeHtml(name)}</span>`).join("") || "none"}</p>
     <p><strong>Related evals:</strong> ${detail.relatedEvalIds.map((id) => `<span class="pill">${escapeHtml(id)}</span>`).join("") || "none"}</p>
@@ -92,7 +103,9 @@ function renderStatus() {
     <p>${escapeHtml(snapshot.conformance.status)}</p>
     <p>${snapshot.conformance.summary.passed} passed, ${snapshot.conformance.summary.failed} failed across ${snapshot.conformance.summary.providers} provider target(s).</p>
   `;
-  const highRisk = snapshot.capabilities.filter((capability) => ["high", "critical"].includes(capability.riskTier));
+  const highRisk = snapshot.capabilities.filter((capability) =>
+    ["high", "critical"].includes(capability.riskTier)
+  );
   document.querySelector("#riskStatus").innerHTML = `
     <h3>Risk Posture</h3>
     <p>${highRisk.length} high or critical capability(ies).</p>
@@ -116,27 +129,41 @@ function renderLedger() {
 }
 
 function renderApprovals() {
-  document.querySelector("#actionsList").innerHTML = snapshot.actions.map((action) => `
+  document.querySelector("#actionsList").innerHTML =
+    snapshot.actions
+      .map(
+        (action) => `
     <div class="queue-item">
       <strong>${escapeHtml(action.actionId)}</strong><br>
       ${escapeHtml(action.capabilityId)} · <span class="status-${escapeHtml(action.actionState)}">${escapeHtml(action.actionState)}</span>
     </div>
-  `).join("") || "No actions.";
+  `
+      )
+      .join("") || "No actions.";
 
-  document.querySelector("#approvalsList").innerHTML = snapshot.approvals.map((approval) => `
+  document.querySelector("#approvalsList").innerHTML =
+    snapshot.approvals
+      .map(
+        (approval) => `
     <div class="queue-item">
       <strong>${escapeHtml(approval.approvalRecordId)}</strong><br>
       ${escapeHtml(approval.capabilityId)} · <span class="status-${escapeHtml(approval.status)}">${escapeHtml(approval.status)}</span><br>
       <button data-approve="${escapeHtml(approval.approvalRecordId)}" type="button">Approve</button>
       <button data-reject="${escapeHtml(approval.approvalRecordId)}" type="button">Reject</button>
     </div>
-  `).join("") || "No approvals.";
+  `
+      )
+      .join("") || "No approvals.";
 
   document.querySelectorAll("[data-approve]").forEach((button) => {
-    button.addEventListener("click", () => mutateApproval(button.dataset.approve, "approve"));
+    button.addEventListener("click", () =>
+      mutateApproval(button.dataset.approve, "approve")
+    );
   });
   document.querySelectorAll("[data-reject]").forEach((button) => {
-    button.addEventListener("click", () => mutateApproval(button.dataset.reject, "reject"));
+    button.addEventListener("click", () =>
+      mutateApproval(button.dataset.reject, "reject")
+    );
   });
 }
 
@@ -156,12 +183,17 @@ function renderControls() {
 }
 
 function renderReplay() {
-  document.querySelector("#replayList").innerHTML = (snapshot.replays ?? []).map((trace) => `
+  document.querySelector("#replayList").innerHTML =
+    (snapshot.replays ?? [])
+      .map(
+        (trace) => `
     <div>
       <strong>${escapeHtml(trace.traceId)}</strong><br>
       ${escapeHtml(trace.provider ?? "unknown provider")} · ${escapeHtml(trace.redactionMode)} · ${trace.capabilityIds.map((id) => `<span class="pill">${escapeHtml(id)}</span>`).join("")}
     </div>
-  `).join("") || "No replay metadata.";
+  `
+      )
+      .join("") || "No replay metadata.";
 }
 
 async function mutateApproval(id, action) {
@@ -189,16 +221,23 @@ async function exportEvidence() {
     includeConformance: true,
     includeReplayIndex: true
   });
-  document.querySelector("#evidenceOutput").textContent = JSON.stringify(evidence, null, 2);
+  document.querySelector("#evidenceOutput").textContent = JSON.stringify(
+    evidence,
+    null,
+    2
+  );
   document.querySelector('[data-view="evidence"]').click();
 }
 
 async function api(path, body) {
   const response = await fetch(path, {
     body: body === undefined ? undefined : JSON.stringify(body),
-    headers: body === undefined ? undefined : {
-      "content-type": "application/json"
-    },
+    headers:
+      body === undefined
+        ? undefined
+        : {
+            "content-type": "application/json"
+          },
     method: body === undefined ? "GET" : "POST"
   });
   const json = await response.json();

@@ -10,5 +10,5 @@ Read:
 - [Governance gate](../governance/gate.md)
 - [Evidence export](../evidence.md)
 
-The reference app does not provide production auth, production persistence,
-hosted SaaS behavior, model calls, or side-effect execution.
+The reference app does not provide production auth, production persistence, hosted SaaS
+behavior, model calls, or side-effect execution.

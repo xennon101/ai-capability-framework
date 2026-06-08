@@ -22,5 +22,5 @@ Expected output:
 "excluded"
 ```
 
-No secrets are required. No live provider calls run by default. The commands
-only export descriptors and binding maps.
+No secrets are required. No live provider calls run by default. The commands only export
+descriptors and binding maps.

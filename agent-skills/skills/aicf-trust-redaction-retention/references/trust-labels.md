@@ -12,4 +12,5 @@ Common labels:
 - tool result
 - model output
 
-Only system instruction, developer instruction, and app policy should carry instruction authority.
+Only system instruction, developer instruction, and app policy should carry instruction
+authority.

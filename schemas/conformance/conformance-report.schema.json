@@ -119,7 +119,14 @@
     "capability_result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["capabilityId", "provider", "caseIds", "passed", "diagnostics", "dimensions"],
+      "required": [
+        "capabilityId",
+        "provider",
+        "caseIds",
+        "passed",
+        "diagnostics",
+        "dimensions"
+      ],
       "properties": {
         "capabilityId": { "type": "string", "minLength": 1 },
         "provider": { "$ref": "#/$defs/provider" },
@@ -187,7 +194,15 @@
     "case_result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["provider", "caseId", "capabilityIds", "passed", "diagnostics", "dimensions", "scorers"],
+      "required": [
+        "provider",
+        "caseId",
+        "capabilityIds",
+        "passed",
+        "diagnostics",
+        "dimensions",
+        "scorers"
+      ],
       "properties": {
         "provider": { "$ref": "#/$defs/provider" },
         "caseId": { "type": "string", "minLength": 1 },

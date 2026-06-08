@@ -2,8 +2,7 @@
 
 Fake data: synthetic support tickets in `examples/support/`.
 
-Goal: validate manifests and inspect the read capability
-`support.ticket.get`.
+Goal: validate manifests and inspect the read capability `support.ticket.get`.
 
 Commands:
 
@@ -20,5 +19,5 @@ Validated 16 manifest(s) and 18 fixture(s).
 support.ticket.get
 ```
 
-No secrets are required. No live provider calls run by default. This example
-uses only public synthetic support data.
+No secrets are required. No live provider calls run by default. This example uses only
+public synthetic support data.

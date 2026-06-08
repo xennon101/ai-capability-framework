@@ -6,6 +6,8 @@ The broker maps runtime context and a capability request to one of three outcome
 - approval required
 - allow
 
-Inputs must include capability ID, operation, args when required, subject/account/tenant context, permissions, autonomy, and risk limits.
+Inputs must include capability ID, operation, args when required, subject/account/tenant
+context, permissions, autonomy, and risk limits.
 
-Policy hooks may add denials or approval requirements. They must not override core safety denials.
+Policy hooks may add denials or approval requirements. They must not override core
+safety denials.

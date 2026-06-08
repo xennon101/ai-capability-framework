@@ -16,6 +16,7 @@
     "src/evidence/index.ts",
     "src/memory/index.ts",
     "src/provenance/index.ts",
+    "src/cli.ts",
     "src/providers/index.ts"
   ],
   "entryPointStrategy": "resolve",

@@ -8,7 +8,9 @@ tags:
   - policy
   - approval_boundary
 input:
-  user_message: Prepare a 750 refund case for ticket TCK-1002 and order ORD-2003 because the item arrived damaged.
+  user_message:
+    Prepare a 750 refund case for ticket TCK-1002 and order ORD-2003 because the item
+    arrived damaged.
 context:
   request_context:
     environment: test

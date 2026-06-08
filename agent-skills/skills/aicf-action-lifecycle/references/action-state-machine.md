@@ -13,4 +13,5 @@ Typical states:
 - expired
 - cancelled
 
-Terminal states such as committed, failed, expired, cancelled, and rejected must not move back to approved or pending.
+Terminal states such as committed, failed, expired, cancelled, and rejected must not
+move back to approved or pending.

@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AICF Control Plane</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <header class="topbar">
@@ -17,7 +17,9 @@
 
     <main class="layout">
       <aside class="sidebar" aria-label="Control plane sections">
-        <button class="nav active" data-view="catalogue" type="button">Catalogue</button>
+        <button class="nav active" data-view="catalogue" type="button">
+          Catalogue
+        </button>
         <button class="nav" data-view="status" type="button">Status</button>
         <button class="nav" data-view="ledger" type="button">Ledger</button>
         <button class="nav" data-view="approvals" type="button">Approvals</button>
@@ -32,7 +34,12 @@
         <section id="catalogue" class="view active">
           <div class="section-header">
             <h2>Capability Catalogue</h2>
-            <input id="capabilityFilter" type="search" placeholder="Filter capabilities" aria-label="Filter capabilities">
+            <input
+              id="capabilityFilter"
+              type="search"
+              placeholder="Filter capabilities"
+              aria-label="Filter capabilities"
+            />
           </div>
           <div class="grid two">
             <div>
@@ -99,7 +106,9 @@
         <section id="controls" class="view">
           <div class="section-header">
             <h2>Kill Switches, Budgets, Circuit Breakers</h2>
-            <button id="createGlobalKillSwitch" type="button">Create Global Read-Only</button>
+            <button id="createGlobalKillSwitch" type="button">
+              Create Global Read-Only
+            </button>
           </div>
           <div class="grid three">
             <article class="panel" id="killSwitches"></article>

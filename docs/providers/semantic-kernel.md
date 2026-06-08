@@ -1,7 +1,7 @@
 # Semantic Kernel
 
-AICF supports Semantic Kernel-compatible hosts through MCP guidance and OpenAPI
-plugin metadata export. It does not provide a native Semantic Kernel runtime.
+AICF supports Semantic Kernel-compatible hosts through MCP guidance and OpenAPI plugin
+metadata export. It does not provide a native Semantic Kernel runtime.
 
 Read:
 

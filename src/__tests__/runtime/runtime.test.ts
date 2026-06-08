@@ -929,39 +929,179 @@ describe("runtime handler registry and execution lifecycle", () => {
     expect(JSON.stringify(actions)).not.toContain("secret stack should not leak");
   });
 
-  it("verifies committed actions with safe unavailable, denied, and failed envelopes", async () => {
-    const harness = await createRuntimeHarness();
+  it("persists verify success without replacing committed action state", async () => {
+    const ledger = new DefaultAuditLedger();
+    const harness = await createRuntimeHarness({ ledger });
+    const { committedAction, preparedActionId } = await commitRefundCase(harness, "refund:TCK-100:verify-success");
     const success = await harness.lifecycle.verify({
-      committedAction: committedAction("support.refund.commit_case"),
+      committedAction,
       runtimeContext: harness.commitRuntimeContext
     });
-    const missingCapability = await harness.lifecycle.verify({
-      committedAction: committedAction("missing.capability"),
-      runtimeContext: harness.commitRuntimeContext
-    });
-    const unsupportedLifecycle = await harness.lifecycle.verify({
-      committedAction: committedAction("support.ticket.get"),
-      runtimeContext: harness.commitRuntimeContext
-    });
-    const missingHandlerHarness = await createRuntimeHarness({ registerVerifyHandler: false });
-    const missingHandler = await missingHandlerHarness.lifecycle.verify({
-      committedAction: committedAction("support.refund.commit_case"),
-      runtimeContext: missingHandlerHarness.commitRuntimeContext
-    });
-    const throwingHarness = await createRuntimeHarness({ throwVerifyHandler: true });
-    const thrown = await throwingHarness.lifecycle.verify({
-      committedAction: committedAction("support.refund.commit_case"),
-      runtimeContext: throwingHarness.commitRuntimeContext
-    });
+    const prepared = await harness.preparedActionStore.get(preparedActionId);
+    const actions = await ledger.actionStore.listActions({ preparedActionId });
+    const auditEvents = await harness.auditSink.list();
 
     expect(success.status).toBe("verified");
-    expect(success.action?.state).toBe("verified");
+    expect(success.action).toMatchObject({
+      preparedActionId,
+      state: "committed",
+      verificationStatus: "verified"
+    });
     expect(success.data).toEqual({ verification_id: "VER-1" });
-    expect(missingCapability.status).toBe("unavailable");
+    expect(prepared).toMatchObject({
+      committedActionId: committedAction.committedActionId,
+      state: "committed",
+      verification: {
+        resultHash: expect.stringMatching(/^sha256:/),
+        status: "verified"
+      }
+    });
+    expect(actions).toEqual([expect.objectContaining({
+      actionState: "committed",
+      resultHash: expect.stringMatching(/^sha256:/),
+      verificationStatus: "verified"
+    })]);
+    expect(auditEvents).toEqual(expect.arrayContaining([expect.objectContaining({
+      actionState: "committed",
+      details: expect.objectContaining({
+        resultHash: expect.stringMatching(/^sha256:/),
+        verificationStatus: "verified"
+      }),
+      operation: "verify",
+      status: "succeeded"
+    })]));
+  });
+
+  it("keeps committed state when verification fails or handler throws", async () => {
+    const failedHarness = await createRuntimeHarness({ verifyFailure: true });
+    const failedCommit = await commitRefundCase(failedHarness, "refund:TCK-100:verify-failed");
+    const failed = await failedHarness.lifecycle.verify({
+      committedAction: failedCommit.committedAction,
+      runtimeContext: failedHarness.commitRuntimeContext
+    });
+    const thrownHarness = await createRuntimeHarness({ throwVerifyHandler: true });
+    const thrownCommit = await commitRefundCase(thrownHarness, "refund:TCK-100:verify-thrown");
+    const thrown = await thrownHarness.lifecycle.verify({
+      committedAction: thrownCommit.committedAction,
+      runtimeContext: thrownHarness.commitRuntimeContext
+    });
+
+    expect(failed.status).toBe("failed");
+    expect(failed.action).toMatchObject({
+      state: "committed",
+      verificationStatus: "verification_failed"
+    });
+    expect(await failedHarness.preparedActionStore.get(failedCommit.preparedActionId)).toMatchObject({
+      state: "committed",
+      verification: {
+        status: "verification_failed"
+      }
+    });
+    expect(thrown.status).toBe("failed");
+    expect(thrown.action).toMatchObject({
+      state: "committed",
+      verificationStatus: "verification_failed"
+    });
+    expect(JSON.stringify(thrown)).not.toContain("secret verify token");
+    expect(await thrownHarness.preparedActionStore.get(thrownCommit.preparedActionId)).toMatchObject({
+      state: "committed",
+      verification: {
+        resultHash: expect.stringMatching(/^sha256:/),
+        status: "verification_failed"
+      }
+    });
+  });
+
+  it("returns stored verification idempotently without calling the handler again", async () => {
+    const harness = await createRuntimeHarness();
+    const { committedAction } = await commitRefundCase(harness, "refund:TCK-100:verify-idempotent");
+    const first = await harness.lifecycle.verify({
+      committedAction,
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const second = await harness.lifecycle.verify({
+      committedAction,
+      runtimeContext: harness.commitRuntimeContext
+    });
+
+    expect(first.status).toBe("verified");
+    expect(second.status).toBe("verified");
+    expect(second.action?.verificationStatus).toBe("verified");
+    expect(second.data).toEqual({ verification_id: "VER-1" });
+    expect(harness.verifyCount()).toBe(1);
+  });
+
+  it("denies mismatched or unverifiable committed action references", async () => {
+    const harness = await createRuntimeHarness();
+    const { committedAction, preparedActionId } = await commitRefundCase(harness, "refund:TCK-100:verify-denials");
+    const missingPrepared = await harness.lifecycle.verify({
+      committedAction: {
+        ...committedAction,
+        preparedActionId: "missing_prepared"
+      },
+      runtimeContext: harness.commitRuntimeContext
+    });
+    const mismatchedTenantContext: AicfRuntimeContext = {
+      ...harness.commitRuntimeContext,
+      account: {
+        ...harness.commitRuntimeContext.account,
+        tenantId: "tenant_other"
+      }
+    };
+    const scopeMismatch = await harness.lifecycle.verify({
+      committedAction,
+      runtimeContext: mismatchedTenantContext
+    });
+    const nonCommittedPrepare = await harness.executor.execute({
+      args: refundPrepareArgs(),
+      builtContext: harness.builtContext,
+      capabilityId: "support.refund.prepare_case",
+      operation: "prepare",
+      runtimeContext: harness.runtimeContext,
+      source: "host_call"
+    });
+    const nonCommitted = await harness.lifecycle.verify({
+      committedAction: {
+        ...committedAction,
+        committedActionId: "commit_not_yet",
+        preparedActionId: nonCommittedPrepare.action?.preparedActionId ?? ""
+      },
+      runtimeContext: harness.commitRuntimeContext
+    });
+
+    expect(missingPrepared.status).toBe("denied");
+    expect(scopeMismatch.status).toBe("denied");
+    expect(nonCommitted.status).toBe("denied");
+    const persisted = await harness.preparedActionStore.get(preparedActionId);
+    expect(persisted).toMatchObject({
+      state: "committed"
+    });
+    expect(persisted?.verification).toBeUndefined();
+  });
+
+  it("returns safe unavailable or denied envelopes for missing capability, unsupported lifecycle, and missing handler", async () => {
+    const missingCapabilityHarness = await createRuntimeHarness();
+    const missingCapability = await storedCommittedActionForCapability(missingCapabilityHarness, "missing.capability", "prepared_missing_capability");
+    const missingCapabilityResult = await missingCapabilityHarness.lifecycle.verify({
+      committedAction: missingCapability,
+      runtimeContext: missingCapabilityHarness.commitRuntimeContext
+    });
+    const unsupportedHarness = await createRuntimeHarness();
+    const unsupported = await storedCommittedActionForCapability(unsupportedHarness, "support.ticket.get", "prepared_unsupported_verify");
+    const unsupportedLifecycle = await unsupportedHarness.lifecycle.verify({
+      committedAction: unsupported,
+      runtimeContext: unsupportedHarness.commitRuntimeContext
+    });
+    const missingHandlerHarness = await createRuntimeHarness({ registerVerifyHandler: false });
+    const { committedAction } = await commitRefundCase(missingHandlerHarness, "refund:TCK-100:verify-no-handler");
+    const missingHandler = await missingHandlerHarness.lifecycle.verify({
+      committedAction,
+      runtimeContext: missingHandlerHarness.commitRuntimeContext
+    });
+
+    expect(missingCapabilityResult.status).toBe("unavailable");
     expect(unsupportedLifecycle.status).toBe("denied");
     expect(missingHandler.status).toBe("unavailable");
-    expect(thrown.status).toBe("failed");
-    expect(JSON.stringify(thrown)).not.toContain("secret verify token");
   });
 
   it("returns safe envelopes for missing handlers, lifecycle mismatch, invalid input, invalid output, and handler errors", async () => {
@@ -1133,27 +1273,90 @@ function refundPrepareArgs(): Record<string, unknown> {
   };
 }
 
-function committedAction(capabilityId: string): AicfCommittedAction {
+async function commitRefundCase(
+  harness: Awaited<ReturnType<typeof createRuntimeHarness>>,
+  idempotencyKey: string
+): Promise<{
+  committedAction: AicfCommittedAction;
+  preparedActionId: string;
+}> {
+  const prepare = await harness.executor.execute({
+    args: {
+      ...refundPrepareArgs(),
+      requested_amount: 750
+    },
+    builtContext: harness.builtContext,
+    capabilityId: "support.refund.prepare_case",
+    operation: "prepare",
+    runtimeContext: harness.runtimeContext,
+    source: "host_call"
+  });
+  const preparedActionId = prepare.action?.preparedActionId ?? "";
+  const approval = await harness.lifecycle.recordApproval({
+    approved: true,
+    preparedActionId,
+    runtimeContext: harness.commitRuntimeContext
+  });
+  const commit = await harness.lifecycle.commit({
+    approvalId: approval.approvalId,
+    commitCapabilityId: "support.refund.commit_case",
+    idempotencyKey,
+    preparedActionId,
+    runtimeContext: harness.commitRuntimeContext
+  });
+  const preparedAction = await harness.preparedActionStore.get(preparedActionId);
+  if (!preparedAction) {
+    throw new Error("Expected committed prepared action.");
+  }
+  const committedActionId = preparedAction.committedActionId ?? String(commit.action?.committedActionId ?? "");
+
   return {
-    accountId: "acct_example_support",
-    capabilityId,
-    committedActionId: "commit_1",
-    committedAt: "2026-06-04T00:00:00.000Z",
-    preparedActionId: "prepared_1",
-    requestId: "req_test_0001",
-    result: {
-      committedActionId: "commit_1",
-      data: {
-        audit_event_id: "AUD-1",
-        refund_id: "RF-1",
+    committedAction: {
+      accountId: preparedAction.accountId,
+      capabilityId: preparedAction.commitCapabilityId ?? preparedAction.capabilityId,
+      committedActionId,
+      committedAt: preparedAction.committedAt ?? "2026-06-04T00:00:00.000Z",
+      preparedActionId,
+      requestId: preparedAction.requestId,
+      result: {
+        committedActionId,
+        data: recordOrUndefined(commit.data),
         status: "committed"
       },
-      status: "committed"
+      runId: preparedAction.runId,
+      state: "committed",
+      subjectId: preparedAction.subjectId,
+      tenantId: preparedAction.tenantId
     },
-    runId: "run_test_0001",
+    preparedActionId
+  };
+}
+
+async function storedCommittedActionForCapability(
+  harness: Awaited<ReturnType<typeof createRuntimeHarness>>,
+  capabilityId: string,
+  preparedActionId: string
+): Promise<AicfCommittedAction> {
+  const committed = await commitRefundCase(harness, `${preparedActionId}:seed`);
+  const preparedAction = await harness.preparedActionStore.get(committed.preparedActionId);
+  if (!preparedAction) {
+    throw new Error("Expected seed prepared action.");
+  }
+  await harness.preparedActionStore.create({
+    ...preparedAction,
+    capabilityId: "support.refund.prepare_case",
+    commitCapabilityId: capabilityId,
+    committedActionId: `commit_${preparedActionId}`,
+    preparedActionId,
     state: "committed",
-    subjectId: "user_example_support_agent",
-    tenantId: "tenant_example_support"
+    updatedAt: "2026-06-04T00:00:00.000Z"
+  });
+
+  return {
+    ...committed.committedAction,
+    capabilityId,
+    committedActionId: `commit_${preparedActionId}`,
+    preparedActionId
   };
 }
 
@@ -1168,6 +1371,7 @@ async function createRuntimeHarness(options: {
   throwCommitHandler?: boolean;
   throwReadHandler?: boolean;
   throwVerifyHandler?: boolean;
+  verifyFailure?: boolean;
 } = {}) {
   const registry = await loadExampleRegistry();
   const runtimeContext = await buildSupportRuntimeContext({
@@ -1197,6 +1401,7 @@ async function createRuntimeHarness(options: {
   const auditSink = new InMemoryAuditSink();
   const policyBroker = new DefaultPolicyBroker();
   let commitCount = 0;
+  let verifyCount = 0;
 
   if (options.registerReadHandler !== false) {
     handlers.register({
@@ -1255,8 +1460,19 @@ async function createRuntimeHarness(options: {
       };
     },
     verify: options.registerVerifyHandler === false ? undefined : () => {
+      verifyCount += 1;
       if (options.throwVerifyHandler) {
         throw new Error("secret verify token should not leak");
+      }
+
+      if (options.verifyFailure) {
+        return {
+          data: {
+            verification_id: "VER-FAIL"
+          },
+          message: "Verification failed safely.",
+          status: "failed"
+        };
       }
 
       return {
@@ -1301,8 +1517,15 @@ async function createRuntimeHarness(options: {
     policyBroker,
     preparedActionStore,
     registry,
-    runtimeContext
+    runtimeContext,
+    verifyCount: () => verifyCount
   };
+}
+
+function recordOrUndefined(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
 }
 
 function ticketOutput(): Record<string, unknown> {

@@ -5,7 +5,9 @@ export type ExamplePreparedAction = {
   argsHash: string;
 };
 
-export async function prepareExampleAction(args: Record<string, unknown>): Promise<ExamplePreparedAction> {
+export async function prepareExampleAction(
+  args: Record<string, unknown>
+): Promise<ExamplePreparedAction> {
   return {
     preparedActionId: "prepared_example_001",
     capabilityId: "example.action.prepare",

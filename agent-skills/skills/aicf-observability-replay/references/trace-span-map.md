@@ -13,4 +13,5 @@ Recommended trace events:
 - eval scoring.
 - runtime error.
 
-Use stable AICF attributes and provider attributes only when the event supplies provider metadata.
+Use stable AICF attributes and provider attributes only when the event supplies provider
+metadata.

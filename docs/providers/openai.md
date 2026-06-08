@@ -11,5 +11,5 @@ Start here:
 - [OpenAI Responses descriptor adapter](../openai-responses.md)
 - [OpenAI Responses runtime](../openai-runtime.md)
 
-Default examples do not call OpenAI. Live use requires a caller-provided client
-or optional SDK setup.
+Default examples do not call OpenAI. Live use requires a caller-provided client or
+optional SDK setup.

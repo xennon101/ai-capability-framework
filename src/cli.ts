@@ -49,6 +49,8 @@ import { buildLangChainToolDescriptors } from "./langchain.js";
 import { loadManifests } from "./loader.js";
 import { buildMcpToolDescriptors } from "./mcp.js";
 import { createDefaultOpenAIResponsesClient } from "./openai/index.js";
+import { createDefaultAnthropicMessagesClient } from "./providers/anthropic/index.js";
+import { createDefaultGeminiClient } from "./providers/gemini/index.js";
 import { buildOpenAIResponsesTools } from "./openai-responses.js";
 import { exportPromptfooSuite } from "./promptfoo/index.js";
 import { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
@@ -80,7 +82,16 @@ import {
   InMemoryIdempotencyStore,
   InMemoryPreparedActionStore
 } from "./runtime/index.js";
-import { evaluateGate, runLiveEvalSuite, type AicfLiveEvalCaseInput } from "./evals-live/index.js";
+import {
+  createAnthropicLiveEvalRunner,
+  createGeminiLiveEvalRunner,
+  createOpenAILiveEvalRunner,
+  evaluateGate,
+  runLiveEvalSuite,
+  type AicfLiveEvalCaseInput,
+  type AicfLiveEvalProviderId,
+  type AicfLiveEvalRunner
+} from "./evals-live/index.js";
 import { buildSemanticKernelFunctions } from "./semantic-kernel.js";
 import type { AicfDiagnostic, CapabilityManifest, DecisionRequest, EvalCase } from "./types.js";
 import { validateManifests, validatePublicFixtures } from "./validator.js";
@@ -91,8 +102,8 @@ interface WritableLike {
 }
 
 export interface CliRunOptions {
-  stderr?: WritableLike;
-  stdout?: WritableLike;
+  stderr?: { write(message: string): unknown };
+  stdout?: { write(message: string): unknown };
 }
 
 type AdapterCliCommand =
@@ -334,13 +345,24 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
       return 1;
     }
 
+    if (!parsedArgs.providerName) {
+      stderr.write("Missing required --provider <openai|anthropic|gemini|ai-sdk> for live evals.\n");
+      return 1;
+    }
+
     if (!parsedArgs.model) {
       stderr.write("Missing required --model <model> for live evals.\n");
       return 1;
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      stderr.write("OPENAI_API_KEY is required for eval-live. Use the TypeScript API with a mock client for API-key-free tests.\n");
+    if (process.env.RUN_REAL_AICF_LIVE_EVALS !== "1") {
+      stderr.write("RUN_REAL_AICF_LIVE_EVALS=1 is required for CLI live evals. Use the TypeScript API with a mock runner for API-key-free tests.\n");
+      return 1;
+    }
+
+    const runner = await createCliLiveEvalRunner(parsedArgs.providerName, parsedArgs.model);
+    if (!runner.ok) {
+      stderr.write(`${runner.error}\n`);
       return 1;
     }
 
@@ -373,9 +395,8 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
       cases: cases.value,
       contextBuilderFactory: () => new DefaultContextBuilder(),
       executor,
-      model: parsedArgs.model,
-      openAIClient: await createDefaultOpenAIResponsesClient(),
       registry,
+      runner: runner.value,
       router: new DefaultCapabilityRouter()
     });
     const gate = evaluateGate(results);
@@ -398,7 +419,7 @@ function helpText(): string {
     "Commands:",
     "  decide <path> --request <file>  Evaluate a decision request.",
     "  eval <path> --results <file> [--format text|json]  Run deterministic evals.",
-    "  eval-live <path> --cases <file> --model <model> [--format text|json]  Run opt-in live evals.",
+    "  eval-live <path> --cases <file> --provider <provider> --model <model> [--format text|json]  Run opt-in live evals.",
     "  export promptfoo <path> --out <dir> [--provider <provider>]  Generate Promptfoo suite files.",
     "  governance risk <path> [--capability <id>] [--format text|json]  Compile governance risk.",
     "  governance lifecycle <path> --capability <id> --to <status> --reason <text>  Evaluate lifecycle transition.",
@@ -2555,6 +2576,74 @@ function adapterLabel(command: AdapterCliCommand): string {
   }
 }
 
+async function createCliLiveEvalRunner(
+  providerName: string,
+  model: string
+): Promise<{ ok: true; value: AicfLiveEvalRunner } | { error: string; ok: false }> {
+  const provider = normalizeLiveEvalProvider(providerName);
+  if (!provider) {
+    return {
+      error: "Unsupported live eval provider. Use one of: openai, anthropic, gemini, ai-sdk.",
+      ok: false
+    };
+  }
+
+  if (provider === "openai") {
+    if (!process.env.OPENAI_API_KEY) {
+      return { error: "OPENAI_API_KEY is required for OpenAI CLI live evals.", ok: false };
+    }
+    return {
+      ok: true,
+      value: createOpenAILiveEvalRunner({
+        client: await createDefaultOpenAIResponsesClient(),
+        model
+      })
+    };
+  }
+
+  if (provider === "anthropic") {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return { error: "ANTHROPIC_API_KEY is required for Anthropic CLI live evals.", ok: false };
+    }
+    return {
+      ok: true,
+      value: createAnthropicLiveEvalRunner({
+        client: await createDefaultAnthropicMessagesClient(),
+        model
+      })
+    };
+  }
+
+  if (provider === "gemini") {
+    if (!process.env.GEMINI_API_KEY) {
+      return { error: "GEMINI_API_KEY is required for Gemini CLI live evals.", ok: false };
+    }
+    return {
+      ok: true,
+      value: createGeminiLiveEvalRunner({
+        client: await createDefaultGeminiClient(),
+        model
+      })
+    };
+  }
+
+  return {
+    error: "AI SDK CLI live evals require a host-supplied generateText function. Use createAiSdkLiveEvalRunner() from the TypeScript API.",
+    ok: false
+  };
+}
+
+function normalizeLiveEvalProvider(value: string): AicfLiveEvalProviderId | undefined {
+  const normalized = value.toLowerCase().replace(/_/g, "-");
+  if (normalized === "openai" || normalized === "anthropic" || normalized === "gemini" || normalized === "ai-sdk") {
+    return normalized;
+  }
+  if (normalized === "vercel-ai-sdk") {
+    return "ai-sdk";
+  }
+  return undefined;
+}
+
 function formatDiagnostics(errors: AicfDiagnostic[]): string {
   return errors
     .map((error) => {
@@ -2567,14 +2656,15 @@ function formatDiagnostics(errors: AicfDiagnostic[]): string {
 }
 
 function formatLiveEvalResults(
-  results: Array<{ evalId: string; status: string }>,
+  results: Array<{ evalId: string; providerId?: string; runtimeName?: string; status: string }>,
   gate: { averageScore: number; status: string }
 ): string {
   const lines = [
     `Live eval gate ${gate.status}: average score ${gate.averageScore.toFixed(3)}.`
   ];
   for (const result of results) {
-    lines.push(`- ${result.status}: ${result.evalId}`);
+    const provider = result.providerId ? ` (${result.providerId}${result.runtimeName ? `/${result.runtimeName}` : ""})` : "";
+    lines.push(`- ${result.status}: ${result.evalId}${provider}`);
   }
 
   return `${lines.join("\n")}\n`;

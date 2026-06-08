@@ -118,9 +118,11 @@ export async function runRuntimeSupportBillingMockFlow() {
     preparedActionId,
     runtimeContext: commitRuntimeContext
   });
-  const modelSafePrepareEnvelope = JSON.parse(serializeToolEnvelopeForModel(prepareEnvelope, {
-    environment: runtimeContext.environment
-  }));
+  const modelSafePrepareEnvelope = JSON.parse(
+    serializeToolEnvelopeForModel(prepareEnvelope, {
+      environment: runtimeContext.environment
+    })
+  );
 
   return {
     approvalId: approval.approvalId,
@@ -150,7 +152,9 @@ async function loadSupportRegistry() {
   ];
 
   if (errors.length > 0) {
-    throw new Error(`Support runtime example manifests are invalid: ${errors.map((error) => error.message).join("; ")}`);
+    throw new Error(
+      `Support runtime example manifests are invalid: ${errors.map((error) => error.message).join("; ")}`
+    );
   }
 
   return buildRegistry(loaded.manifests);

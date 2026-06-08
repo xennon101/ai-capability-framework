@@ -1,12 +1,12 @@
 import type {
-  AicfActionState,
   AicfApprovalDecision,
   AicfApprovalStore,
   AicfAuditEvent,
   AicfAuditSink,
   AicfIdempotencyStore,
   AicfPreparedAction,
-  AicfPreparedActionStore
+  AicfPreparedActionStore,
+  AicfPreparedActionUpdateStateInput
 } from "../runtime/index.js";
 import {
   asAwsClient,
@@ -59,38 +59,73 @@ export class DynamoDbPreparedActionStore implements AicfPreparedActionStore {
     return item?.payload ? clone(item.payload as AicfPreparedAction) : undefined;
   }
 
-  async updateState(input: {
-    expectedState?: AicfActionState;
-    nextState: AicfActionState;
-    preparedActionId: string;
-    updatedAt: string;
-  }): Promise<void> {
+  async updateState(input: AicfPreparedActionUpdateStateInput): Promise<void> {
     const item = await querySingle(this.client, this.options, lookupKey(this.options, "PREPARED", input.preparedActionId), this.options.gsi1Name ?? "GSI1");
     if (!item) {
       throw new Error("Prepared action was not found.");
     }
 
+    const expressionAttributeNames: Record<string, string> = {
+      "#payload": "payload",
+      "#state": "state"
+    };
     const expressionAttributeValues: Record<string, unknown> = {
       ":nextState": input.nextState,
       ":updatedAt": input.updatedAt
     };
+    const setClauses = [
+      "#state = :nextState",
+      "updatedAt = :updatedAt",
+      "#payload.#state = :nextState",
+      "#payload.updatedAt = :updatedAt"
+    ];
+
+    addOptionalPreparedActionUpdate({
+      expressionAttributeNames,
+      expressionAttributeValues,
+      input,
+      name: "committedActionId",
+      setClauses,
+      token: "committedActionId"
+    });
+    addOptionalPreparedActionUpdate({
+      expressionAttributeNames,
+      expressionAttributeValues,
+      input,
+      name: "committedAt",
+      setClauses,
+      token: "committedAt"
+    });
+    addOptionalPreparedActionUpdate({
+      expressionAttributeNames,
+      expressionAttributeValues,
+      input,
+      name: "commitResultHash",
+      setClauses,
+      token: "commitResultHash"
+    });
+    addOptionalPreparedActionUpdate({
+      expressionAttributeNames,
+      expressionAttributeValues,
+      input,
+      name: "verification",
+      setClauses,
+      token: "verification"
+    });
 
     if (input.expectedState) {
       expressionAttributeValues[":expectedState"] = input.expectedState;
     }
 
     const commandInput: Record<string, unknown> = {
-      ExpressionAttributeNames: {
-        "#payload": "payload",
-        "#state": "state"
-      },
+      ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
       Key: {
         PK: item.PK,
         SK: item.SK
       },
       TableName: this.options.tableName,
-      UpdateExpression: "SET #state = :nextState, updatedAt = :updatedAt, #payload.#state = :nextState, #payload.updatedAt = :updatedAt"
+      UpdateExpression: `SET ${setClauses.join(", ")}`
     };
 
     if (input.expectedState) {
@@ -99,6 +134,27 @@ export class DynamoDbPreparedActionStore implements AicfPreparedActionStore {
 
     await this.client.send(await dynamoDbCommand("UpdateCommand", commandInput));
   }
+}
+
+function addOptionalPreparedActionUpdate(input: {
+  expressionAttributeNames: Record<string, string>;
+  expressionAttributeValues: Record<string, unknown>;
+  input: AicfPreparedActionUpdateStateInput;
+  name: keyof Pick<AicfPreparedActionUpdateStateInput, "committedActionId" | "committedAt" | "commitResultHash" | "verification">;
+  setClauses: string[];
+  token: string;
+}): void {
+  const value = input.input[input.name];
+  if (value === undefined) {
+    return;
+  }
+
+  const nameToken = `#${input.token}`;
+  const valueToken = `:${input.token}`;
+  input.expressionAttributeNames[nameToken] = input.name;
+  input.expressionAttributeValues[valueToken] = value;
+  input.setClauses.push(`${nameToken} = ${valueToken}`);
+  input.setClauses.push(`#payload.${nameToken} = ${valueToken}`);
 }
 
 export class DynamoDbApprovalStore implements AicfApprovalStore {

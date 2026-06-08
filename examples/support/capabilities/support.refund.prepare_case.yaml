@@ -12,8 +12,8 @@ capability_type: write_prepare_only
 autonomy_tier: A2
 risk_tier: medium
 model_description: >
-  Use this capability when a user asks for a refund and the application should
-  assemble a reviewable refund case. This capability must not issue money.
+  Use this capability when a user asks for a refund and the application should assemble
+  a reviewable refund case. This capability must not issue money.
 when_to_use:
   - The user asks to start or prepare a refund.
   - A support agent needs a preview before approval.

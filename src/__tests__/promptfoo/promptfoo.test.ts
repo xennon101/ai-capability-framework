@@ -2,7 +2,8 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
-import { runCli, type EvalCase } from "../../index.js";
+import { type EvalCase } from "../../index.js";
+import { runCli } from "../../cli.js";
 import {
   exportPromptfooSuite,
   importPromptfooResults

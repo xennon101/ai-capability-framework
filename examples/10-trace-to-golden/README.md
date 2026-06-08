@@ -19,5 +19,5 @@ replay
 passed
 ```
 
-No secrets are required. No live provider calls run by default. Replay traces
-contain redacted refs, hashes, summaries, and model-safe envelopes only.
+No secrets are required. No live provider calls run by default. Replay traces contain
+redacted refs, hashes, summaries, and model-safe envelopes only.

@@ -1,13 +1,13 @@
 # Capability-Aware Security Packs
 
-Security packs are public-safe test templates for common AI capability risks.
-They help teams generate deterministic eval cases and Promptfoo red-team
-configs from the capabilities already described in AICF manifests.
+Security packs are public-safe test templates for common AI capability risks. They help
+teams generate deterministic eval cases and Promptfoo red-team configs from the
+capabilities already described in AICF manifests.
 
-Security packs are implementation aids only. They are not certification,
-compliance attestation, legal advice, an audit opinion, or a security guarantee.
-Host applications own real red-team execution, evidence retention, policy
-review, incident response, and production controls.
+Security packs are implementation aids only. They are not certification, compliance
+attestation, legal advice, an audit opinion, or a security guarantee. Host applications
+own real red-team execution, evidence retention, policy review, incident response, and
+production controls.
 
 ## What They Cover
 
@@ -29,8 +29,8 @@ The built-in catalog includes packs for:
 - retrieval poisoning
 - memory scope violation
 
-The catalog lives in public YAML files under `security-packs/`. The TypeScript
-API exposes the same catalog from:
+The catalog lives in public YAML files under `security-packs/`. The TypeScript API
+exposes the same catalog from:
 
 ```ts
 import {
@@ -71,15 +71,14 @@ Waivers must include `pack_id`, `reason`, `reviewer`, and `reviewed_at`.
 
 `assessSecurityPackCoverage()` recommends packs from manifest metadata:
 
-- high and critical risk capabilities require assigned/generated packs or a
-  waiver;
-- money movement, commit, irreversible, external-message, workflow,
-  permission-changing, tenant-scoped, retrieval, memory, MCP, and
-  provider-exposed capabilities receive additional recommendations;
+- high and critical risk capabilities require assigned/generated packs or a waiver;
+- money movement, commit, irreversible, external-message, workflow, permission-changing,
+  tenant-scoped, retrieval, memory, MCP, and provider-exposed capabilities receive
+  additional recommendations;
 - missing required packs are reported as coverage failures.
 
-The coverage report is deterministic and local. It does not inspect raw traces,
-call providers, or infer production security posture.
+The coverage report is deterministic and local. It does not inspect raw traces, call
+providers, or infer production security posture.
 
 ## Generate Cases
 
@@ -91,9 +90,9 @@ aicf security generate examples \
   --out ./security-cases.approval-bypass.yaml
 ```
 
-The output is a synthetic case suite. Case text uses public capability IDs and
-generic prompts only; it does not include raw prompts, provider payloads,
-credentials, customer records, or private diagnostics.
+The output is a synthetic case suite. Case text uses public capability IDs and generic
+prompts only; it does not include raw prompts, provider payloads, credentials, customer
+records, or private diagnostics.
 
 TypeScript:
 
@@ -103,8 +102,8 @@ const suite = generateSecurityCases(registry, {
 });
 ```
 
-Generated cases can be reviewed and converted into ordinary AICF eval manifests
-or used as host-owned test inputs.
+Generated cases can be reviewed and converted into ordinary AICF eval manifests or used
+as host-owned test inputs.
 
 ## Promptfoo Export
 
@@ -117,8 +116,8 @@ aicf security export-promptfoo examples \
 ```
 
 The generated YAML defaults to the API-key-free `echo` provider and includes a
-placeholder target endpoint. Replace the provider and target in a host-owned
-test environment before running Promptfoo.
+placeholder target endpoint. Replace the provider and target in a host-owned test
+environment before running Promptfoo.
 
 The export includes assertions for:
 
@@ -140,6 +139,5 @@ aicf security generate examples --pack approval_bypass --out ./cases.json --form
 aicf security export-promptfoo examples --out ./promptfooconfig.aicf-security.yaml
 ```
 
-Commands validate manifests first. Unknown pack IDs, invalid manifests, missing
-output paths, and empty generated suites exit nonzero.
-
+Commands validate manifests first. Unknown pack IDs, invalid manifests, missing output
+paths, and empty generated suites exit nonzero.

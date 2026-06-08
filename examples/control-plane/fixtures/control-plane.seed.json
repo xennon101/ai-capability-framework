@@ -28,11 +28,7 @@
         "refHash": "sha256:example-tenant"
       },
       "redaction": {
-        "fieldsRedacted": [
-          "account",
-          "subject",
-          "tenant"
-        ],
+        "fieldsRedacted": ["account", "subject", "tenant"],
         "hashAlgorithm": "sha256",
         "mode": "redacted"
       },
@@ -72,11 +68,7 @@
         "refHash": "sha256:example-tenant"
       },
       "redaction": {
-        "fieldsRedacted": [
-          "account",
-          "subject",
-          "tenant"
-        ],
+        "fieldsRedacted": ["account", "subject", "tenant"],
         "hashAlgorithm": "sha256",
         "mode": "redacted"
       },
@@ -107,9 +99,7 @@
       "capabilityId": "support.refund.prepare_case",
       "preparedActionId": "prepared_refund_example_1",
       "status": "pending",
-      "requiredReasonCodes": [
-        "approval_required"
-      ],
+      "requiredReasonCodes": ["approval_required"],
       "requestedBy": {
         "actorType": "user",
         "refHash": "sha256:example-subject"
@@ -167,13 +157,8 @@
         "model": "mock-responses"
       },
       "capabilitySlice": {
-        "capabilityIds": [
-          "support.ticket.get",
-          "support.refund.prepare_case"
-        ],
-        "excludedCapabilityIds": [
-          "support.refund.commit_case"
-        ],
+        "capabilityIds": ["support.ticket.get", "support.refund.prepare_case"],
+        "excludedCapabilityIds": ["support.refund.commit_case"],
         "hash": "sha256:example-support-slice"
       },
       "capabilityVersions": {
@@ -184,10 +169,7 @@
         "contextHash": "sha256:example-support-context",
         "userInputSummary": "Synthetic user asks to prepare a refund case.",
         "decisionContext": {
-          "permissions": [
-            "ticket.read",
-            "refund.case.create"
-          ],
+          "permissions": ["ticket.read", "refund.case.create"],
           "autonomyTier": "A2",
           "riskCeiling": "medium"
         }
@@ -225,17 +207,11 @@
           "preparedActionId": "prepared_refund_example_1",
           "capabilityId": "support.refund.prepare_case",
           "status": "pending",
-          "requiredReasonCodes": [
-            "approval_required"
-          ]
+          "requiredReasonCodes": ["approval_required"]
         }
       ],
       "redaction": {
-        "fieldsRedacted": [
-          "account",
-          "subject",
-          "tenant"
-        ],
+        "fieldsRedacted": ["account", "subject", "tenant"],
         "hashAlgorithm": "sha256",
         "mode": "redacted"
       }

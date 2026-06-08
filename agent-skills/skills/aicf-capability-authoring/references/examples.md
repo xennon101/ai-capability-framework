@@ -8,4 +8,5 @@ Use synthetic names and simple domains:
 - `scheduling.invite.prepare`: prepare an invite message.
 - `scheduling.invite.send`: host-controlled send path.
 
-Avoid customer-like identifiers, real endpoints, tenant names, transcripts, or provider transport details.
+Avoid customer-like identifiers, real endpoints, tenant names, transcripts, or provider
+transport details.

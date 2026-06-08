@@ -1,8 +1,8 @@
 # Eval Overview
 
-AICF evals are deterministic fixtures. They prove capability selection,
-expected tool calls, policy outcomes, approval behavior, and no-commit
-boundaries without calling a model.
+AICF evals are deterministic fixtures. They prove capability selection, expected tool
+calls, policy outcomes, approval behavior, and no-commit boundaries without calling a
+model.
 
 Read:
 

@@ -18,9 +18,15 @@ export const requiredRootDocs = [
 
 export const requiredDocs = [
   "docs/index.md",
+  "docs/api/public-api-policy.md",
+  "docs/getting-started/provider-neutral-quickstart.md",
+  "docs/getting-started/openai-quickstart.md",
+  "docs/getting-started/anthropic-quickstart.md",
+  "docs/getting-started/gemini-quickstart.md",
   "docs/getting-started/quickstart.md",
   "docs/getting-started/concepts.md",
   "docs/getting-started/installation.md",
+  "docs/providers/choose-a-runtime.md",
   "docs/core/capability-manifests.md",
   "docs/core/entity-manifests.md",
   "docs/runtime/runtime-overview.md",
@@ -49,6 +55,10 @@ export const requiredDocs = [
   "docs/aws/overview.md",
   "docs/control-plane/overview.md",
   "docs/public-framework/release-process.md",
+  "docs/public-framework/final-certification-matrix.md",
+  "docs/public-framework/license-decision.md",
+  "docs/public/npm-release-preflight.md",
+  "docs/public/license-exceptions.md",
   "docs/public-framework/compatibility-policy.md",
   "docs/public-framework/deprecation-policy.md",
   "docs/public-framework/security-disclosure.md",
@@ -70,10 +80,16 @@ export const numberedExamples = [
 ];
 
 const requiredIndexLinks = [
+  "getting-started/provider-neutral-quickstart.md",
+  "getting-started/openai-quickstart.md",
+  "getting-started/anthropic-quickstart.md",
+  "getting-started/gemini-quickstart.md",
   "getting-started/quickstart.md",
   "getting-started/concepts.md",
   "api.md",
+  "api/public-api-policy.md",
   "providers.md",
+  "providers/choose-a-runtime.md",
   "runtime/runtime-overview.md",
   "evals/overview.md",
   "governance/overview.md",
@@ -81,6 +97,10 @@ const requiredIndexLinks = [
   "evidence.md",
   "provenance.md",
   "public-framework/release-process.md",
+  "public-framework/final-certification-matrix.md",
+  "public-framework/license-decision.md",
+  "public/npm-release-preflight.md",
+  "public/license-exceptions.md",
   "public-framework/v1-certification.md"
 ];
 
@@ -110,12 +130,27 @@ export function runDocsCheck(root = repoRoot) {
   }
 
   const readme = read(root, "README.md");
+  const normalizedReadme = normalizeWhitespace(readme);
   for (const phrase of [
     "AICF is not an agent framework. It is a governed capability layer for AI-accessible application functionality.",
     "Models propose; applications validate, authorize, execute, and audit."
   ]) {
-    if (!readme.includes(phrase)) {
+    if (!normalizedReadme.includes(phrase)) {
       failures.push(`README.md missing required positioning phrase: ${phrase}`);
+    }
+  }
+  for (const link of [
+    "docs/getting-started/provider-neutral-quickstart.md",
+    "docs/getting-started/openai-quickstart.md",
+    "docs/getting-started/anthropic-quickstart.md",
+    "docs/getting-started/gemini-quickstart.md",
+    "docs/providers/choose-a-runtime.md",
+    "agent-skills/README.md",
+    "SECURITY.md",
+    "docs/public-framework/v1-certification.md"
+  ]) {
+    if (!readme.includes(link)) {
+      failures.push(`README.md missing required P6 onboarding link: ${link}`);
     }
   }
 
@@ -220,6 +255,10 @@ function packageDryRunFiles(root) {
 function read(root, relative) {
   const file = path.join(root, relative);
   return existsSync(file) && statSync(file).isFile() ? readFileSync(file, "utf8") : "";
+}
+
+function normalizeWhitespace(value) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function normalize(file) {

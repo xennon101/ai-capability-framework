@@ -13,6 +13,7 @@ import type {
   AicfPolicyDecision,
   AicfPrepareActionInput,
   AicfPreparedAction,
+  AicfPreparedActionVerification,
   AicfRecordApprovalInput,
   AicfRuntimeToolResultEnvelope,
   AicfVerifyActionInput,
@@ -596,11 +597,16 @@ export class AicfActionLifecycleManager {
         return this.basicFailed(input, capability.manifest.id, "commit", "Commit output failed schema validation.", outputValidation.errors);
       }
 
+      const committedAt = new Date().toISOString();
+      const commitResultHash = resultRefFromValue(data, "commit_result").resultHash;
       await this.options.preparedActionStore.updateState({
+        committedActionId: result.committedActionId,
+        committedAt,
+        commitResultHash,
         expectedState: preparedAction.state,
         nextState: "committed",
         preparedActionId: preparedAction.preparedActionId,
-        updatedAt: new Date().toISOString()
+        updatedAt: committedAt
       });
 
       if (idempotencyKey) {
@@ -628,7 +634,7 @@ export class AicfActionLifecycleManager {
       }
       await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(actionId, {
         actionState: "committed",
-        resultHash: resultRefFromValue(data, "commit_result").resultHash,
+        resultHash: commitResultHash,
         updatedAt: new Date().toISOString()
       }));
 
@@ -685,6 +691,7 @@ export class AicfActionLifecycleManager {
 
   async verify(input: AicfVerifyActionInput): Promise<AicfRuntimeToolResultEnvelope> {
     const capabilityId = input.committedAction.capabilityId;
+    const preparedAction = await this.options.preparedActionStore.get(input.committedAction.preparedActionId);
     const capability = this.options.registry.capabilityById.get(capabilityId);
     await writeAuditEvent(this.options.auditSink, {
       actionState: input.committedAction.state,
@@ -696,35 +703,75 @@ export class AicfActionLifecycleManager {
       type: "action_verify"
     });
 
-    if (!capability) {
-      return createToolEnvelope({
+    if (!input.committedAction.committedActionId || !input.committedAction.preparedActionId) {
+      return this.verifyDenied(input, capabilityId, "Committed action reference is incomplete.");
+    }
+
+    if (!preparedAction) {
+      return this.verifyDenied(input, capabilityId, "Prepared action was not found.");
+    }
+
+    const expectedCommitCapabilityId = preparedAction.commitCapabilityId ?? preparedAction.capabilityId;
+    if (input.committedAction.capabilityId !== expectedCommitCapabilityId) {
+      return this.verifyDenied(input, capabilityId, "Committed action capability does not match the prepared action.");
+    }
+
+    if (!committedActionMatchesPreparedAction(input, preparedAction)) {
+      return this.verifyDenied(input, capabilityId, "Committed action scope does not match the prepared action.");
+    }
+
+    if (isExpired(preparedAction.expiresAt)) {
+      return this.verifyDenied(input, capabilityId, "Prepared action has expired.");
+    }
+
+    if (preparedAction.verification?.status === "verified") {
+      const resultHash = preparedAction.verification.resultHash;
+      await writeAuditEvent(this.options.auditSink, {
+        actionState: preparedAction.state,
         capabilityId,
-        errors: [{
-          code: "capability_not_found",
-          message: "Capability was not found."
-        }],
+        details: {
+          idempotent: true,
+          resultHash,
+          verificationStatus: "verified"
+        },
+        operation: "verify",
+        preparedActionId: preparedAction.preparedActionId,
+        runtimeContext: input.runtimeContext,
+        status: "succeeded",
+        type: "action_verify"
+      });
+      return createToolEnvelope({
+        action: {
+          committedActionId: preparedAction.committedActionId ?? input.committedAction.committedActionId,
+          preparedActionId: preparedAction.preparedActionId,
+          state: preparedAction.state,
+          verificationStatus: "verified"
+        },
+        capabilityId,
+        capabilityVersion: capability?.manifest.version,
+        data: preparedAction.verification.result,
         operation: "verify",
         requestId: input.runtimeContext.requestId,
         runId: input.runtimeContext.runId,
-        status: "unavailable",
-        userMessage: "The capability is unavailable."
+        status: "verified",
+        userMessage: preparedAction.verification.message ?? "The action was already verified."
       });
     }
 
+    if (preparedAction.state !== "committed") {
+      return this.verifyDenied(input, capabilityId, `Prepared action is ${preparedAction.state}.`);
+    }
+
+    if (preparedAction.committedActionId && preparedAction.committedActionId !== input.committedAction.committedActionId) {
+      return this.verifyDenied(input, capabilityId, "Committed action ID does not match the stored action.");
+    }
+
+    if (!capability) {
+      return this.verifyUnavailable(input, capabilityId, undefined, "Capability was not found.", "capability_not_found");
+    }
+
     if (capability.manifest.lifecycle.verify !== true) {
-      return createToolEnvelope({
-        capabilityId: capability.manifest.id,
-        capabilityVersion: capability.manifest.version,
-        errors: [{
-          code: "lifecycle_not_supported",
-          message: "Capability does not support verify."
-        }],
-        operation: "verify",
-        requestId: input.runtimeContext.requestId,
-        runId: input.runtimeContext.runId,
-        status: "denied",
-        userMessage: "The action cannot be verified by this capability."
-      });
+      return this.verifyDenied(input, capability.manifest.id, "Capability does not support verify.", capability.manifest.version, "lifecycle_not_supported");
     }
 
     const controlsDecision = this.options.controls?.evaluate({
@@ -738,6 +785,12 @@ export class AicfActionLifecycleManager {
     });
     if (controlsDecision?.status === "denied") {
       return createToolEnvelope({
+        action: {
+          committedActionId: preparedAction.committedActionId ?? input.committedAction.committedActionId,
+          preparedActionId: preparedAction.preparedActionId,
+          state: preparedAction.state,
+          verificationStatus: preparedAction.verification?.status
+        },
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
         operation: "verify",
@@ -755,19 +808,7 @@ export class AicfActionLifecycleManager {
 
     const handler = this.options.handlers.get(capability.manifest.id);
     if (!handler?.verify) {
-      return createToolEnvelope({
-        capabilityId: capability.manifest.id,
-        capabilityVersion: capability.manifest.version,
-        errors: [{
-          code: "handler_not_found",
-          message: "No verify handler is registered."
-        }],
-        operation: "verify",
-        requestId: input.runtimeContext.requestId,
-        runId: input.runtimeContext.runId,
-        status: "unavailable",
-        userMessage: "The capability is unavailable."
-      });
+      return this.verifyUnavailable(input, capability.manifest.id, capability.manifest.version, "No verify handler is registered.");
     }
 
     try {
@@ -777,25 +818,42 @@ export class AicfActionLifecycleManager {
       });
 
       if (result.status === "not_supported") {
-        return createToolEnvelope({
-          capabilityId: capability.manifest.id,
-          capabilityVersion: capability.manifest.version,
-          errors: [{
-            code: "lifecycle_not_supported",
-            message: "Verify is not supported."
-          }],
-          operation: "verify",
-          requestId: input.runtimeContext.requestId,
-          runId: input.runtimeContext.runId,
-          status: "unavailable",
-          userMessage: "The action cannot be verified."
-        });
+        return this.verifyUnavailable(input, capability.manifest.id, capability.manifest.version, "Verify is not supported.", "lifecycle_not_supported");
       }
 
       if (result.status === "failed") {
+        const failedAt = new Date().toISOString();
+        const resultHash = resultRefFromValue(result.data ?? { status: result.status }, "verify_result").resultHash;
+        const verification: AicfPreparedActionVerification = {
+          failedAt,
+          message: "The action could not be verified.",
+          result: isRecord(result.data) ? result.data : undefined,
+          resultHash,
+          status: "verification_failed"
+        };
+        await this.options.preparedActionStore.updateState({
+          expectedState: preparedAction.state,
+          nextState: "committed",
+          preparedActionId: preparedAction.preparedActionId,
+          updatedAt: failedAt,
+          verification
+        });
+        await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(
+          ledgerActionIdForPreparedAction(preparedAction),
+          {
+            actionState: "committed",
+            resultHash,
+            updatedAt: failedAt,
+            verificationStatus: "verification_failed"
+          }
+        ));
         await writeAuditEvent(this.options.auditSink, {
-          actionState: "failed",
+          actionState: "committed",
           capabilityId: capability.manifest.id,
+          details: {
+            resultHash,
+            verificationStatus: "verification_failed"
+          },
           operation: "verify",
           preparedActionId: input.committedAction.preparedActionId,
           runtimeContext: input.runtimeContext,
@@ -806,26 +864,56 @@ export class AicfActionLifecycleManager {
           action: {
             committedActionId: input.committedAction.committedActionId,
             preparedActionId: input.committedAction.preparedActionId,
-            state: "failed"
+            state: "committed",
+            verificationStatus: "verification_failed"
           },
           capabilityId: capability.manifest.id,
           capabilityVersion: capability.manifest.version,
           data: result.data,
           errors: [{
             code: "handler_failed",
-            message: result.message ?? "The action could not be verified."
+            message: "The action could not be verified."
           }],
           operation: "verify",
           requestId: input.runtimeContext.requestId,
           runId: input.runtimeContext.runId,
           status: "failed",
-          userMessage: result.message ?? "The action could not be verified."
+          userMessage: "The action could not be verified."
         });
       }
 
+      const verifiedAt = new Date().toISOString();
+      const resultHash = resultRefFromValue(result.data ?? { status: result.status }, "verify_result").resultHash;
+      const verification: AicfPreparedActionVerification = {
+        message: result.message,
+        result: isRecord(result.data) ? result.data : undefined,
+        resultHash,
+        status: "verified",
+        verifiedAt
+      };
+      await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
+        nextState: "committed",
+        preparedActionId: preparedAction.preparedActionId,
+        updatedAt: verifiedAt,
+        verification
+      });
+      await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(
+        ledgerActionIdForPreparedAction(preparedAction),
+        {
+          actionState: "committed",
+          resultHash,
+          updatedAt: verifiedAt,
+          verificationStatus: "verified"
+        }
+      ));
       await writeAuditEvent(this.options.auditSink, {
-        actionState: "verified",
+        actionState: "committed",
         capabilityId: capability.manifest.id,
+        details: {
+          resultHash,
+          verificationStatus: "verified"
+        },
         operation: "verify",
         preparedActionId: input.committedAction.preparedActionId,
         runtimeContext: input.runtimeContext,
@@ -836,7 +924,8 @@ export class AicfActionLifecycleManager {
         action: {
           committedActionId: input.committedAction.committedActionId,
           preparedActionId: input.committedAction.preparedActionId,
-          state: "verified"
+          state: "committed",
+          verificationStatus: "verified"
         },
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
@@ -848,9 +937,37 @@ export class AicfActionLifecycleManager {
         userMessage: result.message ?? "The action was verified."
       });
     } catch (error) {
+      const failedAt = new Date().toISOString();
+      const resultHash = resultRefFromValue({ error: "verify_handler_failed" }, "error").resultHash;
+      const verification: AicfPreparedActionVerification = {
+        failedAt,
+        message: "The verify handler failed.",
+        resultHash,
+        status: "verification_failed"
+      };
+      await this.options.preparedActionStore.updateState({
+        expectedState: preparedAction.state,
+        nextState: "committed",
+        preparedActionId: preparedAction.preparedActionId,
+        updatedAt: failedAt,
+        verification
+      });
+      await writeLedger(this.options.ledger, () => this.options.ledger?.updateAction(
+        ledgerActionIdForPreparedAction(preparedAction),
+        {
+          actionState: "committed",
+          resultHash,
+          updatedAt: failedAt,
+          verificationStatus: "verification_failed"
+        }
+      ));
       await writeAuditEvent(this.options.auditSink, {
-        actionState: "failed",
+        actionState: "committed",
         capabilityId: capability.manifest.id,
+        details: {
+          resultHash,
+          verificationStatus: "verification_failed"
+        },
         operation: "verify",
         preparedActionId: input.committedAction.preparedActionId,
         runtimeContext: input.runtimeContext,
@@ -858,6 +975,12 @@ export class AicfActionLifecycleManager {
         type: "action_verify"
       });
       return createToolEnvelope({
+        action: {
+          committedActionId: input.committedAction.committedActionId,
+          preparedActionId: input.committedAction.preparedActionId,
+          state: "committed",
+          verificationStatus: "verification_failed"
+        },
         capabilityId: capability.manifest.id,
         capabilityVersion: capability.manifest.version,
         errors: [runtimeErrorToEnvelopeError(error)],
@@ -868,6 +991,50 @@ export class AicfActionLifecycleManager {
         userMessage: "The verify handler failed."
       });
     }
+  }
+
+  private verifyUnavailable(
+    input: AicfVerifyActionInput,
+    capabilityId: string,
+    capabilityVersion: string | undefined,
+    message: string,
+    code = "handler_not_found"
+  ): AicfRuntimeToolResultEnvelope {
+    return createToolEnvelope({
+      capabilityId,
+      capabilityVersion,
+      errors: [{
+        code,
+        message
+      }],
+      operation: "verify",
+      requestId: input.runtimeContext.requestId,
+      runId: input.runtimeContext.runId,
+      status: "unavailable",
+      userMessage: "The capability is unavailable."
+    });
+  }
+
+  private verifyDenied(
+    input: AicfVerifyActionInput,
+    capabilityId: string,
+    message: string,
+    capabilityVersion?: string,
+    code = "policy_denied"
+  ): AicfRuntimeToolResultEnvelope {
+    return createToolEnvelope({
+      capabilityId,
+      capabilityVersion,
+      errors: [{
+        code,
+        message
+      }],
+      operation: "verify",
+      requestId: input.runtimeContext.requestId,
+      runId: input.runtimeContext.runId,
+      status: "denied",
+      userMessage: message
+    });
   }
 
   private resolveCommitCapabilityId(
@@ -1130,6 +1297,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isExpired(expiresAt: string): boolean {
   return Date.parse(expiresAt) <= Date.now();
+}
+
+function committedActionMatchesPreparedAction(
+  input: AicfVerifyActionInput,
+  preparedAction: AicfPreparedAction
+): boolean {
+  const committedAction = input.committedAction;
+  return committedAction.preparedActionId === preparedAction.preparedActionId
+    && committedAction.accountId === preparedAction.accountId
+    && committedAction.subjectId === preparedAction.subjectId
+    && committedAction.tenantId === preparedAction.tenantId
+    && input.runtimeContext.account.accountId === preparedAction.accountId
+    && input.runtimeContext.account.tenantId === preparedAction.tenantId
+    && input.runtimeContext.subject.userId === preparedAction.subjectId;
 }
 
 function mergeAicfMetadata(

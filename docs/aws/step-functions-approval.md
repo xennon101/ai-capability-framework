@@ -1,7 +1,7 @@
 # Step Functions Approval Handoff
 
-`StepFunctionsApprovalAdapter` starts and resumes host-owned approval workflows.
-It sends a safe prepared-action summary, not raw args or provider payloads.
+`StepFunctionsApprovalAdapter` starts and resumes host-owned approval workflows. It
+sends a safe prepared-action summary, not raw args or provider payloads.
 
 ```ts
 import {
@@ -22,11 +22,9 @@ const approvals = new StepFunctionsApprovalAdapter({
 });
 ```
 
-The adapter can record task correlation metadata, send success for approved
-decisions, send failure for rejected decisions, and mark tasks expired or
-cancelled. It does not build approval UI, send email, decide policy, verify
-approvers, or own production auth.
+The adapter can record task correlation metadata, send success for approved decisions,
+send failure for rejected decisions, and mark tasks expired or cancelled. It does not
+build approval UI, send email, decide policy, verify approvers, or own production auth.
 
-Hosts should store task tokens securely. AICF task records store token hashes,
-not raw task tokens.
-
+Hosts should store task tokens securely. AICF task records store token hashes, not raw
+task tokens.

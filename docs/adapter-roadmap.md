@@ -22,29 +22,29 @@ Every adapter should expose the same high-level contract:
 - `bindings`, `excluded`, and `diagnostics`;
 - selection gated by `decideCapability(..., operation: "select")`;
 - restricted side-effect tools excluded by default;
-- schema normalization that fails closed when the target cannot represent an
-  AICF input schema safely.
+- schema normalization that fails closed when the target cannot represent an AICF input
+  schema safely.
 
 ## Priority Order
 
-| Priority | Adapter | Why It Comes Here | Primary Output |
-| --- | --- | --- | --- |
-| Priority | Adapter | Status | Primary Output |
-| --- | --- | --- | --- |
-| P1 | Anthropic Claude Messages tools | Implemented | Claude client tool definitions plus parser for `tool_use` blocks. |
-| P2 | Google Gemini function calling | Implemented | Gemini `functionDeclarations` plus parser for `functionCall` objects. |
-| P3 | Vercel AI SDK tools | Implemented | AI SDK tool map with `inputSchema`, `description`, `strict`, and no `execute`. |
-| P4 | Model Context Protocol tool descriptors | Implemented | MCP `Tool` descriptors and parser for `tools/call` requests. |
-| P5 | LangChain/LangGraph tools | Implemented | Structured tool parameter specs and bindings for host-supplied functions. |
-| P6 | Semantic Kernel functions | Implemented | Function/plugin metadata and parser guidance for manual invocation flows. |
+| Priority | Adapter                                 | Why It Comes Here | Primary Output                                                                 |
+| -------- | --------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
+| Priority | Adapter                                 | Status            | Primary Output                                                                 |
+| ---      | ---                                     | ---               | ---                                                                            |
+| P1       | Anthropic Claude Messages tools         | Implemented       | Claude client tool definitions plus parser for `tool_use` blocks.              |
+| P2       | Google Gemini function calling          | Implemented       | Gemini `functionDeclarations` plus parser for `functionCall` objects.          |
+| P3       | Vercel AI SDK tools                     | Implemented       | AI SDK tool map with `inputSchema`, `description`, `strict`, and no `execute`. |
+| P4       | Model Context Protocol tool descriptors | Implemented       | MCP `Tool` descriptors and parser for `tools/call` requests.                   |
+| P5       | LangChain/LangGraph tools               | Implemented       | Structured tool parameter specs and bindings for host-supplied functions.      |
+| P6       | Semantic Kernel functions               | Implemented       | Function/plugin metadata and parser guidance for manual invocation flows.      |
 
 ## P1: Anthropic Claude Messages Tools
 
 Target a no-model-call adapter that exports Claude client tool definitions:
 
 - `name`: sanitized AICF capability ID, capped at the provider limit.
-- `description`: composed from `model_description`, use guidance, risk,
-  autonomy, lifecycle, and side-effect metadata.
+- `description`: composed from `model_description`, use guidance, risk, autonomy,
+  lifecycle, and side-effect metadata.
 - `input_schema`: normalized AICF `input_schema`.
 - `strict: true` when the schema can be represented safely.
 - optional `input_examples` only when public examples are available and validated.
@@ -54,12 +54,10 @@ Parser target:
 - map Claude `tool_use.name` to capability ID;
 - read `tool_use.id` as call ID;
 - validate `tool_use.input` against the original AICF input schema;
-- return structured diagnostics for unknown names, malformed input, and schema
-  failures.
+- return structured diagnostics for unknown names, malformed input, and schema failures.
 
-Reference basis: Claude client tools include `name`, `description`, and
-`input_schema`, can use `strict: true`, and return `tool_use` blocks that the
-host application executes.
+Reference basis: Claude client tools include `name`, `description`, and `input_schema`,
+can use `strict: true`, and return `tool_use` blocks that the host application executes.
 
 ## P2: Google Gemini Function Calling
 
@@ -67,8 +65,8 @@ Target a no-model-call adapter that exports Gemini function declarations:
 
 - `name`: sanitized capability ID using underscores or camelCase-safe names.
 - `description`: composed from AICF model-facing and governance metadata.
-- `parameters`: AICF input schema converted to Gemini's OpenAPI-compatible
-  schema subset.
+- `parameters`: AICF input schema converted to Gemini's OpenAPI-compatible schema
+  subset.
 
 Parser target:
 
@@ -78,13 +76,13 @@ Parser target:
 - report schema keywords that cannot be represented safely in Gemini parameters.
 
 The hard part is schema normalization. Gemini function declarations use an
-OpenAPI-compatible subset, so this adapter should fail closed for unsupported
-JSON Schema 2020-12 features rather than silently weakening validation.
+OpenAPI-compatible subset, so this adapter should fail closed for unsupported JSON
+Schema 2020-12 features rather than silently weakening validation.
 
 ## P3: Vercel AI SDK Tools
 
-Target a TypeScript-first adapter that exports an AI SDK-compatible tool map
-without execution functions:
+Target a TypeScript-first adapter that exports an AI SDK-compatible tool map without
+execution functions:
 
 - object keys are deterministic tool names;
 - values include `description`, `inputSchema`, and `strict` when supported;
@@ -97,9 +95,9 @@ Parser target:
 - validate tool call input against the original AICF input schema;
 - leave tool result production and execution to the host app.
 
-This adapter is attractive because the AI SDK accepts JSON schemas and `execute`
-is optional, allowing host apps to forward calls to a queue, client, or approval
-path instead of executing in the same process.
+This adapter is attractive because the AI SDK accepts JSON schemas and `execute` is
+optional, allowing host apps to forward calls to a queue, client, or approval path
+instead of executing in the same process.
 
 ## P4: Model Context Protocol Tool Descriptors
 
@@ -110,18 +108,18 @@ Target MCP descriptor export, not an AICF-owned executable MCP server:
 - `description`: AICF model description plus lifecycle/risk guidance;
 - `inputSchema`: AICF input schema, preserving JSON Schema 2020-12 where valid;
 - `outputSchema`: AICF output schema when representable;
-- `annotations`: conservative hints derived from side effects, such as read-only
-  and idempotent hints.
+- `annotations`: conservative hints derived from side effects, such as read-only and
+  idempotent hints.
 
 Parser target:
 
 - map `tools/call.params.name` to capability ID;
 - validate `tools/call.params.arguments`;
-- return an AICF capability request object for the host MCP server or runtime to
-  decide and execute.
+- return an AICF capability request object for the host MCP server or runtime to decide
+  and execute.
 
-Do not add an MCP server that executes capabilities inside AICF. Host apps may
-use AICF descriptors inside their own MCP server implementation.
+Do not add an MCP server that executes capabilities inside AICF. Host apps may use AICF
+descriptors inside their own MCP server implementation.
 
 ## P5: LangChain And LangGraph Tools
 
@@ -132,12 +130,12 @@ Target descriptor export for host-created tools:
 - schema suitable for LangChain structured tools;
 - binding metadata for capability ID, risk, autonomy, and restriction status.
 
-Do not generate callable implementations. LangChain and LangGraph tools are
-runtime functions that can update state or return commands, so the host must
-supply execution, approval, and state handling.
+Do not generate callable implementations. LangChain and LangGraph tools are runtime
+functions that can update state or return commands, so the host must supply execution,
+approval, and state handling.
 
-This adapter should probably be implemented after the AI SDK adapter, because
-both are TypeScript-oriented but AI SDK has a cleaner descriptor-only path.
+This adapter should probably be implemented after the AI SDK adapter, because both are
+TypeScript-oriented but AI SDK has a cleaner descriptor-only path.
 
 ## P6: Semantic Kernel Functions
 
@@ -148,8 +146,8 @@ Target metadata and manual-invocation compatibility:
 - parser support for chosen function name and arguments;
 - guidance for `autoInvoke: false` style host workflows.
 
-Semantic Kernel is useful for enterprise users, but its strongest value is in
-runtime orchestration. AICF should stay on the metadata and validation side.
+Semantic Kernel is useful for enterprise users, but its strongest value is in runtime
+orchestration. AICF should stay on the metadata and validation side.
 
 ## Common Tests For Future Adapter Implementations
 
@@ -157,10 +155,10 @@ Each adapter should add tests for:
 
 - allowed read and prepare capabilities exported for a matching context;
 - restricted commit/send capabilities excluded by default;
-- restricted export only with an explicit option and deterministic selection
-  still applied;
-- deterministic safe name generation, truncation, collision handling, and
-  reverse bindings;
+- restricted export only with an explicit option and deterministic selection still
+  applied;
+- deterministic safe name generation, truncation, collision handling, and reverse
+  bindings;
 - schema normalization success and unsupported-schema exclusion;
 - valid tool-call parsing;
 - invalid JSON or malformed input handling;
@@ -170,10 +168,14 @@ Each adapter should add tests for:
 
 ## Reference Links
 
-- Anthropic Claude tool use: https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
-- Anthropic define tools: https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools
+- Anthropic Claude tool use:
+  https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+- Anthropic define tools:
+  https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools
 - Google Gemini function calling: https://ai.google.dev/gemini-api/docs/function-calling
 - Vercel AI SDK tool calling: https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling
-- Model Context Protocol tools: https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+- Model Context Protocol tools:
+  https://modelcontextprotocol.io/specification/2025-06-18/server/tools
 - LangChain JavaScript tools: https://docs.langchain.com/oss/javascript/langchain/tools
-- Semantic Kernel manual function invocation: https://learn.microsoft.com/en-us/semantic-kernel/concepts/ai-services/chat-completion/function-calling/function-invocation
+- Semantic Kernel manual function invocation:
+  https://learn.microsoft.com/en-us/semantic-kernel/concepts/ai-services/chat-completion/function-calling/function-invocation

@@ -1,6 +1,10 @@
-import { runOpenAIResponses } from "../openai/index.js";
+import { runOpenAIResponses, type AicfOpenAIResponsesClient, type AicfOpenAIRunResult } from "../openai/index.js";
+import { runAnthropicMessages, type AicfAnthropicMessagesClient, type AicfAnthropicRunResult } from "../providers/anthropic/index.js";
+import { runGeminiGenerateContent, type AicfGeminiClient, type AicfGeminiRunResult } from "../providers/gemini/index.js";
+import { createPlainAiSdkToolFactories, runAiSdkGenerateText, type AicfAiSdkGenerateTextLike, type AicfAiSdkRunResult, type AicfAiSdkToolFactories } from "../providers/ai-sdk/index.js";
 import { scoreEvalCase } from "../eval-runner.js";
 import { emitTraceEvent } from "../observability/index.js";
+import type { AicfBuiltContext, CapabilitySlice } from "../runtime/index.js";
 import type {
   EvalCandidateResult,
   EvalCase,
@@ -11,8 +15,12 @@ import type {
   AicfEvalGate,
   AicfEvalGateResult,
   AicfLiveEvalCaseInput,
+  AicfLiveEvalCaseRunResult,
   AicfLiveEvalOptions,
+  AicfLiveEvalProviderId,
   AicfLiveEvalResult,
+  AicfLiveEvalRunner,
+  AicfNormalizedLiveEvalRunResult,
   CreateEvalCaseFromTraceInput
 } from "./types.js";
 
@@ -20,6 +28,7 @@ export async function runLiveEvalSuite(
   options: AicfLiveEvalOptions
 ): Promise<AicfLiveEvalResult[]> {
   const results: AicfLiveEvalResult[] = [];
+  const runner = resolveLiveEvalRunner(options);
 
   for (const testCase of options.cases) {
     const loadedEval = options.registry.evalById.get(testCase.evalId);
@@ -40,7 +49,9 @@ export async function runLiveEvalSuite(
     try {
       await emitTraceEvent({
         attributes: {
-          evalId: testCase.evalId
+          evalId: testCase.evalId,
+          provider: runner.providerId,
+          runtimeName: runner.runtimeName
         },
         events: undefined,
         requestId: testCase.runtimeContext.requestId,
@@ -48,17 +59,21 @@ export async function runLiveEvalSuite(
         sink: options.traceSink,
         type: "eval.score"
       });
-      const runResult = await runOpenAIResponses({
-        client: options.openAIClient,
+      const providerResult = await runner.runCase({
+        caseId: testCase.evalId,
         contextBuilder: options.contextBuilderFactory(testCase),
         executor: options.executor,
-        model: options.model,
+        loadedEval,
+        providerConfig: options.providerConfig,
         registry: options.registry,
         router: options.router,
         runtimeContext: testCase.runtimeContext,
+        suiteId: options.suiteId ?? "live_eval_suite",
+        testCase,
         traceSink: options.traceSink,
         userInput: testCase.userInput
       });
+      const runResult = providerResult.runResult;
       const candidate = createEvalCandidateFromRunResult(testCase.evalId, runResult);
       const evalForScoring = testCase.expected
         ? loadedEvalWithExpected(loadedEval, testCase.expected)
@@ -80,7 +95,9 @@ export async function runLiveEvalSuite(
       results.push({
         candidate,
         evalId: testCase.evalId,
+        providerId: providerResult.providerId,
         runResult,
+        runtimeName: providerResult.runtimeName,
         scores,
         status: passed ? "passed" : "failed"
       });
@@ -99,6 +116,195 @@ export async function runLiveEvalSuite(
   }
 
   return results;
+}
+
+export function runOpenAILiveEvalSuite(
+  options: Omit<AicfLiveEvalOptions, "runner"> & {
+    model: string;
+    openAIClient: AicfOpenAIResponsesClient;
+  }
+): Promise<AicfLiveEvalResult[]> {
+  return runLiveEvalSuite({
+    ...options,
+    runner: createOpenAILiveEvalRunner({
+      client: options.openAIClient,
+      model: options.model
+    })
+  });
+}
+
+export function createOpenAILiveEvalRunner(options: {
+  client: AicfOpenAIResponsesClient;
+  maxToolCalls?: number;
+  maxTurns?: number;
+  model: string;
+  runtimeName?: string;
+  systemInstructions?: string;
+  temperature?: number;
+}): AicfLiveEvalRunner {
+  return {
+    providerId: "openai",
+    runtimeName: options.runtimeName ?? "openai-responses",
+    async runCase(input) {
+      const runResult = await runOpenAIResponses({
+        client: options.client,
+        contextBuilder: input.contextBuilder,
+        executor: input.executor,
+        maxToolCalls: options.maxToolCalls,
+        maxTurns: options.maxTurns,
+        model: options.model,
+        registry: input.registry,
+        router: input.router,
+        runtimeContext: input.runtimeContext,
+        systemInstructions: options.systemInstructions,
+        temperature: options.temperature,
+        traceSink: input.traceSink,
+        userInput: input.userInput
+      });
+      return {
+        providerId: "openai",
+        runtimeName: options.runtimeName ?? "openai-responses",
+        runResult: normalizeOpenAIRunResult(runResult, options.runtimeName ?? "openai-responses")
+      };
+    }
+  };
+}
+
+export function createAnthropicLiveEvalRunner(options: {
+  client: AicfAnthropicMessagesClient;
+  maxTokens?: number;
+  maxToolCalls?: number;
+  maxToolIterations?: number;
+  model: string;
+  runtimeName?: string;
+  strictTools?: boolean;
+  system?: string;
+}): AicfLiveEvalRunner {
+  return {
+    providerId: "anthropic",
+    runtimeName: options.runtimeName ?? "anthropic-messages",
+    async runCase(input) {
+      const { builtContext, slice } = await buildLiveEvalContext(input);
+      const runResult = await runAnthropicMessages({
+        builtContext,
+        client: options.client,
+        executor: input.executor,
+        maxTokens: options.maxTokens,
+        maxToolCalls: options.maxToolCalls,
+        maxToolIterations: options.maxToolIterations,
+        messages: [{ content: input.userInput.text, role: "user" }],
+        model: options.model,
+        registry: input.registry,
+        runtimeContext: input.runtimeContext,
+        slice,
+        strictTools: options.strictTools,
+        system: options.system,
+        traceSink: input.traceSink
+      });
+      return {
+        providerId: "anthropic",
+        runtimeName: options.runtimeName ?? "anthropic-messages",
+        runResult: normalizeProviderRuntimeResult("anthropic", options.runtimeName ?? "anthropic-messages", runResult, slice)
+      };
+    }
+  };
+}
+
+export function createGeminiLiveEvalRunner(options: {
+  client: AicfGeminiClient;
+  maxToolCalls?: number;
+  maxToolIterations?: number;
+  model: string;
+  runtimeName?: string;
+  systemInstruction?: string;
+}): AicfLiveEvalRunner {
+  return {
+    providerId: "gemini",
+    runtimeName: options.runtimeName ?? "gemini-generate-content",
+    async runCase(input) {
+      const { builtContext, slice } = await buildLiveEvalContext(input);
+      const runResult = await runGeminiGenerateContent({
+        builtContext,
+        client: options.client,
+        contents: input.userInput.text,
+        executor: input.executor,
+        maxToolCalls: options.maxToolCalls,
+        maxToolIterations: options.maxToolIterations,
+        model: options.model,
+        registry: input.registry,
+        runtimeContext: input.runtimeContext,
+        slice,
+        systemInstruction: options.systemInstruction,
+        traceSink: input.traceSink
+      });
+      return {
+        providerId: "gemini",
+        runtimeName: options.runtimeName ?? "gemini-generate-content",
+        runResult: normalizeProviderRuntimeResult("gemini", options.runtimeName ?? "gemini-generate-content", runResult, slice)
+      };
+    }
+  };
+}
+
+export function createAiSdkLiveEvalRunner(options: {
+  generateText: AicfAiSdkGenerateTextLike;
+  maxSteps?: number;
+  model: unknown;
+  runtimeName?: string;
+  system?: string;
+  toolFactories?: AicfAiSdkToolFactories;
+}): AicfLiveEvalRunner {
+  return {
+    providerId: "ai-sdk",
+    runtimeName: options.runtimeName ?? "ai-sdk-generate-text",
+    async runCase(input) {
+      const { builtContext, slice } = await buildLiveEvalContext(input);
+      const runResult = await runAiSdkGenerateText({
+        builtContext,
+        executor: input.executor,
+        generateText: options.generateText,
+        maxSteps: options.maxSteps,
+        model: options.model,
+        prompt: input.userInput.text,
+        registry: input.registry,
+        runtimeContext: input.runtimeContext,
+        slice,
+        system: options.system,
+        toolFactories: options.toolFactories ?? createPlainAiSdkToolFactories(),
+        traceSink: input.traceSink
+      });
+      return {
+        providerId: "ai-sdk",
+        runtimeName: options.runtimeName ?? "ai-sdk-generate-text",
+        runResult: normalizeAiSdkRunResult(runResult, options.runtimeName ?? "ai-sdk-generate-text", slice)
+      };
+    }
+  };
+}
+
+export function createMockLiveEvalRunner(input: {
+  providerId?: AicfLiveEvalProviderId;
+  result: AicfNormalizedLiveEvalRunResult | ((testCase: AicfLiveEvalCaseInput) => AicfNormalizedLiveEvalRunResult);
+  runtimeName?: string;
+}): AicfLiveEvalRunner {
+  const providerId = input.providerId ?? "mock";
+  const runtimeName = input.runtimeName ?? "mock-live-eval";
+  return {
+    providerId,
+    runtimeName,
+    async runCase(runInput) {
+      const result = typeof input.result === "function" ? input.result(runInput.testCase) : input.result;
+      return {
+        providerId,
+        runtimeName,
+        runResult: {
+          ...result,
+          providerId,
+          runtimeName
+        }
+      };
+    }
+  };
 }
 
 export function evaluateGate(
@@ -177,6 +383,116 @@ export function createEvalCandidateFromRunResult(
       args: call.args,
       capability_id: call.capabilityId
     }))
+  };
+}
+
+function resolveLiveEvalRunner(options: AicfLiveEvalOptions): AicfLiveEvalRunner {
+  if (options.runner) {
+    return options.runner;
+  }
+
+  if (options.openAIClient && options.model) {
+    return createOpenAILiveEvalRunner({
+      client: options.openAIClient,
+      model: options.model
+    });
+  }
+
+  throw new Error("A live eval runner is required. Pass runner or legacy openAIClient plus model.");
+}
+
+async function buildLiveEvalContext(input: Parameters<AicfLiveEvalRunner["runCase"]>[0]): Promise<{
+  builtContext: AicfBuiltContext;
+  slice: CapabilitySlice;
+}> {
+  const builtContext = await input.contextBuilder.build({
+    baseContext: input.runtimeContext,
+    registry: input.registry,
+    userInput: input.userInput
+  });
+  const slice = await input.router.route({
+    builtContext,
+    registry: input.registry,
+    userInput: input.userInput
+  });
+
+  return { builtContext, slice };
+}
+
+function normalizeOpenAIRunResult(
+  runResult: AicfOpenAIRunResult,
+  runtimeName: string
+): AicfNormalizedLiveEvalRunResult {
+  return {
+    errors: runResult.errors,
+    finalText: runResult.finalText,
+    providerId: "openai",
+    responseId: runResult.responseId,
+    runId: runResult.runId,
+    runtimeName,
+    selectedCapabilities: runResult.selectedCapabilities,
+    status: runResult.status,
+    toolCalls: runResult.toolCalls.map((call) => ({
+      args: call.args,
+      callId: call.callId,
+      capabilityId: call.capabilityId,
+      toolName: call.toolName
+    })),
+    toolResults: runResult.toolResults,
+    traceEvents: runResult.traceEvents,
+    usage: runResult.usage
+  };
+}
+
+function normalizeProviderRuntimeResult(
+  providerId: "anthropic" | "gemini",
+  runtimeName: string,
+  runResult: AicfAnthropicRunResult | AicfGeminiRunResult,
+  selectedCapabilities: CapabilitySlice
+): AicfNormalizedLiveEvalRunResult {
+  return {
+    errors: runResult.errors,
+    finalText: runResult.finalText,
+    providerId,
+    responseId: runResult.responseId,
+    runId: runResult.traceEvents[0]?.runId ?? runResult.toolResults[0]?.runId ?? "unknown",
+    runtimeName,
+    selectedCapabilities,
+    status: runResult.status,
+    toolCalls: runResult.toolCalls.map((call) => ({
+      args: call.args,
+      callId: call.callId,
+      capabilityId: call.capabilityId,
+      toolName: call.providerToolName
+    })),
+    toolResults: runResult.toolResults,
+    traceEvents: runResult.traceEvents,
+    usage: runResult.usage
+  };
+}
+
+function normalizeAiSdkRunResult(
+  runResult: AicfAiSdkRunResult,
+  runtimeName: string,
+  selectedCapabilities: CapabilitySlice
+): AicfNormalizedLiveEvalRunResult {
+  return {
+    errors: runResult.errors,
+    finalText: runResult.text ?? "",
+    providerId: "ai-sdk",
+    runId: runResult.traceEvents[0]?.runId ?? runResult.toolResults[0]?.runId ?? "unknown",
+    runtimeName,
+    selectedCapabilities,
+    status: runResult.status,
+    toolCalls: runResult.toolCalls.map((call) => ({
+      args: {},
+      callId: call.toolCallId,
+      capabilityId: call.capabilityId ?? "unknown",
+      toolName: call.toolName
+    })),
+    toolResults: runResult.toolResults,
+    traceEvents: runResult.traceEvents,
+    usage: runResult.usage
   };
 }
 

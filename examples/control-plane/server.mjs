@@ -46,12 +46,20 @@ const service = createControlPlaneService({
 
 const server = createServer(async (request, response) => {
   try {
-    const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+    const url = new URL(
+      request.url ?? "/",
+      `http://${request.headers.host ?? "localhost"}`
+    );
     if (url.pathname.startsWith("/api/aicf/")) {
       const routed = await routeControlPlaneRequest({
         request: {
           body: await readJsonBody(request),
-          headers: Object.fromEntries(Object.entries(request.headers).map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : value])),
+          headers: Object.fromEntries(
+            Object.entries(request.headers).map(([key, value]) => [
+              key,
+              Array.isArray(value) ? value.join(",") : value
+            ])
+          ),
           method: request.method ?? "GET",
           path: url.pathname,
           user: {
@@ -68,7 +76,11 @@ const server = createServer(async (request, response) => {
     }
 
     const staticPath = url.pathname === "/" ? "/index.html" : url.pathname;
-    const filePath = path.join(here, "public", path.normalize(staticPath).replace(/^(\.\.[/\\])+/, ""));
+    const filePath = path.join(
+      here,
+      "public",
+      path.normalize(staticPath).replace(/^(\.\.[/\\])+/, "")
+    );
     const content = await readFile(filePath);
     response.writeHead(200, {
       "content-type": contentType(filePath)

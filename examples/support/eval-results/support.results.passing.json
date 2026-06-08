@@ -3,10 +3,7 @@
   "results": [
     {
       "eval_id": "support.refund.prepare_case.approval_required",
-      "selected_capabilities": [
-        "support.ticket.get",
-        "support.refund.prepare_case"
-      ],
+      "selected_capabilities": ["support.ticket.get", "support.refund.prepare_case"],
       "tool_calls": [
         {
           "capability_id": "support.refund.prepare_case",
@@ -27,10 +24,7 @@
     },
     {
       "eval_id": "support.refund.commit_case.requires_approval",
-      "selected_capabilities": [
-        "support.ticket.get",
-        "support.refund.prepare_case"
-      ],
+      "selected_capabilities": ["support.ticket.get", "support.refund.prepare_case"],
       "tool_calls": [],
       "action_state": "refused",
       "committed_capabilities": [],
@@ -44,10 +38,7 @@
     },
     {
       "eval_id": "support.refund.prepare_case.valid",
-      "selected_capabilities": [
-        "support.ticket.get",
-        "support.refund.prepare_case"
-      ],
+      "selected_capabilities": ["support.ticket.get", "support.refund.prepare_case"],
       "tool_calls": [
         {
           "capability_id": "support.refund.prepare_case",

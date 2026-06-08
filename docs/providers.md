@@ -1,33 +1,34 @@
 # Provider Foundation
 
-AICF is a provider-agnostic AI capability framework. It turns application
-functions, data access, and workflows into typed, permissioned, versioned,
-observable, and evaluated capabilities that can be exposed to AI models and
-agent frameworks without making any provider schema the source of truth.
+AICF is a provider-agnostic AI capability framework. It turns application functions,
+data access, and workflows into typed, permissioned, versioned, observable, and
+evaluated capabilities that can be exposed to AI models and agent frameworks without
+making any provider schema the source of truth.
 
-OpenAI is one adapter, not the architecture. The canonical contract is still
-the AICF capability manifest plus runtime policy, lifecycle, and model-safe
-result envelopes.
+OpenAI is one adapter, not the architecture. The canonical contract is still the AICF
+capability manifest plus runtime policy, lifecycle, and model-safe result envelopes.
 
-If you are new to provider adapters, read the
-[OpenAI walkthrough](openai-walkthrough.md) first. The same mental model applies
-to the other provider runtimes and framework bridges: export a routed slice,
-map provider calls back through bindings, validate with AICF, and keep commit
-host-controlled.
+If you are new to provider adapters, start with the
+[provider-neutral quickstart](getting-started/provider-neutral-quickstart.md) and then
+use [Choose a Runtime](providers/choose-a-runtime.md). The same mental model applies to
+every provider runtime and framework bridge: export a routed slice, map provider calls
+back through bindings, validate with AICF, and keep commit host-controlled. The
+[OpenAI walkthrough](openai-walkthrough.md) remains a concrete example, not the default
+architecture.
 
 ## Provider Types
 
-- Direct model runtimes: OpenAI Responses, Anthropic Claude Messages, and Google
-  Gemini GenerateContent.
+- Direct model runtimes: OpenAI Responses, Anthropic Claude Messages, and Google Gemini
+  GenerateContent.
 - Framework bridges: Vercel AI SDK and LangChain/LangGraph.
 - Interoperability surfaces: MCP descriptors/server runtime and Semantic
   Kernel-compatible MCP/OpenAPI metadata.
-- Descriptor-only conformance: the provider conformance matrix verifies that a
-  routed slice maps consistently across supported targets.
+- Descriptor-only conformance: the provider conformance matrix verifies that a routed
+  slice maps consistently across supported targets.
 
-Provider modules are optional subpath imports. Root, runtime, and shared
-provider imports must work without Anthropic, Google, AI SDK, LangChain, MCP SDK,
-Semantic Kernel, OpenAI, AWS, or observability SDK packages installed.
+Provider modules are optional subpath imports. Root, runtime, and shared provider
+imports must work without Anthropic, Google, AI SDK, LangChain, MCP SDK, Semantic
+Kernel, OpenAI, AWS, or observability SDK packages installed.
 
 ```ts
 import { createProviderToolNameMap } from "ai-capability-framework/providers";
@@ -41,15 +42,14 @@ import { exportSemanticKernelOpenApiPlugin } from "ai-capability-framework/provi
 
 ## Shared Behavior
 
-The shared provider layer provides deterministic provider-safe tool names,
-collision diagnostics, reverse lookup through binding maps, schema
-normalization, canonical provider call/result summaries, optional dependency
-loading, and an execution helper that delegates read and prepare calls to
-`AicfToolExecutor`.
+The shared provider layer provides deterministic provider-safe tool names, collision
+diagnostics, reverse lookup through binding maps, schema normalization, canonical
+provider call/result summaries, optional dependency loading, and an execution helper
+that delegates read and prepare calls to `AicfToolExecutor`.
 
-Provider SDK validation does not replace AICF validation. Provider descriptors
-are generated from routed AICF capability slices, then all tool calls map back
-through bindings to the original capability ID and input schema.
+Provider SDK validation does not replace AICF validation. Provider descriptors are
+generated from routed AICF capability slices, then all tool calls map back through
+bindings to the original capability ID and input schema.
 
 ## Safety Boundary
 
@@ -58,19 +58,24 @@ AICF remains the policy and action authority:
 - commit capabilities are not exported to models by default;
 - read and prepare calls execute through AICF validation, policy, lifecycle, and
   model-safe envelopes;
-- optional AICF controls can deny provider export, apply read-only mode, and
-  enforce provider-loop budgets;
-- commit remains host-controlled through `AicfActionLifecycleManager` after a
-  stored prepared action, approval, idempotency, and audit checks;
+- optional AICF controls can deny provider export, apply read-only mode, and enforce
+  provider-loop budgets;
+- commit remains host-controlled through `AicfActionLifecycleManager` after a stored
+  prepared action, approval, idempotency, and audit checks;
 - raw prompts, raw user messages, provider request/response payloads, traces,
   credentials, and private diagnostics are not logged by default;
 - ambiguous provider/runtime behavior fails closed.
 
-Live tests are opt-in. Normal package checks use mock clients, fake SDK
-factories, descriptor exports, and synthetic fixtures.
+Live tests are opt-in. Normal package checks use mock clients, fake SDK factories,
+descriptor exports, and synthetic fixtures.
 
 ## Guides And Examples
 
+- [Choose a runtime](providers/choose-a-runtime.md)
+- [Provider-neutral quickstart](getting-started/provider-neutral-quickstart.md)
+- [OpenAI quickstart](getting-started/openai-quickstart.md)
+- [Anthropic quickstart](getting-started/anthropic-quickstart.md)
+- [Gemini quickstart](getting-started/gemini-quickstart.md)
 - [OpenAI Responses runtime](openai-runtime.md)
 - [Anthropic Claude runtime](anthropic-runtime.md)
 - [Google Gemini runtime](gemini-runtime.md)
@@ -80,9 +85,9 @@ factories, descriptor exports, and synthetic fixtures.
 - [Semantic Kernel compatibility](semantic-kernel-runtime.md)
 - [Provider conformance](providers/conformance.md)
 
-Grouped public examples live under `examples/providers/`. They are README-only
-by design: no credentials, raw provider payloads, live transcripts, or local
-runtime state are included.
+Grouped public examples live under `examples/providers/`. They are README-only by
+design: no credentials, raw provider payloads, live transcripts, or local runtime state
+are included.
 
 ## Release Checks
 

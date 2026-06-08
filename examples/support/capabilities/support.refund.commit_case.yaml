@@ -12,9 +12,9 @@ capability_type: write_commit
 autonomy_tier: A0
 risk_tier: critical
 model_description: >
-  Use this capability only when application code has verified an approved
-  prepared refund action. Do not expose this capability in the default model
-  tool set for normal refund requests.
+  Use this capability only when application code has verified an approved prepared
+  refund action. Do not expose this capability in the default model tool set for normal
+  refund requests.
 when_to_use:
   - A prepared refund action has already been approved.
   - The application has verified the approval and idempotency state.

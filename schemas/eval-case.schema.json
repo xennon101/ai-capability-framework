@@ -119,7 +119,14 @@
           "enum": ["allowed", "approval_required", "denied"]
         },
         "action_state": {
-          "enum": ["none", "prepared", "approval_required", "committed", "denied", "refused"]
+          "enum": [
+            "none",
+            "prepared",
+            "approval_required",
+            "committed",
+            "denied",
+            "refused"
+          ]
         },
         "no_commit": { "type": "boolean" },
         "refusal": {

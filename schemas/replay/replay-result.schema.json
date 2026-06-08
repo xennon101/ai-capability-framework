@@ -4,12 +4,26 @@
   "title": "AICF Replay Result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "traceId", "mode", "status", "steps", "summary", "diagnostics"],
+  "required": [
+    "schemaVersion",
+    "traceId",
+    "mode",
+    "status",
+    "steps",
+    "summary",
+    "diagnostics"
+  ],
   "properties": {
     "schemaVersion": { "const": "1.0" },
     "traceId": { "type": "string", "minLength": 1 },
     "mode": {
-      "enum": ["deterministic_mock", "provider_live", "policy_only", "router_only", "tool_validation_only"]
+      "enum": [
+        "deterministic_mock",
+        "provider_live",
+        "policy_only",
+        "router_only",
+        "tool_validation_only"
+      ]
     },
     "status": { "enum": ["passed", "failed", "refused"] },
     "steps": {

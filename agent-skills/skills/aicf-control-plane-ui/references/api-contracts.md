@@ -10,4 +10,5 @@ Control-plane APIs should return JSON-serializable safe responses:
 - coverage metadata.
 - safe errors.
 
-Do not return raw transcripts, provider transport details, stack traces, secrets, or unredacted tenant/account/user IDs.
+Do not return raw transcripts, provider transport details, stack traces, secrets, or
+unredacted tenant/account/user IDs.

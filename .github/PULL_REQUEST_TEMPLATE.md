@@ -11,10 +11,10 @@ Describe the change and the public framework behavior it affects.
 - [ ] Generated public types are current.
 - [ ] Package dry-run checks pass.
 - [ ] Examples are synthetic and public-safe.
-- [ ] No `_private/`, traces, prompts, provider payloads, generated local docs,
-      packed tarballs, or local-only files are tracked.
-- [ ] This change does not add model calls, side-effect execution, handler
-      registries, action stores, or approval runtimes.
+- [ ] No `_private/`, traces, prompts, provider payloads, generated local docs, packed
+      tarballs, or local-only files are tracked.
+- [ ] This change does not add model calls, side-effect execution, handler registries,
+      action stores, or approval runtimes.
 
 ## Notes
 

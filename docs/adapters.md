@@ -1,21 +1,20 @@
 # Adapters
 
-AICF adapters export validated capability manifests into provider or runtime
-tool descriptor shapes. They do not call models, execute handlers, persist
-actions, collect approvals, or perform side effects.
+AICF adapters export validated capability manifests into provider or runtime tool
+descriptor shapes. They do not call models, execute handlers, persist actions, collect
+approvals, or perform side effects.
 
 Every adapter follows the same boundary:
 
 - require a decision context with permissions and autonomy tier;
 - include only capabilities whose `select` decision is `allowed`;
-- exclude restricted commit, send, money-moving, permission-changing, workflow,
-  and irreversible capabilities by default;
-- allow restricted export only with `includeRestricted: true`, while still
-  applying deterministic selection;
+- exclude restricted commit, send, money-moving, permission-changing, workflow, and
+  irreversible capabilities by default;
+- allow restricted export only with `includeRestricted: true`, while still applying
+  deterministic selection;
 - bind exported names back to AICF capability IDs;
 - validate parsed tool-call arguments against the original AICF input schema;
-- fail closed with diagnostics when schemas or names cannot be represented
-  safely.
+- fail closed with diagnostics when schemas or names cannot be represented safely.
 
 ## TypeScript APIs
 
@@ -89,9 +88,9 @@ node dist/cli.js langchain-tools examples --context examples/support/openai/cont
 node dist/cli.js semantic-kernel-functions examples --context examples/support/openai/context.support_agent.json
 ```
 
-Use `--include-restricted` only when the host has deliberately narrowed context
-and still intends to run deterministic approval, idempotency, auth, and commit
-checks before any side effect.
+Use `--include-restricted` only when the host has deliberately narrowed context and
+still intends to run deterministic approval, idempotency, auth, and commit checks before
+any side effect.
 
 ## Output Shapes
 
@@ -107,6 +106,6 @@ All outputs include `bindings`, `excluded`, and `diagnostics`.
 
 ## Host Responsibilities
 
-Adapters only produce descriptors and parse calls. Host applications remain
-responsible for model requests, real authorization, facts, approvals, execution,
-storage, idempotency, verification, and durable audit logs.
+Adapters only produce descriptors and parse calls. Host applications remain responsible
+for model requests, real authorization, facts, approvals, execution, storage,
+idempotency, verification, and durable audit logs.

@@ -4,9 +4,9 @@ AICF conformance checks prove that one routed capability slice can be exported
 consistently across provider and framework targets. The canonical import path is
 `ai-capability-framework/conformance`.
 
-The conformance harness is descriptor/mock-only. It does not call live models,
-use credentials, execute provider SDKs, store provider payloads, or expose
-commit capabilities to models.
+The conformance harness is descriptor/mock-only. It does not call live models, use
+credentials, execute provider SDKs, store provider payloads, or expose commit
+capabilities to models.
 
 ## Install And Import
 
@@ -22,8 +22,8 @@ import {
 } from "ai-capability-framework/conformance";
 ```
 
-The older `ai-capability-framework/providers/conformance` path remains available
-as a compatibility alias.
+The older `ai-capability-framework/providers/conformance` path remains available as a
+compatibility alias.
 
 ## Targets
 
@@ -38,8 +38,8 @@ The canonical matrix covers:
 - Semantic Kernel through MCP compatibility;
 - Semantic Kernel through OpenAPI plugin metadata.
 
-`semantic-kernel` is accepted as an alias for `semantic-kernel-openapi`.
-`vercel-ai-sdk` and `vercel_ai_sdk` are accepted as aliases for `ai-sdk`.
+`semantic-kernel` is accepted as an alias for `semantic-kernel-openapi`. `vercel-ai-sdk`
+and `vercel_ai_sdk` are accepted as aliases for `ai-sdk`.
 
 ## What Gets Checked
 
@@ -56,9 +56,8 @@ The report scores each target across these dimensions:
 - provider error normalization;
 - loop or streaming boundary metadata.
 
-Failures are structured by provider, capability, case, and dimension. The report
-also keeps the older `passed`, `counts`, and `results` fields for existing
-callers.
+Failures are structured by provider, capability, case, and dimension. The report also
+keeps the older `passed`, `counts`, and `results` fields for existing callers.
 
 ## CLI
 
@@ -84,12 +83,12 @@ aicf providers conformance examples --format text
 
 ## Boundary
 
-Host applications remain responsible for model calls, provider SDK setup,
-runtime context, real authorization, approval collection, idempotency, side
-effects, audit persistence, and optional live tests.
+Host applications remain responsible for model calls, provider SDK setup, runtime
+context, real authorization, approval collection, idempotency, side effects, audit
+persistence, and optional live tests.
 
-Conformance uses public manifests, synthetic contexts, and mock/canonical calls.
-Live provider behavior belongs in provider-specific opt-in tests.
+Conformance uses public manifests, synthetic contexts, and mock/canonical calls. Live
+provider behavior belongs in provider-specific opt-in tests.
 
 ## Checks
 

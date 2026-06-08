@@ -6,10 +6,10 @@ import {
   buildRegistry,
   buildOpenAIResponsesTools,
   loadManifests,
-  runCli,
   validateManifests,
   type ManifestRegistry
 } from "../../index.js";
+import { runCli } from "../../cli.js";
 import {
   DefaultControlsEvaluator,
   evaluateBudget,

@@ -7,6 +7,7 @@ import type {
 } from "../types.js";
 import type {
   AicfApprovalDecision,
+  AicfActionVerificationState,
   AicfPolicyDecision,
   AicfPreparedAction,
   AicfRuntimeContext
@@ -111,6 +112,7 @@ export interface ActionRecord {
   schemaVersion: "1.0";
   traceRef?: TraceRef;
   updatedAt: string;
+  verificationStatus?: AicfActionVerificationState;
 }
 
 export interface ApprovalRecord {
@@ -233,6 +235,7 @@ export interface CreateActionRecordInput {
   runId: string;
   traceRef?: TraceRef;
   updatedAt?: string;
+  verificationStatus?: AicfActionVerificationState;
 }
 
 export interface CreateApprovalRecordInput {
@@ -284,6 +287,7 @@ export interface RuntimeActionLedgerInput {
   result?: unknown;
   runId: string;
   traceRef?: TraceRef;
+  verificationStatus?: AicfActionVerificationState;
 }
 
 export interface RuntimeApprovalLedgerInput {

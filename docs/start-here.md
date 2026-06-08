@@ -1,10 +1,10 @@
 # Start Here
 
-This guide shows the smallest useful AICF path with the public support/refund
-example. It is API-key-free and uses synthetic data only.
+This guide shows the smallest useful AICF path with the public support/refund example.
+It is API-key-free and uses synthetic data only.
 
-You will validate manifests, inspect the registry, export OpenAI tools, run the
-mock runtime flow, and score evals.
+You will validate manifests, inspect the registry, export OpenAI tools, run the mock
+runtime flow, and score evals.
 
 ## 1. Install
 
@@ -12,8 +12,8 @@ mock runtime flow, and score evals.
 npm install
 ```
 
-This installs the local package dependencies. It does not install provider SDKs
-or call any model.
+This installs the local package dependencies. It does not install provider SDKs or call
+any model.
 
 ## 2. Validate The Public Examples
 
@@ -50,8 +50,8 @@ Capabilities by type:
 - write_commit: scheduling.invite.send, support.refund.commit_case
 ```
 
-This shows the validated registry AICF uses for routing, provider export,
-policy decisions, and eval scoring.
+This shows the validated registry AICF uses for routing, provider export, policy
+decisions, and eval scoring.
 
 ## 4. Export OpenAI Tools
 
@@ -83,8 +83,8 @@ Expected excerpt:
 }
 ```
 
-This proves safe tool export. The model can see read and prepare tools, but the
-commit capability is not exposed as a normal model tool.
+This proves safe tool export. The model can see read and prepare tools, but the commit
+capability is not exposed as a normal model tool.
 
 ## 5. Run The Mock Runtime Flow
 
@@ -102,10 +102,9 @@ Expected excerpt:
 }
 ```
 
-This runs route, read, prepare, approval, and lifecycle commit with mock
-handlers and in-memory reference stores. The model-facing path still cannot
-commit. Commit happens only after the host records approval and calls the
-lifecycle manager.
+This runs route, read, prepare, approval, and lifecycle commit with mock handlers and
+in-memory reference stores. The model-facing path still cannot commit. Commit happens
+only after the host records approval and calls the lifecycle manager.
 
 ## 6. Run Deterministic Evals
 
@@ -119,9 +118,9 @@ Expected excerpt:
 Eval suite passed: 6/6 passed.
 ```
 
-This proves the candidate fixture matches the eval manifests for tool
-selection, arguments, policy decisions, refusals, response text, and no
-unapproved commit boundaries.
+This proves the candidate fixture matches the eval manifests for tool selection,
+arguments, policy decisions, refusals, response text, and no unapproved commit
+boundaries.
 
 ## What You Just Proved
 
@@ -133,6 +132,5 @@ unapproved commit boundaries.
 - Host-controlled lifecycle commit works after approval and idempotency checks.
 - Evals score behavior without calling models.
 
-Next, read the [OpenAI walkthrough](openai-walkthrough.md) for the same flow
-from the model/tool-call perspective, then use the [glossary](glossary.md) for
-the main terms.
+Next, read the [OpenAI walkthrough](openai-walkthrough.md) for the same flow from the
+model/tool-call perspective, then use the [glossary](glossary.md) for the main terms.

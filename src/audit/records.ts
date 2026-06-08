@@ -86,7 +86,8 @@ export function createActionRecord(input: CreateActionRecordInput): ActionRecord
     runId: input.runId,
     schemaVersion: "1.0",
     traceRef: input.traceRef,
-    updatedAt: input.updatedAt ?? now
+    updatedAt: input.updatedAt ?? now,
+    verificationStatus: input.verificationStatus
   };
 }
 

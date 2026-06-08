@@ -1,8 +1,8 @@
 # Entity Manifests
 
-Entity manifests describe application objects that capabilities can read,
-prepare, or commit against. They help AICF explain impact, governance coverage,
-and allowed actions without exposing raw databases or broad application APIs.
+Entity manifests describe application objects that capabilities can read, prepare, or
+commit against. They help AICF explain impact, governance coverage, and allowed actions
+without exposing raw databases or broad application APIs.
 
 Public examples:
 
@@ -17,5 +17,5 @@ Validate them with:
 node dist/cli.js validate examples
 ```
 
-Entity docs stay intentionally small. Capability manifests own the callable
-schemas and lifecycle rules.
+Entity docs stay intentionally small. Capability manifests own the callable schemas and
+lifecycle rules.

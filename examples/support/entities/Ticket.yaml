@@ -22,4 +22,3 @@ allowed_actions:
   - support.refund.prepare_case
 model_guidance: >
   Tickets are tenant-scoped. Use only synthetic identifiers in public examples.
-

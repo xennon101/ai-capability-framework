@@ -12,8 +12,8 @@ capability_type: external_message_prepare
 autonomy_tier: A2
 risk_tier: medium
 model_description: >
-  Use this capability when the user asks to prepare a meeting invite. The
-  capability creates reviewable draft state but must not send the invitation.
+  Use this capability when the user asks to prepare a meeting invite. The capability
+  creates reviewable draft state but must not send the invitation.
 when_to_use:
   - The user asks to prepare or draft a meeting invitation.
   - Availability has been checked and a reviewable invitation preview is needed.

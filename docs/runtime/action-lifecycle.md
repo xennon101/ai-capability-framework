@@ -1,8 +1,8 @@
 # Action Lifecycle
 
-The action lifecycle keeps risky side effects out of model tool execution.
-Models can reach read and prepare. Commit is host-controlled after validation,
-approval, and idempotency checks.
+The action lifecycle keeps risky side effects out of model tool execution. Models can
+reach read and prepare. Commit is host-controlled after validation, approval, and
+idempotency checks.
 
 Read the canonical guide:
 

@@ -4,7 +4,13 @@
   "title": "AICF Control Decision",
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "reasons", "warnings", "matchedKillSwitches", "matchedCircuitBreakers"],
+  "required": [
+    "status",
+    "reasons",
+    "warnings",
+    "matchedKillSwitches",
+    "matchedCircuitBreakers"
+  ],
   "properties": {
     "status": { "enum": ["allowed", "denied", "force_approval", "read_only", "warn"] },
     "effectiveMode": { "enum": ["deny", "force_approval", "read_only"] },

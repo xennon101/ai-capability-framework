@@ -65,6 +65,15 @@ export class FakeDynamoDbDocumentClient extends RecordingAwsClient {
           item.payload.updatedAt = values[":updatedAt"];
         }
       }
+      for (const name of ["committedActionId", "committedAt", "commitResultHash", "verification"]) {
+        const value = values[`:${name}`];
+        if (value !== undefined) {
+          item[name] = clone(value);
+          if (isRecord(item.payload)) {
+            item.payload[name] = clone(value);
+          }
+        }
+      }
       if (values[":result"]) {
         item.result = clone(values[":result"]);
         item.completedAt = values[":completedAt"];

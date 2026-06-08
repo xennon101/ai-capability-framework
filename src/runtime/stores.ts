@@ -1,11 +1,11 @@
 import { AicfRuntimeError } from "./errors.js";
 import type {
-  AicfActionState,
   AicfApprovalDecision,
   AicfApprovalStore,
   AicfIdempotencyStore,
   AicfPreparedAction,
-  AicfPreparedActionStore
+  AicfPreparedActionStore,
+  AicfPreparedActionUpdateStateInput
 } from "./types.js";
 
 export class InMemoryPreparedActionStore implements AicfPreparedActionStore {
@@ -27,12 +27,7 @@ export class InMemoryPreparedActionStore implements AicfPreparedActionStore {
     return action ? clone(action) : undefined;
   }
 
-  async updateState(input: {
-    expectedState?: AicfActionState;
-    nextState: AicfActionState;
-    preparedActionId: string;
-    updatedAt: string;
-  }): Promise<void> {
+  async updateState(input: AicfPreparedActionUpdateStateInput): Promise<void> {
     const action = this.actions.get(input.preparedActionId);
     if (!action) {
       throw new AicfRuntimeError({
@@ -54,6 +49,18 @@ export class InMemoryPreparedActionStore implements AicfPreparedActionStore {
 
     action.state = input.nextState;
     action.updatedAt = input.updatedAt;
+    if (input.committedActionId !== undefined) {
+      action.committedActionId = input.committedActionId;
+    }
+    if (input.committedAt !== undefined) {
+      action.committedAt = input.committedAt;
+    }
+    if (input.commitResultHash !== undefined) {
+      action.commitResultHash = input.commitResultHash;
+    }
+    if (input.verification !== undefined) {
+      action.verification = clone(input.verification);
+    }
     this.actions.set(input.preparedActionId, clone(action));
   }
 }

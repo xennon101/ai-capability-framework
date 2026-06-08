@@ -1,9 +1,9 @@
 # OpenAI Walkthrough
 
-This walkthrough uses the public support/refund example to show how AICF works
-with OpenAI. The default path is API-key-free: it exports tools, shows the tool
-call and repair shapes, and uses the mock runtime example. Live OpenAI usage is
-optional and requires a caller-provided client.
+This walkthrough uses the public support/refund example to show how AICF works with
+OpenAI. The default path is API-key-free: it exports tools, shows the tool call and
+repair shapes, and uses the mock runtime example. Live OpenAI usage is optional and
+requires a caller-provided client.
 
 ## The Scenario
 
@@ -19,14 +19,13 @@ The support example has three relevant capabilities:
 - `support.refund.prepare_case`: prepare a refund case for approval.
 - `support.refund.commit_case`: commit the refund after host approval.
 
-The first two can be model-facing tools. The commit capability is host
-controlled and is not exposed to the model by default.
+The first two can be model-facing tools. The commit capability is host controlled and is
+not exposed to the model by default.
 
 ## 1. Capability Manifests Define The Contract
 
-A capability manifest describes the model-facing purpose, the input and output
-schemas, the risk tier, required permissions, policy gates, lifecycle flags, and
-eval links.
+A capability manifest describes the model-facing purpose, the input and output schemas,
+the risk tier, required permissions, policy gates, lifecycle flags, and eval links.
 
 Small excerpt:
 
@@ -41,8 +40,7 @@ policy:
   approval_required: true
 ```
 
-AICF validates these manifests before any provider tool export or runtime
-execution.
+AICF validates these manifests before any provider tool export or runtime execution.
 
 ## 2. AICF Exports OpenAI Function Tools
 
@@ -77,8 +75,8 @@ Small excerpt:
 }
 ```
 
-The binding map is important. AICF never guesses a capability ID from a provider
-tool name; it maps tool calls back through generated bindings.
+The binding map is important. AICF never guesses a capability ID from a provider tool
+name; it maps tool calls back through generated bindings.
 
 ## 3. OpenAI Returns A Function Call
 
@@ -93,14 +91,13 @@ A model might return a Responses function call like this:
 }
 ```
 
-AICF parses the provider call, resolves the binding to `support.ticket.get`,
-parses JSON arguments, and validates those arguments against the original AICF
-`input_schema`.
+AICF parses the provider call, resolves the binding to `support.ticket.get`, parses JSON
+arguments, and validates those arguments against the original AICF `input_schema`.
 
 ## 4. Invalid Calls Become Repair Envelopes
 
-If the model calls an unknown tool or sends incorrect arguments, AICF fails
-closed. The app can return a model-safe repair envelope as the tool output.
+If the model calls an unknown tool or sends incorrect arguments, AICF fails closed. The
+app can return a model-safe repair envelope as the tool output.
 
 Example validation failure:
 
@@ -128,9 +125,9 @@ OpenAI continuation shape:
 }
 ```
 
-The model can then repair its next call. The app may also decide to stop, ask
-the user for clarification, or escalate to a stronger model. AICF only provides
-the safe envelope and deterministic validation result.
+The model can then repair its next call. The app may also decide to stop, ask the user
+for clarification, or escalate to a stronger model. AICF only provides the safe envelope
+and deterministic validation result.
 
 ## 5. Prepare Can Require Approval
 
@@ -149,8 +146,7 @@ envelope:
 }
 ```
 
-This tells the model that work has paused. It must not claim the refund was
-issued.
+This tells the model that work has paused. It must not claim the refund was issued.
 
 ## 6. Commit Is Host-Controlled
 
@@ -180,16 +176,16 @@ Expected excerpt:
 
 ## 7. Optional Live OpenAI Runtime
 
-The optional `ai-capability-framework/openai` subpath can run a bounded
-non-streaming Responses loop with a caller-provided compatible client:
+The optional `ai-capability-framework/openai` subpath can run a bounded non-streaming
+Responses loop with a caller-provided compatible client:
 
 ```ts
 import { runOpenAIResponses } from "ai-capability-framework/openai";
 ```
 
-AICF does not require the OpenAI SDK for root or runtime imports. Live usage is
-opt-in, and host applications remain responsible for provider credentials,
-model selection, auth, side effects, approvals, storage, and audit.
+AICF does not require the OpenAI SDK for root or runtime imports. Live usage is opt-in,
+and host applications remain responsible for provider credentials, model selection,
+auth, side effects, approvals, storage, and audit.
 
 ## What To Read Next
 

@@ -8,4 +8,5 @@ Use synthetic text that attempts to:
 - Ask for tools outside the routed slice.
 - Claim that approval has already happened.
 
-Assertions should verify the app treats the text as data and keeps policy authority in the host.
+Assertions should verify the app treats the text as data and keeps policy authority in
+the host.

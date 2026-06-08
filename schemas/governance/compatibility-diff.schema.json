@@ -4,7 +4,14 @@
   "title": "AICF Governance Compatibility Diff",
   "type": "object",
   "additionalProperties": false,
-  "required": ["capabilityId", "fromVersion", "toVersion", "compatibility", "changes", "requiredActions"],
+  "required": [
+    "capabilityId",
+    "fromVersion",
+    "toVersion",
+    "compatibility",
+    "changes",
+    "requiredActions"
+  ],
   "properties": {
     "capabilityId": { "type": "string" },
     "fromVersion": { "type": "string" },

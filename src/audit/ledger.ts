@@ -89,7 +89,8 @@ export class DefaultAuditLedger implements AicfRuntimeLedgerRecorder {
       preview: input.preview ?? input.preparedAction?.preview,
       result: input.result,
       runId: input.runId ?? input.preparedAction?.runId ?? "unknown",
-      traceRef: input.traceRef
+      traceRef: input.traceRef,
+      verificationStatus: input.verificationStatus
     });
 
     if (existing) {

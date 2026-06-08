@@ -1,10 +1,15 @@
 ---
 name: aicf-storage-and-aws
-description: Implement optional AICF storage and AWS reference adapters for action stores, approval stores, audit, idempotency, Step Functions approvals, DynamoDB/RDS/Postgres, CloudWatch, and least-privilege IAM.
+description:
+  Implement optional AICF storage and AWS reference adapters for action stores, approval
+  stores, audit, idempotency, Step Functions approvals, DynamoDB/RDS/Postgres,
+  CloudWatch, and least-privilege IAM.
 license: MIT
-compatibility: Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or migrating to AICF. AWS work must remain optional and subpath-isolated.
+compatibility:
+  Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
+  migrating to AICF. AWS work must remain optional and subpath-isolated.
 metadata:
-  aicf.skill.version: "1.0.0"
+  aicf.skill.version: "1.0.0-rc.4"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "storage-aws"
   aicf.skill.scope: "builder"
@@ -15,12 +20,15 @@ metadata:
 
 ## Purpose
 
-Guide optional storage and AWS reference adapter work while keeping cloud dependencies isolated, tests local by default, and host deployment authority explicit.
+Guide optional storage and AWS reference adapter work while keeping cloud dependencies
+isolated, tests local by default, and host deployment authority explicit.
 
 ## Use this skill when
 
-- Implementing or auditing AICF stores for actions, approvals, audit, idempotency, controls, replay metadata, or control-plane state.
-- Adding optional AWS reference adapters for DynamoDB, Step Functions, EventBridge, CloudWatch, KMS, RDS, Aurora, or Postgres.
+- Implementing or auditing AICF stores for actions, approvals, audit, idempotency,
+  controls, replay metadata, or control-plane state.
+- Adding optional AWS reference adapters for DynamoDB, Step Functions, EventBridge,
+  CloudWatch, KMS, RDS, Aurora, or Postgres.
 - Writing fake-client tests or least-privilege IAM examples.
 
 ## Do not use this skill when
@@ -32,8 +40,12 @@ Guide optional storage and AWS reference adapter work while keeping cloud depend
 
 ## Inputs to inspect first
 
-- AWS subpath exports, runtime store interfaces, audit/controls/control-plane contracts, existing fake clients, docs, and package import tests.
-- References: [adapter boundaries](references/aws-adapter-boundaries.md), [store map](references/store-interface-map.md), [Step Functions approval](references/step-functions-approval.md), and [least privilege IAM](references/least-privilege-iam.md).
+- AWS subpath exports, runtime store interfaces, audit/controls/control-plane contracts,
+  existing fake clients, docs, and package import tests.
+- References: [adapter boundaries](references/aws-adapter-boundaries.md),
+  [store map](references/store-interface-map.md),
+  [Step Functions approval](references/step-functions-approval.md), and
+  [least privilege IAM](references/least-privilege-iam.md).
 
 ## Workflow
 
@@ -45,7 +57,9 @@ Guide optional storage and AWS reference adapter work while keeping cloud depend
 6. Add least-privilege IAM examples without credentials or account-specific IDs.
 7. Confirm root, runtime, provider, and skills imports do not require AWS SDK packages.
 
-Use [DynamoDB template](assets/dynamodb-store.template.ts), [Postgres template](assets/postgres-store.template.ts), and [Step Functions template](assets/step-functions-approval.template.ts) as safe examples.
+Use [DynamoDB template](assets/dynamodb-store.template.ts),
+[Postgres template](assets/postgres-store.template.ts), and
+[Step Functions template](assets/step-functions-approval.template.ts) as safe examples.
 
 ## Required outputs
 
@@ -68,4 +82,5 @@ Use [DynamoDB template](assets/dynamodb-store.template.ts), [Postgres template](
 
 ## Handoff format
 
-Report interfaces implemented, adapter isolation, tests run, safe payload behavior, and any host deployment/IAM obligations.
+Report interfaces implemented, adapter isolation, tests run, safe payload behavior, and
+any host deployment/IAM obligations.

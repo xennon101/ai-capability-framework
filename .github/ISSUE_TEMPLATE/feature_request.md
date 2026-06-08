@@ -10,13 +10,13 @@ Who needs this, and what public-safe workflow would it support?
 
 ## Proposed Shape
 
-If you have a suggested manifest field, TypeScript API, CLI option, or docs
-change, describe it here.
+If you have a suggested manifest field, TypeScript API, CLI option, or docs change,
+describe it here.
 
 ## Boundary
 
-- [ ] This feature can be described without model calls, handler execution,
-      action stores, approval runtimes, or side effects.
+- [ ] This feature can be described without model calls, handler execution, action
+      stores, approval runtimes, or side effects.
 - [ ] This request uses only synthetic examples and public-safe detail.
 
 ## Alternatives Considered

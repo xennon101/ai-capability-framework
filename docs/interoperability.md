@@ -1,7 +1,7 @@
 # Interoperability
 
-AICF describes AI-facing application capabilities. Other frameworks may execute
-or orchestrate those capabilities.
+AICF describes AI-facing application capabilities. Other frameworks may execute or
+orchestrate those capabilities.
 
 Use AICF as the portable contract layer for:
 
@@ -22,11 +22,11 @@ Use host or adjacent runtime frameworks for:
 - durable audit pipelines;
 - production observability.
 
-When integrating with another runtime, keep the boundary explicit: AICF can
-validate and decide whether a capability request is allowed, approval-required,
-or denied, but the runtime must still enforce real auth, produce facts, execute
-or refuse handlers, and persist records.
+When integrating with another runtime, keep the boundary explicit: AICF can validate and
+decide whether a capability request is allowed, approval-required, or denied, but the
+runtime must still enforce real auth, produce facts, execute or refuse handlers, and
+persist records.
 
-See [the adapter guide](adapters.md) for implemented provider/runtime adapters
-and [the adapter status page](adapter-roadmap.md) for reference links and
-priority rationale.
+See [the adapter guide](adapters.md) for implemented provider/runtime adapters and
+[the adapter status page](adapter-roadmap.md) for reference links and priority
+rationale.

@@ -1,6 +1,6 @@
 {
   "name": "aicf-agent-skills",
-  "version": "1.0.0",
+  "version": "1.0.0-rc.4",
   "description": "Reusable Agent Skills for building, auditing, testing, migrating, and releasing AI Capability Framework projects.",
   "author": {
     "name": "AICF Contributors",
@@ -26,10 +26,7 @@
     "longDescription": "Agent Skills for authoring AICF capabilities, integrating runtime handlers, writing evals, red-teaming, validating provider adapters, and releasing public AICF projects safely.",
     "developerName": "AICF Contributors",
     "category": "Developer Tools",
-    "capabilities": [
-      "Read",
-      "Write"
-    ],
+    "capabilities": ["Read", "Write"],
     "websiteURL": "https://github.com/xennon101/ai-capability-framework",
     "defaultPrompt": [
       "Use AICF Agent Skills to author a new governed AI capability.",

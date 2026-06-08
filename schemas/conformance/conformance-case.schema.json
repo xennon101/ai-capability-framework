@@ -10,7 +10,16 @@
     "input": { "type": "string", "minLength": 1 },
     "provider": {
       "type": "string",
-      "enum": ["openai", "anthropic", "gemini", "ai-sdk", "mcp", "langchain", "semantic-kernel-mcp", "semantic-kernel-openapi"]
+      "enum": [
+        "openai",
+        "anthropic",
+        "gemini",
+        "ai-sdk",
+        "mcp",
+        "langchain",
+        "semantic-kernel-mcp",
+        "semantic-kernel-openapi"
+      ]
     },
     "capabilityIds": {
       "type": "array",
@@ -33,7 +42,14 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["success", "approval_required", "denied", "failed", "validation_error", "unavailable"]
+            "enum": [
+              "success",
+              "approval_required",
+              "denied",
+              "failed",
+              "validation_error",
+              "unavailable"
+            ]
           }
         },
         "finalTextRequiredSubstrings": {

@@ -12,8 +12,8 @@ capability_type: external_message_send
 autonomy_tier: A0
 risk_tier: high
 model_description: >
-  Use this capability only when application code has verified an approved
-  prepared invitation. Do not expose it in broad model tool sets.
+  Use this capability only when application code has verified an approved prepared
+  invitation. Do not expose it in broad model tool sets.
 when_to_use:
   - A prepared meeting invite has already been approved.
   - The application has verified approval and idempotency state.

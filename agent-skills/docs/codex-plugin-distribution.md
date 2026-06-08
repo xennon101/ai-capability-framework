@@ -2,20 +2,19 @@
 
 The Codex plugin manifest is `.codex-plugin/plugin.json`.
 
-The manifest points to `./skills/`, uses relative asset paths, and omits legal
-policy URLs unless the repository contains real public policy documents.
+The manifest points to `./skills/`, uses relative asset paths, and omits legal policy
+URLs unless the repository contains real public policy documents.
 
-The package does not include MCP servers, hooks, app connectors, or cloud
-deployment behavior. It distributes skill folders and public package metadata
-only.
+The package does not include MCP servers, hooks, app connectors, or cloud deployment
+behavior. It distributes skill folders and public package metadata only.
 
 ## Required Manifest Checks
 
 - `skills` is exactly `./skills/`.
 - `license` is `MIT`.
 - `version` matches `agent-skills/package.json`.
-- `interface.composerIcon` and `interface.logo` are relative asset paths that
-  resolve inside the package.
+- `interface.composerIcon` and `interface.logo` are relative asset paths that resolve
+  inside the package.
 - The manifest does not point to local-only files or dependency folders.
 
 ## Local Marketplace Example

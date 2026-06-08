@@ -1,6 +1,6 @@
 {
   "name": "@aicf/agent-skills",
-  "version": "1.0.0",
+  "version": "1.0.0-rc.4",
   "description": "Agent Skills for building, integrating, testing, auditing, and releasing AICF-based AI capability systems.",
   "type": "module",
   "license": "MIT",
@@ -35,7 +35,7 @@
     "CHANGELOG.md"
   ],
   "bin": {
-    "aicf-skills": "./scripts/aicf-skills.mjs"
+    "aicf-skills": "scripts/aicf-skills.mjs"
   },
   "scripts": {
     "validate": "node scripts/validate-skills.mjs ./skills",
@@ -48,8 +48,14 @@
     "check": "npm run validate && npm run check:triggers && npm run check:index && npm run test && npm run check:public && npm run check:release",
     "pack:dry": "npm pack --dry-run"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "yaml": "^2.8.0"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -98,7 +98,16 @@
     "capability_inventory_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "version", "capabilityType", "riskTier", "status", "autonomyTier", "lifecycle"],
+      "required": [
+        "id",
+        "name",
+        "version",
+        "capabilityType",
+        "riskTier",
+        "status",
+        "autonomyTier",
+        "lifecycle"
+      ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
@@ -174,7 +183,11 @@
     "human_review_summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "approvalRequiredCapabilities", "humanReviewRequiredCapabilities"],
+      "required": [
+        "status",
+        "approvalRequiredCapabilities",
+        "humanReviewRequiredCapabilities"
+      ],
       "properties": {
         "status": { "$ref": "#/$defs/coverage_status" },
         "approvalRequiredCapabilities": { "type": "integer", "minimum": 0 },
@@ -206,7 +219,14 @@
     "policy_inventory_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["capabilityId", "approvalRequired", "auditRequired", "idempotencyRequired", "permissions", "policyRules"],
+      "required": [
+        "capabilityId",
+        "approvalRequired",
+        "auditRequired",
+        "idempotencyRequired",
+        "permissions",
+        "policyRules"
+      ],
       "properties": {
         "capabilityId": { "type": "string", "minLength": 1 },
         "approvalRequired": { "type": "boolean" },
@@ -249,7 +269,9 @@
       "properties": {
         "status": { "$ref": "#/$defs/coverage_status" },
         "rawPromptRetention": { "enum": ["none", "short_diagnostic", "custom"] },
-        "rawProviderPayloadRetention": { "enum": ["none", "short_diagnostic", "custom"] },
+        "rawProviderPayloadRetention": {
+          "enum": ["none", "short_diagnostic", "custom"]
+        },
         "traceMetadataRetentionDays": { "type": "integer", "minimum": 0 },
         "auditRecordRetentionDays": { "type": "integer", "minimum": 0 },
         "evalDatasetRetentionDays": { "type": "integer", "minimum": 0 }
@@ -258,7 +280,14 @@
     "risk_inventory_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["capabilityId", "declaredRiskTier", "inferredRiskTier", "passed", "requiredControls", "warnings"],
+      "required": [
+        "capabilityId",
+        "declaredRiskTier",
+        "inferredRiskTier",
+        "passed",
+        "requiredControls",
+        "warnings"
+      ],
       "properties": {
         "capabilityId": { "type": "string", "minLength": 1 },
         "declaredRiskTier": { "$ref": "#/$defs/evidence_risk_tier" },

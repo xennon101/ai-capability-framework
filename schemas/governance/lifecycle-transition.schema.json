@@ -31,7 +31,16 @@
   },
   "$defs": {
     "lifecycle_status": {
-      "enum": ["draft", "review", "approved", "canary", "production", "deprecated", "disabled", "removed"]
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "canary",
+        "production",
+        "deprecated",
+        "disabled",
+        "removed"
+      ]
     }
   }
 }

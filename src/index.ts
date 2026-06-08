@@ -9,7 +9,6 @@ export { loadManifests, kindFromPath } from "./loader.js";
 export { buildMcpToolDescriptors, parseMcpToolCall, toMcpToolName } from "./mcp.js";
 export { buildOpenAIResponsesTools, parseOpenAIResponsesToolCall, toOpenAIResponsesToolName } from "./openai-responses.js";
 export { buildRegistry, formatInspection, inspectRegistry } from "./registry.js";
-export { runCli } from "./cli.js";
 export { buildSemanticKernelFunctions, parseSemanticKernelFunctionCall, toSemanticKernelFunctionName } from "./semantic-kernel.js";
 export {
   approvalRequiredToolResult,

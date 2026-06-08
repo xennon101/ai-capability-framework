@@ -2,9 +2,11 @@
 name: example-aicf-skill
 description: Describe the task this skill owns and include a clear Use when clause.
 license: MIT
-compatibility: Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or migrating to AICF.
+compatibility:
+  Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
+  migrating to AICF.
 metadata:
-  aicf.skill.version: "1.0.0"
+  aicf.skill.version: "1.0.0-rc.4"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "example"
   aicf.skill.scope: "builder"

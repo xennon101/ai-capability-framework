@@ -1,7 +1,7 @@
 # 09 Security Packs And Promptfoo
 
-Fake data: synthetic support and scheduling capabilities plus public security
-pack templates.
+Fake data: synthetic support and scheduling capabilities plus public security pack
+templates.
 
 Goal: generate public-safe security cases and API-key-free Promptfoo red-team
 configuration.
@@ -21,5 +21,5 @@ unsafe_commit_attempt
 provider_payload_exposure
 ```
 
-No secrets are required. No live provider calls run by default. AICF generates
-Promptfoo config files; it does not run Promptfoo.
+No secrets are required. No live provider calls run by default. AICF generates Promptfoo
+config files; it does not run Promptfoo.

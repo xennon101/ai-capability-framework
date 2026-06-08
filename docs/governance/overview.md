@@ -1,8 +1,7 @@
 # Governance Overview
 
-AICF governance checks lifecycle transitions, inferred risk, compatibility,
-impact, eval coverage, security-pack coverage, provider conformance, and public
-artifact hygiene.
+AICF governance checks lifecycle transitions, inferred risk, compatibility, impact, eval
+coverage, security-pack coverage, provider conformance, and public artifact hygiene.
 
 Start with:
 

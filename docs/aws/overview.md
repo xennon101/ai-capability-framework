@@ -1,8 +1,8 @@
 # AWS Overview
 
-AWS support is an optional reference integration under
-`ai-capability-framework/aws`. Root, runtime, provider, governance, control, and
-evidence imports do not require AWS SDK modules.
+AWS support is an optional reference integration under `ai-capability-framework/aws`.
+Root, runtime, provider, governance, control, and evidence imports do not require AWS
+SDK modules.
 
 Read:
 
@@ -13,5 +13,5 @@ Read:
 - [CloudWatch telemetry](cloudwatch-telemetry.md)
 - [KMS redaction](kms-redaction.md)
 
-Host applications own AWS credentials, IAM, deployment, table provisioning,
-retention, and cleanup.
+Host applications own AWS credentials, IAM, deployment, table provisioning, retention,
+and cleanup.

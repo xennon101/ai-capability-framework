@@ -18,7 +18,8 @@ const root = packageRoot();
 test("package and plugin metadata point to skills", () => {
   const pkg = readJson(path.join(root, "package.json"));
   const plugin = readJson(path.join(root, ".codex-plugin", "plugin.json"));
-  assert.equal(pkg.bin["aicf-skills"], "./scripts/aicf-skills.mjs");
+  assert.equal(pkg.bin["aicf-skills"], "scripts/aicf-skills.mjs");
+  assert.equal(pkg.publishConfig.access, "public");
   assert.equal(pkg.scripts["check:index"], "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check");
   assert.equal(pkg.scripts["check:release"], "node scripts/check-release-readiness.mjs");
   assert.equal(plugin.skills, "./skills/");

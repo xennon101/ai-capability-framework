@@ -1,7 +1,6 @@
 # Anthropic Claude Provider Example
 
-This example shows the public-safe shape for using AICF with Claude Messages
-tool use.
+This example shows the public-safe shape for using AICF with Claude Messages tool use.
 
 ```bash
 npm install ai-capability-framework @anthropic-ai/sdk
@@ -13,10 +12,10 @@ npm run test:anthropic:mock
 import { runAnthropicMessages } from "ai-capability-framework/providers/anthropic";
 ```
 
-Host applications provide the Anthropic-compatible client, runtime context,
-handler registry, executor, and model messages. AICF routes only read and
-prepare capabilities, validates tool input against AICF schemas, returns
-model-safe envelopes, and never exposes commit tools to Claude.
+Host applications provide the Anthropic-compatible client, runtime context, handler
+registry, executor, and model messages. AICF routes only read and prepare capabilities,
+validates tool input against AICF schemas, returns model-safe envelopes, and never
+exposes commit tools to Claude.
 
 Live tests are opt-in only:
 

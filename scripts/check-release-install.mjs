@@ -35,8 +35,10 @@ try {
     `
       const root = await import("ai-capability-framework");
       if (!root.loadManifests || !root.decideCapability) throw new Error("Missing expected root exports.");
+      if (root.runCli) throw new Error("runCli must not be exported from the root package.");
 
       const subpaths = [
+        ["cli", "ai-capability-framework/cli", "runCli"],
         ["runtime", "ai-capability-framework/runtime", "DefaultCapabilityRouter"],
         ["openai", "ai-capability-framework/openai", "runOpenAIResponses"],
         ["observability", "ai-capability-framework/observability", "CollectingTraceSink"],

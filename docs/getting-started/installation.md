@@ -14,8 +14,8 @@ npm run build
 npm run validate
 ```
 
-The default examples use fake data and do not call live model providers. Live
-provider tests are opt-in and require explicit environment variables documented
-in the provider guides.
+The default examples use fake data and do not call live model providers. Live provider
+tests are opt-in and require explicit environment variables documented in the provider
+guides.
 
 Next: [Quickstart](quickstart.md).

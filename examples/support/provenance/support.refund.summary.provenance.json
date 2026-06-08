@@ -11,9 +11,7 @@
       "traceId": "trace_support_refund_example"
     }
   ],
-  "modelRefs": [
-    "example-support-model"
-  ],
+  "modelRefs": ["example-support-model"],
   "capabilityRefs": [
     {
       "capabilityId": "support.ticket.get",
@@ -49,9 +47,7 @@
       "trust": "tool_result"
     }
   ],
-  "approvalRefs": [
-    "approval.support.refund.synthetic"
-  ],
+  "approvalRefs": ["approval.support.refund.synthetic"],
   "traceRef": {
     "provider": "openai",
     "traceId": "trace_support_refund_example"

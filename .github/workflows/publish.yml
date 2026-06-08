@@ -32,14 +32,27 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            agent-skills/package-lock.json
 
       - name: Ensure tag matches package version
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
+          AGENT_VERSION=$(node -p "require('./agent-skills/package.json').version")
+          PLUGIN_VERSION=$(node -p "require('./agent-skills/.codex-plugin/plugin.json').version")
           EXPECTED_TAG="v${VERSION}"
           if [[ "$GITHUB_REF_NAME" != "$EXPECTED_TAG" ]]; then
             echo "Release tag $GITHUB_REF_NAME does not match package version $VERSION. Expected $EXPECTED_TAG." >&2
+            exit 1
+          fi
+          if [[ "$AGENT_VERSION" != "$VERSION" ]]; then
+            echo "agent-skills package version $AGENT_VERSION does not match root package version $VERSION." >&2
+            exit 1
+          fi
+          if [[ "$PLUGIN_VERSION" != "$VERSION" ]]; then
+            echo "agent-skills plugin version $PLUGIN_VERSION does not match root package version $VERSION." >&2
             exit 1
           fi
 
@@ -48,6 +61,19 @@ jobs:
 
       - name: Run final certification checks
         run: npm run check:certification
+
+      - name: Ensure npm versions are unpublished
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "ai-capability-framework@${VERSION}" version >/dev/null 2>&1; then
+            echo "ai-capability-framework@${VERSION} is already published. Bump the version before tagging." >&2
+            exit 1
+          fi
+          if npm view "@aicf/agent-skills@${VERSION}" version >/dev/null 2>&1; then
+            echo "@aicf/agent-skills@${VERSION} is already published. Bump the version before tagging." >&2
+            exit 1
+          fi
 
       - name: Select npm dist tag
         id: dist-tag
@@ -61,7 +87,19 @@ jobs:
           fi
 
       - name: Dry-run npm publish
-        run: npm publish --dry-run --access public --tag "${{ steps.dist-tag.outputs.tag }}"
+        run:
+          npm publish --dry-run --access public --tag "${{ steps.dist-tag.outputs.tag
+          }}"
 
-      - name: Publish to npm
+      - name: Dry-run agent skills npm publish
+        run:
+          npm publish ./agent-skills --dry-run --access public --tag "${{
+          steps.dist-tag.outputs.tag }}"
+
+      - name: Publish agent skills to npm
+        run:
+          npm publish ./agent-skills --access public --tag "${{
+          steps.dist-tag.outputs.tag }}"
+
+      - name: Publish root package to npm
         run: npm publish --access public --tag "${{ steps.dist-tag.outputs.tag }}"

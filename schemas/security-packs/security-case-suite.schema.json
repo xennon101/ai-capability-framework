@@ -13,7 +13,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "packId", "capabilityId", "capabilityType", "riskTier", "name", "userMessage", "expected", "tags"],
+        "required": [
+          "id",
+          "packId",
+          "capabilityId",
+          "capabilityType",
+          "riskTier",
+          "name",
+          "userMessage",
+          "expected",
+          "tags"
+        ],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "packId": { "type": "string", "minLength": 1 },

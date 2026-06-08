@@ -7,9 +7,9 @@ The AWS reference stores use one DynamoDB table with:
 - `GSI2PK` and `GSI2SK` for entity-type and relationship lookups;
 - `schemaVersion`, `entityType`, timestamps, and optional `ttlEpochSeconds`.
 
-Supported item families include prepared actions, runtime approvals,
-idempotency reservations, audit events, canonical ledger records, controls,
-budget usage, Step Functions approval tasks, and sanitized replay metadata.
+Supported item families include prepared actions, runtime approvals, idempotency
+reservations, audit events, canonical ledger records, controls, budget usage, Step
+Functions approval tasks, and sanitized replay metadata.
 
 Example CDK-style table shape:
 
@@ -21,10 +21,9 @@ new dynamodb.Table(this, "AicfRuntimeState", {
 });
 ```
 
-Add GSIs named `GSI1` and `GSI2` with string partition and sort keys matching
-the field names above.
+Add GSIs named `GSI1` and `GSI2` with string partition and sort keys matching the field
+names above.
 
-Use least-privilege IAM scoped to the table and the operations your host
-actually enables: `dynamodb:PutItem`, `dynamodb:Query`, `dynamodb:UpdateItem`,
-and `dynamodb:DeleteItem`.
-
+Use least-privilege IAM scoped to the table and the operations your host actually
+enables: `dynamodb:PutItem`, `dynamodb:Query`, `dynamodb:UpdateItem`, and
+`dynamodb:DeleteItem`.

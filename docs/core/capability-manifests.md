@@ -1,8 +1,7 @@
 # Capability Manifests
 
-Capability manifests are the core AICF contract. They describe the operation,
-input and output schemas, lifecycle, permissions, risk, policy, and eval
-coverage.
+Capability manifests are the core AICF contract. They describe the operation, input and
+output schemas, lifecycle, permissions, risk, policy, and eval coverage.
 
 Use the existing guide for the full field reference:
 
@@ -16,5 +15,5 @@ node dist/cli.js inspect examples
 node dist/cli.js validate examples
 ```
 
-The examples are synthetic and use fake support tickets, orders, and scheduling
-data only.
+The examples are synthetic and use fake support tickets, orders, and scheduling data
+only.

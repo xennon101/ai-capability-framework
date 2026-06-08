@@ -12,8 +12,8 @@ capability_type: read_data
 autonomy_tier: A1
 risk_tier: low
 model_description: >
-  Use this capability to retrieve a synthetic support ticket when the current
-  user is allowed to view that ticket. This capability does not change data.
+  Use this capability to retrieve a synthetic support ticket when the current user is
+  allowed to view that ticket. This capability does not change data.
 when_to_use:
   - The user asks about a specific support ticket.
   - Another capability needs ticket details before preparing an action.

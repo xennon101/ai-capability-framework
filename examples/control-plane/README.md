@@ -1,9 +1,8 @@
 # AICF Control Plane Example
 
-This is a public-safe local reference app for the optional AICF control-plane
-subpath. It shows capability review, governance status, eval/security coverage,
-policy decisions, approvals, controls, replay metadata, and evidence export
-without credentials.
+This is a public-safe local reference app for the optional AICF control-plane subpath.
+It shows capability review, governance status, eval/security coverage, policy decisions,
+approvals, controls, replay metadata, and evidence export without credentials.
 
 The example uses:
 
@@ -12,9 +11,9 @@ The example uses:
 - mutable local state in `.aicf/control-plane-state.json`;
 - a fake local development user.
 
-Production deployments must enforce real authentication, tenant/account
-authorization, approval identity, durable storage, audit retention, and side
-effects outside this example.
+Production deployments must enforce real authentication, tenant/account authorization,
+approval identity, durable storage, audit retention, and side effects outside this
+example.
 
 ## Run
 
@@ -41,5 +40,5 @@ PORT=4300 node examples/control-plane/server.mjs
 - redacted replay index;
 - evidence export with refs, hashes, and summaries only.
 
-The app never displays raw prompts, provider payloads, transcripts, secrets,
-stack traces, tenant IDs, account IDs, or sensitive tool outputs.
+The app never displays raw prompts, provider payloads, transcripts, secrets, stack
+traces, tenant IDs, account IDs, or sensitive tool outputs.

@@ -4,7 +4,14 @@
   "title": "AICF AWS Step Functions Approval Task",
   "type": "object",
   "additionalProperties": false,
-  "required": ["createdAt", "preparedActionId", "schemaVersion", "status", "taskId", "updatedAt"],
+  "required": [
+    "createdAt",
+    "preparedActionId",
+    "schemaVersion",
+    "status",
+    "taskId",
+    "updatedAt"
+  ],
   "properties": {
     "approvalRecordId": { "type": "string" },
     "createdAt": { "type": "string", "format": "date-time" },

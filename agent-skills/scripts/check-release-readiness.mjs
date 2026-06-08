@@ -37,11 +37,12 @@ if (failures.length > 0) {
 function checkPackageMetadata() {
   const pkg = readJson(path.join(root, "package.json"));
   expect(pkg.name === "@aicf/agent-skills", "package.json: name must be @aicf/agent-skills.");
-  expect(pkg.version === "1.0.0", "package.json: version must be 1.0.0 for the v1 skills pack.");
+  expect(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version), "package.json: version must be semver-like.");
   expect(pkg.private === false, "package.json: private must be false.");
   expect(pkg.license === "MIT", "package.json: license must be MIT.");
+  expect(pkg.publishConfig?.access === "public", "package.json: publishConfig.access must be public.");
   expect(pkg.type === "module", "package.json: type must be module.");
-  expect(pkg.bin?.["aicf-skills"] === "./scripts/aicf-skills.mjs", "package.json: bin.aicf-skills must point to scripts/aicf-skills.mjs.");
+  expect(pkg.bin?.["aicf-skills"] === "scripts/aicf-skills.mjs", "package.json: bin.aicf-skills must point to scripts/aicf-skills.mjs.");
 
   for (const rel of [
     "scripts/validate-skills.mjs",

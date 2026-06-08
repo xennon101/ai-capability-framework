@@ -2,8 +2,8 @@
 
 Fake data: synthetic support permissions and runtime context.
 
-Goal: see how host auth and account systems can make AICF decisions stricter
-without replacing AICF validation.
+Goal: see how host auth and account systems can make AICF decisions stricter without
+replacing AICF validation.
 
 Commands:
 
@@ -20,5 +20,5 @@ denied
 passed
 ```
 
-No secrets are required. No live provider calls run by default. Production auth,
-tenant boundaries, account state, and entitlements remain host responsibilities.
+No secrets are required. No live provider calls run by default. Production auth, tenant
+boundaries, account state, and entitlements remain host responsibilities.

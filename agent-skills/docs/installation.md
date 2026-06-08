@@ -1,7 +1,7 @@
 # Installation
 
-The AICF Agent Skills package is an independent nested npm package. Commands run
-from `agent-skills/` unless noted otherwise.
+The AICF Agent Skills package is an independent nested npm package. Commands run from
+`agent-skills/` unless noted otherwise.
 
 ## Local package setup
 
@@ -11,13 +11,15 @@ npm install
 npm run check
 ```
 
-Expected successful output includes `Skill validation passed`, `Trigger
-coverage passed`, and `Agent skills release readiness passed`.
+Expected successful output includes `Skill validation passed`,
+`Trigger coverage passed`, and `Agent skills release readiness passed`.
 
 The root AICF repository can call package checks through root script hooks:
 
 ```bash
+npm run skills:ci
 npm run skills:check
+npm run skills:pack:dry
 ```
 
 ## Repo-local skill copy
@@ -38,13 +40,13 @@ Copy skills into a user-level discovery folder:
 node scripts/install-skills.mjs --target $HOME/.agents/skills
 ```
 
-The install script copies only skill folders. It does not copy package metadata,
-tests, plugin metadata, dependency folders, or local artifacts.
+The install script copies only skill folders. It does not copy package metadata, tests,
+plugin metadata, dependency folders, or local artifacts.
 
 ## Codex plugin setup
 
-The plugin manifest is `.codex-plugin/plugin.json`. A local plugin marketplace
-entry can point at this package:
+The plugin manifest is `.codex-plugin/plugin.json`. A local plugin marketplace entry can
+point at this package:
 
 ```json
 {
@@ -77,13 +79,18 @@ codex plugin marketplace add xennon101/ai-capability-framework --sparse agent-sk
 
 ## npm package usage
 
-When the package is published, consumers can install the npm package and use its
-CLI:
+Consumers can install the npm package and use its CLI. Use the `next` dist tag for
+release candidates:
 
 ```bash
-npm install @aicf/agent-skills
+npm install @aicf/agent-skills@next
 npx aicf-skills list
 ```
 
-The npm package does not install hooks or run provider calls. It ships public
-skill folders, docs, assets, and validation scripts.
+The npm package does not install hooks or run provider calls. It ships public skill
+folders, docs, assets, and validation scripts.
+
+The skills package is released with the same version and Git tag as
+`ai-capability-framework`. Before the first real publish, the npm `@aicf/agent-skills`
+package must have scope ownership and Trusted Publishing configured for the repository
+publish workflow.

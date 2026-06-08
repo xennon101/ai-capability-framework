@@ -1,9 +1,6 @@
 {
   "autonomyTier": "A2",
-  "permissions": [
-    "ticket.read",
-    "refund.case.create"
-  ],
+  "permissions": ["ticket.read", "refund.case.create"],
   "tenantId": "tenant_example_support",
   "userId": "user_example_support_agent"
 }

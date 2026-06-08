@@ -26,6 +26,7 @@ export {
 export type {
   AicfActionLifecycleManagerOptions,
   AicfActionState,
+  AicfActionVerificationState,
   AicfAccountContext,
   AicfApprovalDecision,
   AicfApprovalRequirement,
@@ -53,6 +54,8 @@ export type {
   AicfPrepareActionInput,
   AicfPreparedAction,
   AicfPreparedActionPreview,
+  AicfPreparedActionUpdateStateInput,
+  AicfPreparedActionVerification,
   AicfPreparedActionStore,
   AicfRedaction,
   AicfRedactionPolicy,

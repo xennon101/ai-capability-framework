@@ -6,12 +6,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildRegistry,
   loadManifests,
-  runCli,
   validateManifests,
   validatePublicFixtures,
   type LoadedCapabilityManifest,
   type ManifestRegistry
 } from "../../index.js";
+import { runCli } from "../../cli.js";
 import {
   buildConformanceMatrix,
   exportConformanceProviderTools,

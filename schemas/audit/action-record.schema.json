@@ -50,7 +50,10 @@
     "runId": { "type": "string", "minLength": 1 },
     "schemaVersion": { "const": "1.0" },
     "traceRef": { "$ref": "#/$defs/trace_ref" },
-    "updatedAt": { "type": "string", "format": "date-time" }
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "verificationStatus": {
+      "enum": ["not_required", "pending", "verified", "verification_failed"]
+    }
   },
   "$defs": {
     "sha256_ref": {

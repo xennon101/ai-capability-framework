@@ -57,7 +57,8 @@ describe("audit ledger contracts", () => {
       args: { ticket_id: "TCK-100" },
       capability,
       createdAt: timestamp,
-      runId: runtimeContext.runId
+      runId: runtimeContext.runId,
+      verificationStatus: "pending"
     });
     const approval = createApprovalRecord({
       capabilityId: capability.id,
@@ -80,6 +81,7 @@ describe("audit ledger contracts", () => {
     expect(JSON.stringify(policy)).not.toContain("user_raw_audit");
     expect(JSON.stringify(policy)).not.toContain("acct_raw_audit");
     expect(JSON.stringify(policy)).not.toContain("tenant_raw_audit");
+    expect(action.verificationStatus).toBe("pending");
   });
 
   it("hashes deterministically and redacts subject/account/tenant refs by default", () => {
@@ -126,11 +128,13 @@ describe("audit ledger contracts", () => {
     await expect(policyStore.putDecision(policy)).rejects.toThrow("already exists");
     await actionStore.putAction(action);
     const updatedAction = await actionStore.updateAction(action.actionId, { actionState: "failed" });
+    const verifiedAction = await actionStore.updateAction(action.actionId, { verificationStatus: "verified" });
     await approvalStore.putApproval(approval);
     const updatedApproval = await approvalStore.updateApproval(approval.approvalRecordId, { status: "approved" });
 
     expect((await policyStore.listDecisions({ capabilityId: capability.id }))).toHaveLength(1);
     expect(updatedAction.actionState).toBe("failed");
+    expect(verifiedAction.verificationStatus).toBe("verified");
     expect(updatedApproval.status).toBe("approved");
 
     const clone = await actionStore.getAction(action.actionId);

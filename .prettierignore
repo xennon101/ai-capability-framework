@@ -1,0 +1,20 @@
+# Generated, dependency, and local-only artifacts.
+_private/
+.aicf/
+dist/
+dist-source/
+generated-docs/
+node_modules/
+agent-skills/node_modules/
+agent-skills/docs/skill-index.md
+
+# Keep implementation formatting scoped to the existing TypeScript style.
+src/
+scripts/
+agent-skills/scripts/
+agent-skills/tests/
+
+# Package/archive artifacts.
+*.tgz
+*.zip
+*.log

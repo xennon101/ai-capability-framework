@@ -22,5 +22,5 @@ lookup:
 allowed_actions:
   - scheduling.invite.prepare
 model_guidance: >
-  Availability slots are tenant-scoped. Public examples must use synthetic
-  participant and slot identifiers only.
+  Availability slots are tenant-scoped. Public examples must use synthetic participant
+  and slot identifiers only.

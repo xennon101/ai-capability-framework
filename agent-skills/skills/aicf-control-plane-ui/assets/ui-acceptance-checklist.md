@@ -1,7 +1,8 @@
 # UI Acceptance Checklist
 
 - Capability catalogue is scannable.
-- Detail view includes lifecycle, risk, policy, eval, conformance, and evidence summaries.
+- Detail view includes lifecycle, risk, policy, eval, conformance, and evidence
+  summaries.
 - Approval required state is clear.
 - Disabled and denied states are clear.
 - Safe errors omit stack traces.

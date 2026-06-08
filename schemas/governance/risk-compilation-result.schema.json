@@ -4,7 +4,15 @@
   "title": "AICF Governance Risk Compilation Result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["capabilityId", "declaredRiskTier", "inferredMinimumRiskTier", "passed", "reasons", "warnings", "requiredControls"],
+  "required": [
+    "capabilityId",
+    "declaredRiskTier",
+    "inferredMinimumRiskTier",
+    "passed",
+    "reasons",
+    "warnings",
+    "requiredControls"
+  ],
   "properties": {
     "capabilityId": { "type": "string" },
     "declaredRiskTier": { "$ref": "#/$defs/risk_tier" },

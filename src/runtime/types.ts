@@ -248,6 +248,12 @@ export type AicfActionState =
   | "expired"
   | "cancelled";
 
+export type AicfActionVerificationState =
+  | "not_required"
+  | "pending"
+  | "verified"
+  | "verification_failed";
+
 export interface AicfPreparedActionPreview {
   data: Record<string, unknown>;
   expiresAt?: string;
@@ -256,13 +262,25 @@ export interface AicfPreparedActionPreview {
   userMessage?: string;
 }
 
+export interface AicfPreparedActionVerification {
+  failedAt?: string;
+  message?: string;
+  result?: Record<string, unknown>;
+  resultHash?: string;
+  status: AicfActionVerificationState;
+  verifiedAt?: string;
+}
+
 export interface AicfPreparedAction {
   accountId: string;
   argsHash: string;
   argsRedacted: Record<string, unknown>;
   capabilityId: string;
   capabilityVersion?: string;
+  committedActionId?: string;
+  committedAt?: string;
   commitCapabilityId?: string;
+  commitResultHash?: string;
   createdAt: string;
   expiresAt: string;
   idempotencyKey?: string;
@@ -277,6 +295,7 @@ export interface AicfPreparedAction {
   subjectId: string;
   tenantId: string;
   updatedAt: string;
+  verification?: AicfPreparedActionVerification;
 }
 
 export interface AicfCommitResult {
@@ -394,6 +413,7 @@ export interface AicfRuntimeToolResultEnvelope<TData = unknown> {
     expiresAt?: string;
     preparedActionId?: string;
     state?: AicfActionState | string;
+    verificationStatus?: AicfActionVerificationState;
   };
   capabilityId: string;
   capabilityVersion?: string;
@@ -476,12 +496,18 @@ export interface AicfCapabilityHandler<TInput extends Record<string, unknown> = 
 export interface AicfPreparedActionStore {
   create(action: AicfPreparedAction): Promise<void>;
   get(preparedActionId: string): Promise<AicfPreparedAction | undefined>;
-  updateState(input: {
-    expectedState?: AicfActionState;
-    nextState: AicfActionState;
-    preparedActionId: string;
-    updatedAt: string;
-  }): Promise<void>;
+  updateState(input: AicfPreparedActionUpdateStateInput): Promise<void>;
+}
+
+export interface AicfPreparedActionUpdateStateInput {
+  committedActionId?: string;
+  committedAt?: string;
+  commitResultHash?: string;
+  expectedState?: AicfActionState;
+  nextState: AicfActionState;
+  preparedActionId: string;
+  updatedAt: string;
+  verification?: AicfPreparedActionVerification;
 }
 
 export interface AicfApprovalStore {

@@ -4,7 +4,13 @@
   "title": "AICF Security Pack Coverage Report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "generatedAt", "passed", "missingRequired", "capabilities"],
+  "required": [
+    "schema_version",
+    "generatedAt",
+    "passed",
+    "missingRequired",
+    "capabilities"
+  ],
   "properties": {
     "schema_version": { "const": "1.0" },
     "generatedAt": { "type": "string", "minLength": 1 },
@@ -15,7 +21,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["capabilityId", "riskTier", "assignedPacks", "recommendedPacks", "requiredPacks", "missingRequiredPacks", "validWaivers", "warnings"],
+        "required": [
+          "capabilityId",
+          "riskTier",
+          "assignedPacks",
+          "recommendedPacks",
+          "requiredPacks",
+          "missingRequiredPacks",
+          "validWaivers",
+          "warnings"
+        ],
         "properties": {
           "capabilityId": { "type": "string", "minLength": 1 },
           "riskTier": { "enum": ["none", "low", "medium", "high", "critical"] },

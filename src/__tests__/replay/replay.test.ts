@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import {
   buildRegistry,
-  loadManifests,
-  runCli
+  loadManifests
 } from "../../index.js";
+import { runCli } from "../../cli.js";
 import {
   createEvalCandidateFromReplayTrace,
   createGoldenFromTrace,

@@ -11,4 +11,5 @@ Allowed lifecycle states:
 - `disabled`: blocked from routing/execution.
 - `removed`: terminal state for retired contracts.
 
-Promotion should require owner, validation, eval/security coverage, risk controls, and no active kill switch.
+Promotion should require owner, validation, eval/security coverage, risk controls, and
+no active kill switch.

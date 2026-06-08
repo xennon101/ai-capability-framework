@@ -28,6 +28,5 @@ What happened instead?
 ## Public-Safety Confirmation
 
 - [ ] This report uses only synthetic data.
-- [ ] This report does not include credentials, customer data, raw prompts, raw
-      traces, provider payloads, private documents, internal endpoints, or
-      account IDs.
+- [ ] This report does not include credentials, customer data, raw prompts, raw traces,
+      provider payloads, private documents, internal endpoints, or account IDs.

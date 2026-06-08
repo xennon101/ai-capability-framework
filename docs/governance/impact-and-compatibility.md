@@ -1,9 +1,8 @@
 # Impact And Compatibility
 
 Compatibility checks compare two capability manifests and classify changes as
-compatible, minor, or breaking. Impact analysis reports direct registry
-coverage across entities, evals, prepare/commit links, policy references, and
-provider export relevance.
+compatible, minor, or breaking. Impact analysis reports direct registry coverage across
+entities, evals, prepare/commit links, policy references, and provider export relevance.
 
 Use:
 

@@ -7,12 +7,12 @@ import {
   buildRegistry,
   loadManifests,
   loadEvalResults,
-  runCli,
   runEvalSuite,
   validateManifests,
   validatePublicFixtures,
   type ManifestRegistry
 } from "../../index.js";
+import { runCli } from "../../cli.js";
 import {
   createEvidencePack,
   evidencePackDisclaimerText,

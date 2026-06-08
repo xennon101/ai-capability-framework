@@ -19,7 +19,9 @@
     "schemaVersion": { "const": "1.0" },
     "contentId": { "type": "string", "minLength": 1 },
     "contentType": { "enum": ["text", "document", "image", "audio", "video", "other"] },
-    "generatedBy": { "enum": ["model", "model_assisted_human", "human_approved_model"] },
+    "generatedBy": {
+      "enum": ["model", "model_assisted_human", "human_approved_model"]
+    },
     "providerRefs": {
       "type": "array",
       "minItems": 1,

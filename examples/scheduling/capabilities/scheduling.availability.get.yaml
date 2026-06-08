@@ -12,8 +12,8 @@ capability_type: read_data
 autonomy_tier: A1
 risk_tier: low
 model_description: >
-  Use this capability to retrieve synthetic availability slots before preparing
-  a meeting invite. This capability does not create or send invitations.
+  Use this capability to retrieve synthetic availability slots before preparing a
+  meeting invite. This capability does not create or send invitations.
 when_to_use:
   - The user asks whether a participant is available on a date.
   - A meeting invite needs availability context before preparation.

@@ -1,8 +1,7 @@
 # Model Context Protocol
 
-AICF supports MCP descriptors and an optional MCP server runtime. MCP clients
-receive routed read/prepare tools backed by AICF validation and executor
-boundaries.
+AICF supports MCP descriptors and an optional MCP server runtime. MCP clients receive
+routed read/prepare tools backed by AICF validation and executor boundaries.
 
 Read:
 

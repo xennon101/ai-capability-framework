@@ -1,7 +1,7 @@
 # LangChain Agent Provider Example
 
-This example shows the public-safe shape for exposing AICF capabilities as
-LangChain.js tools.
+This example shows the public-safe shape for exposing AICF capabilities as LangChain.js
+tools.
 
 ```bash
 npm install ai-capability-framework @langchain/core langchain zod
@@ -23,5 +23,4 @@ Live tests are opt-in only:
 RUN_LIVE_LANGCHAIN=1 npm run test:langchain:live
 ```
 
-Do not commit raw LangChain traces, prompts, tool payloads, or provider
-transcripts.
+Do not commit raw LangChain traces, prompts, tool payloads, or provider transcripts.

@@ -183,7 +183,14 @@
         "callId": { "type": "string" },
         "capabilityId": { "type": "string", "minLength": 1 },
         "status": {
-          "enum": ["ok", "unavailable", "denied", "approval_required", "error", "verified"]
+          "enum": [
+            "ok",
+            "unavailable",
+            "denied",
+            "approval_required",
+            "error",
+            "verified"
+          ]
         },
         "actionState": { "type": "string" },
         "policyDecision": { "enum": ["allowed", "approval_required", "denied"] },
@@ -250,7 +257,9 @@
         "approvalRecordId": { "type": "string" },
         "preparedActionId": { "type": "string" },
         "capabilityId": { "type": "string" },
-        "status": { "enum": ["pending", "approved", "rejected", "expired", "cancelled"] },
+        "status": {
+          "enum": ["pending", "approved", "rejected", "expired", "cancelled"]
+        },
         "requiredReasonCodes": {
           "type": "array",
           "items": { "type": "string" }

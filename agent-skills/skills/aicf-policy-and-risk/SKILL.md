@@ -1,10 +1,15 @@
 ---
 name: aicf-policy-and-risk
-description: Implement or audit AICF policy broker, risk tiers, semantic invariants, tenant isolation, permissions, entitlements, approval requirements, and fail-closed runtime decisions.
+description:
+  Implement or audit AICF policy broker, risk tiers, semantic invariants, tenant
+  isolation, permissions, entitlements, approval requirements, and fail-closed runtime
+  decisions.
 license: MIT
-compatibility: Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or migrating to AICF.
+compatibility:
+  Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
+  migrating to AICF.
 metadata:
-  aicf.skill.version: "1.0.0"
+  aicf.skill.version: "1.0.0-rc.4"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "policy-risk"
   aicf.skill.scope: "builder"
@@ -15,12 +20,14 @@ metadata:
 
 ## Purpose
 
-Guide implementation or review of policy decisions so AICF capabilities fail closed, respect tenant/account/user context, and keep side effects under host authority.
+Guide implementation or review of policy decisions so AICF capabilities fail closed,
+respect tenant/account/user context, and keep side effects under host authority.
 
 ## Use this skill when
 
 - Adding or auditing a policy broker, decision request, or risk tier rule.
-- Checking tenant isolation, permissions, entitlements, autonomy, approvals, or idempotency.
+- Checking tenant isolation, permissions, entitlements, autonomy, approvals, or
+  idempotency.
 - Investigating why a capability should be denied, allowed, or approval-required.
 - Adding tests for semantic invariants or runtime decision behavior.
 
@@ -32,21 +39,29 @@ Guide implementation or review of policy decisions so AICF capabilities fail clo
 
 ## Inputs to inspect first
 
-- Capability manifests, policy docs, runtime context builder, router, executor, and lifecycle manager.
+- Capability manifests, policy docs, runtime context builder, router, executor, and
+  lifecycle manager.
 - Existing tests for decisions, approvals, idempotency, and invalid args.
-- References for [policy broker contract](references/policy-broker-contract.md), [risk tiers](references/risktier-rules.md), [decision matrix](references/deny-approval-allow-matrix.md), and [semantic invariants](references/semantic-invariants.md).
+- References for [policy broker contract](references/policy-broker-contract.md),
+  [risk tiers](references/risktier-rules.md),
+  [decision matrix](references/deny-approval-allow-matrix.md), and
+  [semantic invariants](references/semantic-invariants.md).
 
 ## Workflow
 
-1. Identify the capability, operation, risk tier, side effects, lifecycle state, and required context.
-2. Verify user, account, tenant, permission, autonomy, and entitlement inputs come from host-controlled context.
+1. Identify the capability, operation, risk tier, side effects, lifecycle state, and
+   required context.
+2. Verify user, account, tenant, permission, autonomy, and entitlement inputs come from
+   host-controlled context.
 3. Apply semantic invariants before policy hooks.
 4. Let host hooks only make decisions stricter.
 5. Return structured deny, approval-required, or allow decisions with safe reason codes.
-6. Add tests for missing context, invalid args, risk ceilings, approval requirements, and hook failures.
+6. Add tests for missing context, invalid args, risk ceilings, approval requirements,
+   and hook failures.
 7. Keep policy decision records public-safe.
 
-Use [policy broker template](assets/policy-broker.template.ts) and [decision fixture](assets/policy-decision-fixture.json) as safe starting points.
+Use [policy broker template](assets/policy-broker.template.ts) and
+[decision fixture](assets/policy-decision-fixture.json) as safe starting points.
 
 ## Required outputs
 
@@ -69,4 +84,5 @@ Use [policy broker template](assets/policy-broker.template.ts) and [decision fix
 
 ## Handoff format
 
-List decisions changed, reason codes, tests added, commands run, and any remaining host integration obligations.
+List decisions changed, reason codes, tests added, commands run, and any remaining host
+integration obligations.

@@ -1,5 +1,7 @@
 id: support.refund.prepare.requires_approval
-description: "Refund preparation should produce approval-required behavior for the synthetic threshold case."
+description:
+  "Refund preparation should produce approval-required behavior for the synthetic
+  threshold case."
 capability_under_test: support.refund.prepare_case
 input:
   user_message: "Prepare a refund review for ticket TICKET-100."

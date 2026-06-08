@@ -3,8 +3,8 @@
 Fake data: synthetic control-plane seed state in
 `examples/control-plane/fixtures/control-plane.seed.json`.
 
-Goal: run the self-hostable local review surface for capability catalogue,
-approvals, controls, coverage, replay metadata, and evidence export.
+Goal: run the self-hostable local review surface for capability catalogue, approvals,
+controls, coverage, replay metadata, and evidence export.
 
 Commands:
 
@@ -19,6 +19,5 @@ Expected output:
 AICF control plane listening
 ```
 
-No secrets are required. No live provider calls run by default. The reference
-app uses a fake local dev user; production deployments must enforce real auth
-and durable storage.
+No secrets are required. No live provider calls run by default. The reference app uses a
+fake local dev user; production deployments must enforce real auth and durable storage.

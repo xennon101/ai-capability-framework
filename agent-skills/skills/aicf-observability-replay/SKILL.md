@@ -1,10 +1,15 @@
 ---
 name: aicf-observability-replay
-description: Add AICF tracing, OpenTelemetry-style events, Langfuse/export adapters, replay fixtures, simulation, and trace-to-golden workflows while keeping raw prompts and provider payloads redacted by default.
+description:
+  Add AICF tracing, OpenTelemetry-style events, Langfuse/export adapters, replay
+  fixtures, simulation, and trace-to-golden workflows while keeping raw prompts and
+  provider payloads redacted by default.
 license: MIT
-compatibility: Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or migrating to AICF.
+compatibility:
+  Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
+  migrating to AICF.
 metadata:
-  aicf.skill.version: "1.0.0"
+  aicf.skill.version: "1.0.0-rc.4"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "observability-replay"
   aicf.skill.scope: "builder"
@@ -15,11 +20,13 @@ metadata:
 
 ## Purpose
 
-Guide traceability, replay, simulation, and trace-to-golden work while keeping sensitive content out of default telemetry and eval artifacts.
+Guide traceability, replay, simulation, and trace-to-golden work while keeping sensitive
+content out of default telemetry and eval artifacts.
 
 ## Use this skill when
 
-- Adding AICF trace events, span metadata, optional observability adapters, replay fixtures, or trace-to-golden workflows.
+- Adding AICF trace events, span metadata, optional observability adapters, replay
+  fixtures, or trace-to-golden workflows.
 - Testing redaction, provider attribution, replay determinism, or eval score capture.
 - Turning sanitized runtime behavior into regression fixtures.
 
@@ -31,20 +38,30 @@ Guide traceability, replay, simulation, and trace-to-golden work while keeping s
 
 ## Inputs to inspect first
 
-- Observability modules, runtime trace events, provider loops, eval runner, replay fixtures, redaction helpers, and package tests.
-- References: [trace span map](references/trace-span-map.md), [replay simulation](references/replay-simulation.md), [trace-to-golden](references/trace-to-golden.md), and [redacted telemetry](references/redacted-telemetry.md).
+- Observability modules, runtime trace events, provider loops, eval runner, replay
+  fixtures, redaction helpers, and package tests.
+- References: [trace span map](references/trace-span-map.md),
+  [replay simulation](references/replay-simulation.md),
+  [trace-to-golden](references/trace-to-golden.md), and
+  [redacted telemetry](references/redacted-telemetry.md).
 
 ## Workflow
 
-1. Add trace events for context build, routing, model call, tool call, policy decision, prepare, approval, commit, final response, and eval score.
-2. Include run ID, provider, model, capability IDs, schema version, selected slice, redacted args hash, decision reasons, latency, cost/tokens where available, and outcome.
+1. Add trace events for context build, routing, model call, tool call, policy decision,
+   prepare, approval, commit, final response, and eval score.
+2. Include run ID, provider, model, capability IDs, schema version, selected slice,
+   redacted args hash, decision reasons, latency, cost/tokens where available, and
+   outcome.
 3. Redact sensitive content before sinks, exports, and replay fixtures.
-4. Add replay fixture generation for deterministic mock, policy-only, router-only, and validation-only paths.
+4. Add replay fixture generation for deterministic mock, policy-only, router-only, and
+   validation-only paths.
 5. Add trace-to-golden drafts with review required by default.
 6. Keep OpenTelemetry and Langfuse integration optional and adapter-isolated.
-7. Add tests for redaction, provider attribution, sink failure isolation, and replay determinism.
+7. Add tests for redaction, provider attribution, sink failure isolation, and replay
+   determinism.
 
-Use [replay fixture](assets/replay-fixture.json) and [trace-to-golden template](assets/trace-to-golden-template.yaml) as examples.
+Use [replay fixture](assets/replay-fixture.json) and
+[trace-to-golden template](assets/trace-to-golden-template.yaml) as examples.
 
 ## Required outputs
 
@@ -67,4 +84,5 @@ Use [replay fixture](assets/replay-fixture.json) and [trace-to-golden template](
 
 ## Handoff format
 
-Report events added, replay modes covered, redaction behavior, optional adapters touched, tests run, and remaining review gaps.
+Report events added, replay modes covered, redaction behavior, optional adapters
+touched, tests run, and remaining review gaps.

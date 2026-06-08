@@ -25,8 +25,8 @@ What this proves:
 
 - manifests and fixtures validate;
 - read/prepare tools can be exported without exposing commit tools;
-- the runtime can read, prepare, require approval, and commit through host
-  lifecycle APIs;
+- the runtime can read, prepare, require approval, and commit through host lifecycle
+  APIs;
 - evals prove expected behavior without calling a model.
 
 Full command explanations are in [Start here](../start-here.md).

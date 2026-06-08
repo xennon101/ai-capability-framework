@@ -1,7 +1,7 @@
 # Security Overview
 
-AICF security features help keep model-accessible capabilities constrained,
-validated, and reviewable.
+AICF security features help keep model-accessible capabilities constrained, validated,
+and reviewable.
 
 Key guides:
 
@@ -10,5 +10,5 @@ Key guides:
 - [Governed memory](../memory.md)
 - [Content provenance hooks](../provenance.md)
 
-AICF does not replace host DLP, auth, privacy review, incident response, or
-security operations.
+AICF does not replace host DLP, auth, privacy review, incident response, or security
+operations.

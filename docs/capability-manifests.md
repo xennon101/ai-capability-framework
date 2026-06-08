@@ -1,7 +1,7 @@
 # Capability Manifests
 
-A capability manifest is the contract between model-facing intent and
-application-owned execution.
+A capability manifest is the contract between model-facing intent and application-owned
+execution.
 
 See [the 1.0 spec](spec.md) for the shared vocabulary.
 
@@ -12,36 +12,32 @@ See [the 1.0 spec](spec.md) for the shared vocabulary.
 - `version`: Semantic version for the capability contract.
 - `status`: Lifecycle state such as `draft`, `active`, or `deprecated`.
 - `name` and `summary`: Human-readable labels for operators and maintainers.
-- `model_description`: Short model-facing description of when to use the
-  capability.
-- `capability_type`: The broad action class, such as read, compute, prepare, or
-  commit.
+- `model_description`: Short model-facing description of when to use the capability.
+- `capability_type`: The broad action class, such as read, compute, prepare, or commit.
 - `autonomy_tier`: Maximum autonomy level allowed for the capability.
 - `risk_tier`: Safety and business risk tier.
 - `input_schema` and `output_schema`: JSON Schema contracts.
-- `side_effects`: Explicit flags for data reads, writes, money movement,
-  external messages, permission changes, and irreversible actions.
+- `side_effects`: Explicit flags for data reads, writes, money movement, external
+  messages, permission changes, and irreversible actions.
 - `authorization`: Required permissions and scoping rules.
 - `policy`: Deny, approval, and review rules.
-- `lifecycle`: Explicit prepare, preview, approve, commit, verify, and audit
-  flags.
+- `lifecycle`: Explicit prepare, preview, approve, commit, verify, and audit flags.
 - `idempotency`: Optional commit idempotency requirements.
 - `observability`: Logging and trace expectations.
 
 ## Lifecycle Guidance
 
-Use `write_prepare_only` for capabilities that assemble a proposed action but do
-not execute it. Use `write_commit` only when the application can enforce
-authorization, idempotency, approval state, verification, and audit.
+Use `write_prepare_only` for capabilities that assemble a proposed action but do not
+execute it. Use `write_commit` only when the application can enforce authorization,
+idempotency, approval state, verification, and audit.
 
 High-risk capabilities should require explicit approval before commit. Critical
-capabilities should usually be split into separate prepare and commit
-capabilities.
+capabilities should usually be split into separate prepare and commit capabilities.
 
-Commit capabilities should be excluded from normal model tool sets until
-application code has verified approval and idempotency state.
+Commit capabilities should be excluded from normal model tool sets until application
+code has verified approval and idempotency state.
 
-AICF tooling loads and validates capability manifests, builds registries,
-evaluates deterministic select, prepare, and commit decisions, exports adapter
-metadata, and scores eval fixtures. It does not execute capabilities, persist
-actions, collect approvals, or perform side effects.
+AICF tooling loads and validates capability manifests, builds registries, evaluates
+deterministic select, prepare, and commit decisions, exports adapter metadata, and
+scores eval fixtures. It does not execute capabilities, persist actions, collect
+approvals, or perform side effects.
