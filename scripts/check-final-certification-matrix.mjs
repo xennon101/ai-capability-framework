@@ -108,6 +108,7 @@ export function runFinalCertificationMatrix(options = {}) {
       file: ".github/workflows/release-dry-run.yml",
       snippets: [
         "name: Release Dry Run",
+        "workflow_dispatch:",
         "fetch-depth: 0",
         "npm run check:certification",
         "npm run archive:source",
@@ -137,6 +138,14 @@ export function runFinalCertificationMatrix(options = {}) {
     if (!content) continue;
     for (const snippet of check.snippets) {
       expectContains(content, snippet, `${check.file} must include ${snippet}.`, failures);
+    }
+    if (check.file === ".github/workflows/release-dry-run.yml") {
+      if (content.includes("pull_request:")) {
+        failures.push(`${check.file} must remain manual and must not run on pull_request.`);
+      }
+      if (/branches:\s*\r?\n\s*-\s*main/.test(content)) {
+        failures.push(`${check.file} must remain manual and must not run on every main push.`);
+      }
     }
   }
 

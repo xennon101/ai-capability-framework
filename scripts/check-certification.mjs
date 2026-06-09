@@ -214,6 +214,7 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "npm run skills:check"
 ]);
 expectWorkflowContains(".github/workflows/release-dry-run.yml", [
+  "workflow_dispatch:",
   "fetch-depth: 0",
   "npm run check:certification",
   "npm run archive:source",

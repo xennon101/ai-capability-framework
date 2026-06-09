@@ -128,6 +128,9 @@ describe("public repository release readiness", () => {
     }
 
     expect(dryRun).toContain("npm run check:certification");
+    expect(dryRun).toContain("workflow_dispatch:");
+    expect(dryRun).not.toContain("pull_request:");
+    expect(dryRun).not.toMatch(/branches:\s*\r?\n\s*-\s*main/);
     expect(dryRun).toContain("fetch-depth: 0");
     expect(dryRun).toContain("npm run check:release-tag");
     expect(dryRun).toContain("npm run archive:source");
@@ -407,6 +410,7 @@ describe("public repository release readiness", () => {
     expect(release).toContain("npm run release:preflight:npm");
     expect(release).toContain("npm run check:final-matrix");
     expect(release).toContain("npm run release:publish:dry");
+    expect(release).toContain("manual release-review gate");
     expect(release).toContain("npm run check:licenses");
     expect(release).toContain("npm provenance and trusted publishing");
     expect(release).toContain("Partial publish recovery");
@@ -417,6 +421,7 @@ describe("public repository release readiness", () => {
     expect(process).toContain("npm run release:preflight:npm");
     expect(process).toContain("npm run check:final-matrix");
     expect(process).toContain("npm run release:publish:dry");
+    expect(process).toContain("manual release-review workflow");
     expect(process).toContain("npm run check:licenses");
     expect(process).toContain("npm run check:release-tag");
     expect(process).toContain("trusted publishing");

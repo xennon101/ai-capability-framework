@@ -44,6 +44,10 @@ Use [Final Certification Matrix](final-certification-matrix.md) to confirm the l
 command set, workflows, package contents, source archive rule, and publish dry-run
 commands are still aligned.
 
+The Release Dry Run workflow is a manual release-review workflow. Run it from GitHub
+Actions when preparing a release candidate or stable tag; ordinary `main` pushes rely on
+CI, validation, docs, and security workflows instead.
+
 AICF uses MIT for the v1 public release. The root package, `@aicf/agent-skills`, the
 Codex plugin manifest, skill metadata, README, and release docs must agree; see
 [License Decision](license-decision.md).

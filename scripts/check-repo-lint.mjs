@@ -82,6 +82,7 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "npm run skills:check"
 ]);
 expectWorkflowContains(".github/workflows/release-dry-run.yml", [
+  "workflow_dispatch:",
   "fetch-depth: 0",
   "npm run check:certification",
   "npm run archive:source",
@@ -89,6 +90,9 @@ expectWorkflowContains(".github/workflows/release-dry-run.yml", [
   "npm run check:release-tag",
   "npm run release:publish:dry"
 ]);
+const releaseDryRunWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/release-dry-run.yml"), "utf8");
+expect(!releaseDryRunWorkflow.includes("pull_request:"), "Release Dry Run workflow must remain manual, not a pull_request gate.");
+expect(!/branches:\s*\r?\n\s*-\s*main/.test(releaseDryRunWorkflow), "Release Dry Run workflow must remain manual, not a main push gate.");
 expectWorkflowContains(".github/workflows/security.yml", [
   "npm --prefix agent-skills ci",
   "npm audit",

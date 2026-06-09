@@ -202,9 +202,10 @@ and examples should be present at `docs/index.md`, `docs/getting-started/`,
 - `.github/workflows/ci.yml` runs root and agent-skills installs, generated-type
   freshness, build, typecheck, repository lint, tests, validation, conformance,
   governance gate, package checks, agent-skills checks, and docs build.
-- `.github/workflows/release-dry-run.yml` runs the full release gate, package dry-run,
-  source archive creation/checking, final certification, root npm publish dry-run, and
-  agent-skills npm publish dry-run.
+- `.github/workflows/release-dry-run.yml` is a manual release-review gate. It runs the
+  full release gate, package dry-run, source archive creation/checking, final
+  certification, root npm publish dry-run, and agent-skills npm publish dry-run when a
+  maintainer starts it with `workflow_dispatch`.
 - `.github/workflows/security.yml` runs production dependency audit, high-confidence
   secret scanning, package public hygiene, and workspace public hygiene.
 - `.github/workflows/docs.yml` runs TypeDoc generation and docs checks for docs and
