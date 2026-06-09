@@ -45,6 +45,7 @@ export function runFinalCertificationMatrix(options = {}) {
     ["check:metadata", "node scripts/check-metadata.mjs"],
     ["check:licenses", "node scripts/check-licenses.mjs"],
     ["check:final-matrix", "node scripts/check-final-certification-matrix.mjs"],
+    ["check:readability", "node scripts/check-public-readability.mjs"],
     ["release:publish:dry", "node scripts/check-publish-dry-run.mjs"],
     ["skills:ci", "npm --prefix agent-skills ci"],
     ["skills:check", "npm --prefix agent-skills run check"],
@@ -58,6 +59,7 @@ export function runFinalCertificationMatrix(options = {}) {
   }
   expectContains(scripts["check:certification"], "npm run check:final-matrix", "check:certification must include check:final-matrix.", failures);
   expectContains(scripts["check:certification"], "npm run check:licenses", "check:certification must include check:licenses.", failures);
+  expectContains(scripts["check:certification"], "npm run check:readability", "check:certification must include check:readability.", failures);
   expectContains(scripts["check:certification"], "npm run skills:check", "check:certification must include skills:check.", failures);
 
   const workflowChecks = [
@@ -75,6 +77,7 @@ export function runFinalCertificationMatrix(options = {}) {
         "npm test",
         "npm run validate",
         "npm run conformance",
+        "npm run check:readability",
         "npm run skills:check"
       ]
     },
@@ -86,7 +89,9 @@ export function runFinalCertificationMatrix(options = {}) {
       file: ".github/workflows/security.yml",
       snippets: [
         "name: Security",
+        "npm --prefix agent-skills ci",
         "npm audit --omit=dev --audit-level=high",
+        "npm --prefix agent-skills audit --omit=dev --audit-level=high",
         "npm run check:licenses",
         "npm run check:secrets",
         "npm run check:package-public",
@@ -147,7 +152,13 @@ export function runFinalCertificationMatrix(options = {}) {
       failures.push(`Root package dry-run must include ${required}.`);
     }
   }
-  for (const required of ["README.md", ".codex-plugin/plugin.json", "docs/skill-index.md", "scripts/aicf-skills.mjs"]) {
+  for (const required of [
+    "README.md",
+    ".codex-plugin/plugin.json",
+    "docs/skill-index.md",
+    "scripts/aicf-skills.mjs",
+    "scripts/check-release-install.mjs"
+  ]) {
     if (!agentPackFiles.includes(required)) {
       failures.push(`Agent-skills package dry-run must include ${required}.`);
     }

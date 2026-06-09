@@ -56,7 +56,9 @@ describe("public docs and developer experience", () => {
 
     expect(packageJson.scripts["docs:api"]).toBe("typedoc --options typedoc.json");
     expect(packageJson.scripts["docs:build"]).toContain("npm run docs:api");
+    expect(packageJson.scripts["docs:build"]).toContain("npm run check:readability");
     expect(packageJson.scripts["check:docs"]).toBe("node scripts/check-docs.mjs");
+    expect(packageJson.scripts["check:readability"]).toBe("node scripts/check-public-readability.mjs");
     expect(packageJson.scripts.format).toBe("prettier --write .");
     expect(packageJson.scripts["format:check"]).toBe("prettier --check .");
     expect(files).toContain("CODE_OF_CONDUCT.md");

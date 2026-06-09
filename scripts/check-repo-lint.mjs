@@ -27,6 +27,7 @@ for (const [name, expected] of [
   ["check:metadata", "node scripts/check-metadata.mjs"],
   ["check:licenses", "node scripts/check-licenses.mjs"],
   ["check:final-matrix", "node scripts/check-final-certification-matrix.mjs"],
+  ["check:readability", "node scripts/check-public-readability.mjs"],
   ["check:package:contents", "node scripts/check-package.mjs"],
   ["check:public", "npm run check:package-public && npm run check:workspace-public && npm run check:secrets"],
   ["skills:ci", "npm --prefix agent-skills ci"],
@@ -44,6 +45,7 @@ expect(scripts["check:certification"]?.includes("npm run check:metadata"), "pack
 expect(scripts["check:certification"]?.includes("npm run check:licenses"), "package script check:certification must run dependency license checks.");
 expect(scripts["check:certification"]?.includes("npm run check:final-matrix"), "package script check:certification must run final certification matrix checks.");
 expect(scripts["check:certification"]?.includes("npm run format:check"), "package script check:certification must run format checks.");
+expect(scripts["check:certification"]?.includes("npm run check:readability"), "package script check:certification must run readability checks.");
 
 for (const workflow of [
   ".github/workflows/ci.yml",
@@ -70,6 +72,7 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "npm run validate",
   "npm run conformance",
   "npm run format:check",
+  "npm run check:readability",
   "npm run gate:examples",
   "npm run check:package",
   "npm run docs:build",
@@ -83,7 +86,9 @@ expectWorkflowContains(".github/workflows/release-dry-run.yml", [
   "npm run release:publish:dry"
 ]);
 expectWorkflowContains(".github/workflows/security.yml", [
+  "npm --prefix agent-skills ci",
   "npm audit",
+  "npm --prefix agent-skills audit --omit=dev --audit-level=high",
   "npm run check:licenses",
   "npm run check:secrets",
   "npm run check:package-public",

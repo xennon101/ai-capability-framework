@@ -118,6 +118,10 @@ Before a public v1.0 tag, manually inspect:
 - `@aicf/agent-skills` package contents.
 - README quickstart from a fresh machine or clean container.
 - fresh-machine quickstart using the public npm package or a clean checkout.
+- GitHub repository About/description says AICF is a provider-agnostic governed AI
+  capability framework.
+- GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp,
+  typescript.
 - examples with fake data.
 - generated API docs.
 - governance/lifecycle docs.

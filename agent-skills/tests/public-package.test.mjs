@@ -22,6 +22,8 @@ test("package and plugin metadata point to skills", () => {
   assert.equal(pkg.publishConfig.access, "public");
   assert.equal(pkg.scripts["check:index"], "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check");
   assert.equal(pkg.scripts["check:release"], "node scripts/check-release-readiness.mjs");
+  assert.equal(pkg.scripts["check:release-install"], "node scripts/check-release-install.mjs");
+  assert.match(pkg.scripts.check, /npm run check:release-install/);
   assert.equal(plugin.skills, "./skills/");
   assert.equal(plugin.version, pkg.version);
   assert.equal(plugin.license, "MIT");
@@ -55,6 +57,7 @@ test("npm dry-run excludes forbidden files", () => {
   assert.ok(files.includes("docs/skill-index.md"));
   assert.ok(files.includes("assets/aicf-agent-skills-icon.svg"));
   assert.ok(files.includes("scripts/check-release-readiness.mjs"));
+  assert.ok(files.includes("scripts/check-release-install.mjs"));
   for (const skillName of expectedSkillNames) {
     assert.ok(files.includes(`skills/${skillName}/SKILL.md`), `${skillName} should be packed`);
   }
@@ -99,4 +102,13 @@ test("release readiness script passes for the current package", () => {
     encoding: "utf8"
   });
   assert.match(output, /Agent skills release readiness passed/);
+});
+
+test("release install smoke test passes for the current package", () => {
+  const output = execFileSync(process.execPath, ["scripts/check-release-install.mjs"], {
+    cwd: root,
+    encoding: "utf8"
+  });
+
+  assert.match(output, /Agent skills release install smoke test passed/);
 });

@@ -51,7 +51,8 @@ function checkPackageMetadata() {
     "scripts/generate-skill-index.mjs",
     "scripts/install-skills.mjs",
     "scripts/aicf-skills.mjs",
-    "scripts/check-release-readiness.mjs"
+    "scripts/check-release-readiness.mjs",
+    "scripts/check-release-install.mjs"
   ]) {
     requireFile(rel);
   }
@@ -64,6 +65,7 @@ function checkPackageMetadata() {
     "check:index": "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check",
     test: "node --test tests/*.test.mjs",
     "check:release": "node scripts/check-release-readiness.mjs",
+    "check:release-install": "node scripts/check-release-install.mjs",
     "pack:dry": "npm pack --dry-run"
   };
   for (const [scriptName, expected] of Object.entries(requiredScripts)) {
@@ -71,6 +73,7 @@ function checkPackageMetadata() {
   }
   expect(String(pkg.scripts?.check ?? "").includes("npm run check:index"), "package.json: check must include check:index.");
   expect(String(pkg.scripts?.check ?? "").includes("npm run check:release"), "package.json: check must include check:release.");
+  expect(String(pkg.scripts?.check ?? "").includes("npm run check:release-install"), "package.json: check must include check:release-install.");
 
   for (const requiredFileEntry of [".codex-plugin", "skills", "scripts", "docs", "assets", "README.md", "LICENSE", "CHANGELOG.md"]) {
     expect(pkg.files?.includes(requiredFileEntry), `package.json: files must include ${requiredFileEntry}.`);
@@ -156,7 +159,8 @@ function checkPackContents() {
     "assets/aicf-agent-skills-icon.svg",
     "assets/aicf-agent-skills-logo.svg",
     "scripts/aicf-skills.mjs",
-    "scripts/check-release-readiness.mjs"
+    "scripts/check-release-readiness.mjs",
+    "scripts/check-release-install.mjs"
   ];
 
   for (const skillName of expectedSkillNames) {

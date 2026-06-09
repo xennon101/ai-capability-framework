@@ -10,6 +10,7 @@ import { runNpmReleasePreflight } from "../../../scripts/check-npm-release-prefl
 import { runLicenseCheck } from "../../../scripts/check-licenses.mjs";
 import { runFinalCertificationMatrix } from "../../../scripts/check-final-certification-matrix.mjs";
 import { runPublishDryRun } from "../../../scripts/check-publish-dry-run.mjs";
+import { runPublicReadabilityCheck } from "../../../scripts/check-public-readability.mjs";
 
 describe("public repository release readiness", () => {
   it("root policy docs contain F16 public repository guidance", () => {
@@ -62,6 +63,7 @@ describe("public repository release readiness", () => {
     expect(packageJson.scripts["check:metadata"]).toBe("node scripts/check-metadata.mjs");
     expect(packageJson.scripts["check:licenses"]).toBe("node scripts/check-licenses.mjs");
     expect(packageJson.scripts["check:final-matrix"]).toBe("node scripts/check-final-certification-matrix.mjs");
+    expect(packageJson.scripts["check:readability"]).toBe("node scripts/check-public-readability.mjs");
     expect(packageJson.scripts["check:package:contents"]).toBe("node scripts/check-package.mjs");
     expect(packageJson.scripts["check:public"]).toBe("npm run check:package-public && npm run check:workspace-public && npm run check:secrets");
     expect(packageJson.scripts["skills:ci"]).toBe("npm --prefix agent-skills ci");
@@ -72,6 +74,7 @@ describe("public repository release readiness", () => {
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:licenses");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:final-matrix");
     expect(packageJson.scripts["check:certification"]).toContain("npm run format:check");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:readability");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:runtime");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:optional");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:providers:mock");
@@ -85,6 +88,7 @@ describe("public repository release readiness", () => {
     expect(packageJson.scripts.check).toContain("npm run lint");
     expect(packageJson.scripts.check).toContain("npm run conformance");
     expect(packageJson.scripts.check).toContain("npm run gate:examples");
+    expect(packageJson.scripts.check).toContain("npm run check:readability");
   });
 
   it("GitHub workflows run the expected public readiness gates", () => {
@@ -110,6 +114,7 @@ describe("public repository release readiness", () => {
       "npm run validate",
       "npm run conformance",
       "npm run format:check",
+      "npm run check:readability",
       "npm run gate:examples",
       "npm run check:package",
       "npm run docs:build",
@@ -124,6 +129,8 @@ describe("public repository release readiness", () => {
     expect(dryRun).toContain("npm run check:source-archive");
     expect(dryRun).toContain("npm run release:publish:dry");
     expect(security).toContain("npm audit --omit=dev --audit-level=high");
+    expect(security).toContain("npm --prefix agent-skills ci");
+    expect(security).toContain("npm --prefix agent-skills audit --omit=dev --audit-level=high");
     expect(security).toContain("npm run check:licenses");
     expect(security).toContain("npm run check:secrets");
     expect(security).toContain("npm run check:package-public");
@@ -280,6 +287,7 @@ describe("public repository release readiness", () => {
     const compatibility = readFileSync("docs/public-framework/compatibility-policy.md", "utf8");
     const deprecation = readFileSync("docs/public-framework/deprecation-policy.md", "utf8");
     const certification = readFileSync("docs/public-framework/v1-certification.md", "utf8");
+    const normalizedCertification = certification.replace(/\s+/g, " ");
     const licenseDecision = readFileSync("docs/public-framework/license-decision.md", "utf8");
     const npmPreflight = readFileSync("docs/public/npm-release-preflight.md", "utf8");
     const apiPolicy = readFileSync("docs/api/public-api-policy.md", "utf8");
@@ -313,6 +321,12 @@ describe("public repository release readiness", () => {
     expect(certification).toContain("Node 20.x, 22.x, and 24.x");
     expect(certification).toContain("npm run release:preflight:npm");
     expect(certification).toContain("Manual Review Checklist");
+    expect(normalizedCertification).toContain(
+      "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework"
+    );
+    expect(normalizedCertification).toContain(
+      "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript"
+    );
     expect(certification).toContain("Live integration tests are opt-in");
     expect(licenseDecision).toContain("AICF uses the MIT license");
     expect(licenseDecision).toContain("npm run check:metadata");
@@ -328,7 +342,43 @@ describe("public repository release readiness", () => {
     expect(npmPreflight).toContain("latest");
     expect(apiPolicy).toContain("ai-capability-framework/cli");
     expect(apiPolicy).toContain("not exported from the root package");
-    expect(readFileSync("docs/public-framework/final-certification-matrix.md", "utf8")).toContain("Final Certification Matrix");
+    const finalMatrix = readFileSync("docs/public-framework/final-certification-matrix.md", "utf8");
+    const normalizedFinalMatrix = finalMatrix.replace(/\s+/g, " ");
+    expect(finalMatrix).toContain("Final Certification Matrix");
+    expect(normalizedFinalMatrix).toContain(
+      "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework"
+    );
+  });
+
+  it("public readability checker passes on the current repository", () => {
+    expect(runPublicReadabilityCheck()).toEqual([]);
+  });
+
+  it("public readability checker rejects collapsed docs and config fixtures", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "aicf-readability-"));
+    await mkdir(path.join(root, ".github", "workflows"), { recursive: true });
+    await mkdir(path.join(root, "agent-skills", ".codex-plugin"), { recursive: true });
+
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Title This body sentence is collapsed onto the heading line and should be rejected by the public readability guard.\n"
+    );
+    await writeFile(path.join(root, "CHANGELOG.md"), "```bash npm test ```\n");
+    await writeFile(path.join(root, "CONTRIBUTING.md"), `${Array.from({ length: 6 }, () => "x".repeat(241)).join("\n")}\n`);
+    await writeFile(path.join(root, "GOVERNANCE.md"), "Before | A | B | | --- | --- | | X | Y | after\n");
+    await writeFile(path.join(root, ".github", "workflows", "ci.yml"), "name: CI\n");
+    await writeFile(path.join(root, "package.json"), JSON.stringify({ name: "collapsed" }));
+    await writeFile(path.join(root, "agent-skills", "package.json"), JSON.stringify({ name: "collapsed" }));
+    await writeFile(path.join(root, "agent-skills", ".codex-plugin", "plugin.json"), JSON.stringify({ name: "collapsed" }));
+
+    const failures = runPublicReadabilityCheck(root).join("\n");
+
+    expect(failures).toContain("collapsed heading/body line");
+    expect(failures).toContain("fenced code block on one line");
+    expect(failures).toContain("non-table line(s) over 240 characters");
+    expect(failures).toContain("collapsed Markdown table");
+    expect(failures).toContain("Workflow YAML");
+    expect(failures).toContain("Public JSON");
   });
 
   it("final certification assertions pass against the current public repository", () => {

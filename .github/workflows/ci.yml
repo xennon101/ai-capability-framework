@@ -67,6 +67,9 @@ jobs:
       - name: Check docs and config formatting
         run: npm run format:check
 
+      - name: Check public readability
+        run: npm run check:readability
+
       - name: Run governance gate
         run: npm run gate:examples
 

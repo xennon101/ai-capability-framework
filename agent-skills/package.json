@@ -45,7 +45,8 @@
     "check:index": "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check",
     "test": "node --test tests/*.test.mjs",
     "check:release": "node scripts/check-release-readiness.mjs",
-    "check": "npm run validate && npm run check:triggers && npm run check:index && npm run test && npm run check:public && npm run check:release",
+    "check:release-install": "node scripts/check-release-install.mjs",
+    "check": "npm run validate && npm run check:triggers && npm run check:index && npm run test && npm run check:public && npm run check:release && npm run check:release-install",
     "pack:dry": "npm pack --dry-run"
   },
   "engines": {

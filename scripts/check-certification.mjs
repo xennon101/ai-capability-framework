@@ -37,6 +37,7 @@ const expectedExactScripts = new Map([
   ["format", "prettier --write ."],
   ["format:check", "prettier --check ."],
   ["lint", "node scripts/check-repo-lint.mjs"],
+  ["check:readability", "node scripts/check-public-readability.mjs"],
   ["release:preflight:npm", "node scripts/check-npm-release-preflight.mjs"],
   ["release:publish:dry", "node scripts/check-publish-dry-run.mjs"],
   ["test", "npm run build --silent && vitest run"],
@@ -44,7 +45,7 @@ const expectedExactScripts = new Map([
   ["conformance", "node dist/cli.js conformance run examples --format text"],
   ["gate:examples", "node dist/cli.js gate examples --env production"],
   ["docs:api", "typedoc --options typedoc.json"],
-  ["docs:build", "npm run docs:api && npm run check:docs"],
+  ["docs:build", "npm run docs:api && npm run check:docs && npm run check:readability"],
   ["check:package", "npm run build && npm run check:package:contents && npm run check:package-public && npm run check:release-install"],
   ["check:metadata", "node scripts/check-metadata.mjs"],
   ["check:licenses", "node scripts/check-licenses.mjs"],
@@ -72,6 +73,7 @@ expectScriptContains("check", [
   "npm run conformance",
   "npm run gate:examples",
   "npm run format:check",
+  "npm run check:readability",
   "npm run docs:build",
   "npm run check:package",
   "npm run check:workspace-public"
@@ -85,6 +87,7 @@ expectScriptContains("check:certification", [
   "npm run validate",
   "npm run conformance",
   "npm run format:check",
+  "npm run check:readability",
   "npm run gate:examples",
   "npm run docs:build",
   "npm run check:package",
@@ -92,6 +95,7 @@ expectScriptContains("check:certification", [
   "npm run check:metadata",
   "npm run check:licenses",
   "npm run check:final-matrix",
+  "npm run check:readability",
   "npm run check:runtime",
   "npm run check:optional",
   "npm run check:providers:mock",
@@ -150,6 +154,8 @@ expectFileContains("docs/public-framework/v1-certification.md", [
   "npm run release:publish:dry",
   "Manual Review Checklist",
   "npm package contents",
+  "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework",
+  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript",
   "fresh-machine quickstart",
   "no private docs or planning artifacts",
   "no raw provider payloads",
@@ -173,6 +179,8 @@ expectFileContains("docs/public-framework/final-certification-matrix.md", [
   "Final Certification Matrix",
   "npm run check:final-matrix",
   "npm run release:publish:dry",
+  "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework",
+  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript",
   "Node 20.x, 22.x, and 24.x",
   "Do not zip the working directory manually"
 ]);
@@ -199,6 +207,7 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "\"24.x\"",
   "node-version: ${{ matrix.node }}",
   "npm run format:check",
+  "npm run check:readability",
   "npm --prefix agent-skills ci",
   "npm run skills:check"
 ]);
@@ -209,7 +218,9 @@ expectWorkflowContains(".github/workflows/release-dry-run.yml", [
   "npm run release:publish:dry"
 ]);
 expectWorkflowContains(".github/workflows/security.yml", [
+  "npm --prefix agent-skills ci",
   "npm audit --omit=dev --audit-level=high",
+  "npm --prefix agent-skills audit --omit=dev --audit-level=high",
   "npm run check:licenses",
   "npm run check:secrets",
   "npm run check:package-public",
@@ -278,6 +289,7 @@ for (const required of [
   "assets/aicf-agent-skills-icon.svg",
   "assets/aicf-agent-skills-logo.svg",
   "scripts/aicf-skills.mjs",
+  "scripts/check-release-install.mjs",
   "scripts/check-release-readiness.mjs"
 ]) {
   expect(agentPackFiles.includes(required), `Agent-skills package dry-run missing expected file: ${required}`);

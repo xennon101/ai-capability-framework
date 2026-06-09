@@ -96,3 +96,8 @@ Before stable v1, maintainers should also review README positioning, MIT license
 consistency, provider-neutral onboarding, at least one non-OpenAI quickstart, agent
 skills install docs, npm ownership, trusted publishing, source archive contents, opt-in
 live test boundaries, and root import optional-dependency isolation.
+
+- GitHub repository About/description says AICF is a provider-agnostic governed AI
+  capability framework.
+- GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp,
+  typescript.
