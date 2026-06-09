@@ -32,6 +32,11 @@ npm run release:publish:dry
 npm pack --dry-run --json
 ```
 
+`npm run release:publish:dry` runs package publish dry-runs while the target version is
+unpublished. After both public packages at the current version are already on npm, it
+exits successfully with a skip message. A partial state, where only one package version
+is published, remains a failure and must be handled with the documented recovery path.
+
 Use `npm pack` for npm artifact review and `npm run archive:source` for source review.
 Do not zip the working directory manually.
 

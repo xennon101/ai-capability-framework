@@ -101,6 +101,11 @@ npm pack
 `npm run release:publish:dry` wraps `npm publish --dry-run` for the root package and for
 `@aicf/agent-skills` with the computed `next` or `latest` dist tag.
 
+If both package versions are already published, the command exits successfully and
+reports that publish dry-runs were skipped. That keeps post-release `main` checks from
+failing on npm's immutable-version rule. If only one package version is published, the
+command fails and the partial publish recovery steps below apply.
+
 Then inspect:
 
 ```bash

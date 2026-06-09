@@ -300,40 +300,81 @@ describe("public repository release readiness", () => {
     const prereleaseRoot = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-prerelease-"));
     await mkdir(path.join(prereleaseRoot, "agent-skills"), { recursive: true });
     await writePackageSet(prereleaseRoot, "1.0.0-rc.6");
-    const prereleaseCommands: string[] = [];
     const prerelease = runPublishDryRun({
       root: prereleaseRoot,
-      exec: (_command, args) => {
-        prereleaseCommands.push(args.join(" "));
-        return "dry run ok";
-      }
+      exec: mockNpmExec({
+        "view ai-capability-framework@1.0.0-rc.6 version --json": npm404(),
+        "view @aicf/agent-skills@1.0.0-rc.6 version --json": npm404(),
+        "publish --dry-run --access public --tag next": "dry run ok",
+        "publish ./agent-skills --dry-run --access public --tag next": "dry run ok"
+      })
     });
 
     expect(prerelease.ok).toBe(true);
     expect(prerelease.distTag).toBe("next");
-    expect(prereleaseCommands).toEqual([
-      "publish --dry-run --access public --tag next",
-      "publish ./agent-skills --dry-run --access public --tag next"
+    expect(prerelease.skipped).toBe(false);
+    expect(prerelease.commands).toEqual([
+      "npm publish --dry-run --access public --tag next",
+      "npm publish ./agent-skills --dry-run --access public --tag next"
     ]);
 
     const root = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-"));
     await mkdir(path.join(root, "agent-skills"), { recursive: true });
     await writePackageSet(root, "1.0.0");
-    const stableCommands: string[] = [];
     const stable = runPublishDryRun({
       root,
-      exec: (_command, args) => {
-        stableCommands.push(args.join(" "));
-        return "dry run ok";
-      }
+      exec: mockNpmExec({
+        "view ai-capability-framework@1.0.0 version --json": npm404(),
+        "view @aicf/agent-skills@1.0.0 version --json": npm404(),
+        "publish --dry-run --access public --tag latest": "dry run ok",
+        "publish ./agent-skills --dry-run --access public --tag latest": "dry run ok"
+      })
     });
 
     expect(stable.ok).toBe(true);
     expect(stable.distTag).toBe("latest");
-    expect(stableCommands).toEqual([
-      "publish --dry-run --access public --tag latest",
-      "publish ./agent-skills --dry-run --access public --tag latest"
+    expect(stable.skipped).toBe(false);
+    expect(stable.commands).toEqual([
+      "npm publish --dry-run --access public --tag latest",
+      "npm publish ./agent-skills --dry-run --access public --tag latest"
     ]);
+  });
+
+  it("publish dry-run wrapper skips cleanly after both package versions are published", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-published-"));
+    await mkdir(path.join(root, "agent-skills"), { recursive: true });
+    await writePackageSet(root, "1.0.0");
+
+    const report = runPublishDryRun({
+      root,
+      exec: mockNpmExec({
+        "view ai-capability-framework@1.0.0 version --json": "\"1.0.0\"",
+        "view @aicf/agent-skills@1.0.0 version --json": "\"1.0.0\""
+      })
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.skipped).toBe(true);
+    expect(report.commands).toEqual([]);
+    expect(report.warnings.join("\n")).toContain("already published");
+  });
+
+  it("publish dry-run wrapper fails partial publish states", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-partial-"));
+    await mkdir(path.join(root, "agent-skills"), { recursive: true });
+    await writePackageSet(root, "1.0.0");
+
+    const report = runPublishDryRun({
+      root,
+      exec: mockNpmExec({
+        "view ai-capability-framework@1.0.0 version --json": "\"1.0.0\"",
+        "view @aicf/agent-skills@1.0.0 version --json": npm404()
+      })
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.commands).toEqual([]);
+    expect(report.failures.join("\n")).toContain("partial-publish state");
   });
 
   it("secret scanner catches high-confidence credentials and allows synthetic examples", async () => {

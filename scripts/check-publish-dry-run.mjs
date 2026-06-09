@@ -10,11 +10,13 @@ export function runPublishDryRun(options = {}) {
   const exec = options.exec ?? defaultExec;
   const failures = [];
   const commands = [];
+  const registryChecks = [];
+  const warnings = [];
 
   const rootPackage = readJson(path.join(root, "package.json"), failures, "package.json");
   const agentPackage = readJson(path.join(root, "agent-skills", "package.json"), failures, "agent-skills/package.json");
   if (!rootPackage || !agentPackage) {
-    return { ok: false, distTag: "unknown", commands, failures };
+    return { ok: false, distTag: "unknown", commands, registryChecks, warnings, failures, skipped: false };
   }
 
   const distTag = distTagForVersion(rootPackage.version);
@@ -32,7 +34,28 @@ export function runPublishDryRun(options = {}) {
   }
 
   if (failures.length > 0) {
-    return { ok: false, distTag, commands, failures };
+    return { ok: false, distTag, commands, registryChecks, warnings, failures, skipped: false };
+  }
+
+  const published = [
+    checkPublishedVersion(exec, root, rootPackage.name, rootPackage.version, registryChecks, failures),
+    checkPublishedVersion(exec, root, agentPackage.name, agentPackage.version, registryChecks, failures)
+  ];
+
+  if (failures.length > 0) {
+    return { ok: false, distTag, commands, registryChecks, warnings, failures, skipped: false };
+  }
+
+  const publishedCount = published.filter(Boolean).length;
+  if (publishedCount === published.length) {
+    warnings.push(`Both packages at ${rootPackage.version} are already published; publish dry-runs are skipped.`);
+    return { ok: true, distTag, commands, registryChecks, warnings, failures, skipped: true };
+  }
+  if (publishedCount > 0) {
+    failures.push(
+      "Only one target package version is already published. Treat this as a partial-publish state and use the release recovery docs before retrying."
+    );
+    return { ok: false, distTag, commands, registryChecks, warnings, failures, skipped: false };
   }
 
   for (const command of [
@@ -52,6 +75,9 @@ export function runPublishDryRun(options = {}) {
     ok: failures.length === 0,
     distTag,
     commands,
+    registryChecks,
+    warnings,
+    skipped: false,
     failures
   };
 }
@@ -60,10 +86,26 @@ export function formatPublishDryRunReport(report) {
   const lines = [];
   lines.push(`Publish dry-run ${report.ok ? "passed" : "failed"}.`);
   lines.push(`Dist tag: ${report.distTag}.`);
+  if (report.skipped) {
+    lines.push("Status: skipped because the current version is already published for both packages.");
+  }
+  if (report.registryChecks?.length > 0) {
+    lines.push("");
+    lines.push("Registry checks:");
+    for (const check of report.registryChecks) lines.push(`- ${check}`);
+  }
   lines.push("");
   lines.push("Commands:");
   for (const command of report.commands) {
     lines.push(`- ${command}`);
+  }
+  if (report.commands.length === 0) {
+    lines.push("- none");
+  }
+  if (report.warnings?.length > 0) {
+    lines.push("");
+    lines.push("Warnings:");
+    for (const warning of report.warnings) lines.push(`- ${warning}`);
   }
   if (report.failures.length > 0) {
     lines.push("");
@@ -75,6 +117,24 @@ export function formatPublishDryRunReport(report) {
 
 export function distTagForVersion(version) {
   return typeof version === "string" && version.includes("-") ? "next" : "latest";
+}
+
+function checkPublishedVersion(exec, root, packageName, version, registryChecks, failures) {
+  const args = ["view", `${packageName}@${version}`, "version", "--json"];
+  registryChecks.push(`npm ${args.join(" ")}`);
+  try {
+    exec("npm", args, { cwd: root });
+    return true;
+  } catch (error) {
+    if (isNotFoundError(error)) return false;
+    failures.push(`Unable to determine npm publication state for ${packageName}@${version}: ${safeMessage(error)}`);
+    return false;
+  }
+}
+
+function isNotFoundError(error) {
+  const text = String(`${error?.status ?? ""} ${error?.stderr ?? ""} ${error?.message ?? ""}`);
+  return text.includes("E404") || text.includes("404") || text.includes("No match found");
 }
 
 function readJson(file, failures, label) {
