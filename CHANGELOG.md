@@ -4,8 +4,8 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
-- Prepared the `1.0.0-rc.5` release candidate and made `@aicf/agent-skills` a
-  first-class same-version npm artifact in certification, CI, release dry-run, and
+- Prepared the `1.0.0` stable release and made `@aicf/agent-skills` a first-class
+  same-version npm artifact in certification, CI, release dry-run, and
   trusted-publishing workflows.
 - Added the final v1.0 certification gate with `check:public`, `check:certification`,
   public certification docs, workflow hardening, and release-readiness assertions for

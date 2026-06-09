@@ -11,7 +11,7 @@ boundary and makes the release operator verify ownership and publishing setup.
 | `@aicf/agent-skills`      | `@aicf` npm scope       | public | Published from the same release tag and version, before the root package. |
 
 Both packages must use the same version. Release tags must match that version exactly:
-package version `1.0.0-rc.5` uses tag `v1.0.0-rc.5`.
+package version `1.0.0` uses tag `v1.0.0`.
 
 ## Ownership
 
@@ -29,7 +29,7 @@ trusted publishing setup must exist before the tag is pushed.
 
 ## Dist Tags
 
-- Prerelease versions with a hyphen, such as `1.0.0-rc.5`, publish with `next`.
+- Prerelease versions with a hyphen, such as `1.0.0-rc.6`, publish with `next`.
 - Stable versions, such as `1.0.0`, publish with `latest`.
 - Do not move `latest` to a prerelease intentionally. If a prerelease lands on `latest`,
   fix the dist tags before announcing the release.
@@ -41,6 +41,11 @@ tokens, one-time passwords, local `.npmrc` auth lines, or long-lived release
 credentials. The publish workflow must keep `id-token: write` and publish only from `v*`
 tags that point at `origin/main`.
 
+AICF uses npm Trusted Publishing / GitHub OIDC for both public packages:
+
+- `ai-capability-framework`
+- `@aicf/agent-skills`
+
 ## Preflight Commands
 
 See [Final Certification Matrix](../public-framework/final-certification-matrix.md) for
@@ -50,6 +55,10 @@ Run the final matrix and local metadata/registry preflight:
 
 ```bash
 npm run check:final-matrix
+```
+
+```bash
+npm run check:release-tag
 ```
 
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "@aicf/agent-skills",
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0",
   "description": "Agent Skills for building, integrating, testing, auditing, and releasing AICF-based AI capability systems.",
   "type": "module",
   "license": "MIT",

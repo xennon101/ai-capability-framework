@@ -130,11 +130,11 @@ async function createFixture(options: {
 
   await writeFile(
     path.join(root, "package.json"),
-    JSON.stringify({ name: "ai-capability-framework", version: "1.0.0-rc.5", license: "MIT" })
+    JSON.stringify({ name: "ai-capability-framework", version: "1.0.0", license: "MIT" })
   );
   await writeFile(
     path.join(root, "agent-skills", "package.json"),
-    JSON.stringify({ name: "@aicf/agent-skills", version: "1.0.0-rc.5", license: "MIT" })
+    JSON.stringify({ name: "@aicf/agent-skills", version: "1.0.0", license: "MIT" })
   );
   await writeFile(
     path.join(root, "package-lock.json"),
@@ -156,7 +156,7 @@ function lockfile(name: string, packages: Array<[string, string, string, string 
   const entries: Record<string, unknown> = {
     "": {
       name,
-      version: "1.0.0-rc.5",
+      version: "1.0.0",
       license: "MIT"
     }
   };
@@ -168,7 +168,7 @@ function lockfile(name: string, packages: Array<[string, string, string, string 
   }
   return {
     name,
-    version: "1.0.0-rc.5",
+    version: "1.0.0",
     lockfileVersion: 3,
     packages: entries
   };

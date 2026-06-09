@@ -11,6 +11,7 @@ import { runLicenseCheck } from "../../../scripts/check-licenses.mjs";
 import { runFinalCertificationMatrix } from "../../../scripts/check-final-certification-matrix.mjs";
 import { runPublishDryRun } from "../../../scripts/check-publish-dry-run.mjs";
 import { runPublicReadabilityCheck } from "../../../scripts/check-public-readability.mjs";
+import { runReleaseTagAlignment } from "../../../scripts/check-release-tag-alignment.mjs";
 
 describe("public repository release readiness", () => {
   it("root policy docs contain F16 public repository guidance", () => {
@@ -56,12 +57,13 @@ describe("public repository release readiness", () => {
     expect(packageJson.scripts["format:check"]).toBe("prettier --check .");
     expect(packageJson.scripts.lint).toBe("node scripts/check-repo-lint.mjs");
     expect(packageJson.scripts["release:preflight:npm"]).toBe("node scripts/check-npm-release-preflight.mjs");
-    expect(packageJson.scripts["release:publish:dry"]).toBe("node scripts/check-publish-dry-run.mjs");
+    expect(packageJson.scripts["release:publish:dry"]).toBe("npm run check:release-tag && node scripts/check-publish-dry-run.mjs");
     expect(packageJson.scripts.conformance).toBe("node dist/cli.js conformance run examples --format text");
     expect(packageJson.scripts["gate:examples"]).toBe("node dist/cli.js gate examples --env production");
     expect(packageJson.scripts["check:secrets"]).toBe("node scripts/check-secrets.mjs");
     expect(packageJson.scripts["check:metadata"]).toBe("node scripts/check-metadata.mjs");
     expect(packageJson.scripts["check:licenses"]).toBe("node scripts/check-licenses.mjs");
+    expect(packageJson.scripts["check:release-tag"]).toBe("node scripts/check-release-tag-alignment.mjs");
     expect(packageJson.scripts["check:final-matrix"]).toBe("node scripts/check-final-certification-matrix.mjs");
     expect(packageJson.scripts["check:readability"]).toBe("node scripts/check-public-readability.mjs");
     expect(packageJson.scripts["check:package:contents"]).toBe("node scripts/check-package.mjs");
@@ -72,6 +74,7 @@ describe("public repository release readiness", () => {
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:public");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:metadata");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:licenses");
+    expect(packageJson.scripts["check:certification"]).toContain("npm run check:release-tag");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:final-matrix");
     expect(packageJson.scripts["check:certification"]).toContain("npm run format:check");
     expect(packageJson.scripts["check:certification"]).toContain("npm run check:readability");
@@ -125,6 +128,8 @@ describe("public repository release readiness", () => {
     }
 
     expect(dryRun).toContain("npm run check:certification");
+    expect(dryRun).toContain("fetch-depth: 0");
+    expect(dryRun).toContain("npm run check:release-tag");
     expect(dryRun).toContain("npm run archive:source");
     expect(dryRun).toContain("npm run check:source-archive");
     expect(dryRun).toContain("npm run release:publish:dry");
@@ -137,11 +142,13 @@ describe("public repository release readiness", () => {
     expect(security).toContain("npm run check:workspace-public");
     expect(docs).toContain("npm run docs:build");
     expect(publish).toContain("tags:");
+    expect(publish).toContain("fetch-depth: 0");
     expect(publish).toContain("id-token: write");
     expect(publish).toContain("AGENT_VERSION=$(node -p \"require('./agent-skills/package.json').version\")");
     expect(publish).toContain("PLUGIN_VERSION=$(node -p \"require('./agent-skills/.codex-plugin/plugin.json').version\")");
     expect(publish).toContain("npm view \"ai-capability-framework@${VERSION}\" version");
     expect(publish).toContain("npm view \"@aicf/agent-skills@${VERSION}\" version");
+    expect(publish).toContain("npm run check:release-tag");
     expect(publish).toContain("npm run check:certification");
     expect(publish).toContain("npm publish --dry-run");
     expect(publish).toContain("npm publish ./agent-skills --dry-run --access public --tag");
@@ -158,15 +165,15 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0-rc.5 version --json": npm404(),
+        "view ai-capability-framework@1.0.0 version --json": npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0 version --json": npm404()
       })
     });
 
     expect(report.ok).toBe(true);
-    expect(report.expectedDistTag).toBe("next");
+    expect(report.expectedDistTag).toBe("latest");
     expect(report.warnings.join("\n")).toContain("@aicf/agent-skills is not published yet");
   });
 
@@ -176,18 +183,18 @@ describe("public repository release readiness", () => {
         "whoami": "aicf-maintainer\n",
         "view ai-capability-framework name version dist-tags --json": {
           name: "ai-capability-framework",
-          version: "1.0.0-rc.5",
-          "dist-tags": { next: "1.0.0-rc.5" }
+          version: "1.0.0",
+          "dist-tags": { next: "1.0.0" }
         },
-        "view ai-capability-framework@1.0.0-rc.5 version --json": "\"1.0.0-rc.5\"",
+        "view ai-capability-framework@1.0.0 version --json": "\"1.0.0\"",
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0 version --json": npm404()
       })
     });
 
     expect(alreadyPublished.ok).toBe(false);
-    expect(alreadyPublished.failures.join("\n")).toContain("ai-capability-framework@1.0.0-rc.5 is already published");
+    expect(alreadyPublished.failures.join("\n")).toContain("ai-capability-framework@1.0.0 is already published");
 
     const strictFirstPublish = runNpmReleasePreflight({
       strict: true,
@@ -198,10 +205,10 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0-rc.5 version --json": npm404(),
+        "view ai-capability-framework@1.0.0 version --json": npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0-rc.5 version --json": npm404()
+        "view @aicf/agent-skills@1.0.0 version --json": npm404()
       })
     });
 
@@ -214,7 +221,7 @@ describe("public repository release readiness", () => {
     await mkdir(path.join(root, "agent-skills"), { recursive: true });
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ name: "wrong-name", version: "1.0.0-rc.5", private: false, publishConfig: { access: "public" } })
+      JSON.stringify({ name: "wrong-name", version: "1.0.0", private: false, publishConfig: { access: "public" } })
     );
     await writeFile(
       path.join(root, "agent-skills", "package.json"),
@@ -228,9 +235,74 @@ describe("public repository release readiness", () => {
     expect(report.failures).toContain("Root and agent-skills package versions must match before release.");
   });
 
+  it("release tag alignment guard handles version and tag states safely", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "aicf-release-tag-"));
+    await mkdir(path.join(root, "agent-skills", ".codex-plugin"), { recursive: true });
+    await mkdir(path.join(root, ".git"), { recursive: true });
+    await writePackageSet(root, "1.0.0", { includePlugin: true });
+
+    const noTag = runReleaseTagAlignment({
+      root,
+      exec: mockGitExec({
+        "rev-parse --git-dir": ".git\n",
+        "rev-parse HEAD": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+        "rev-list -n 1 refs/tags/v1.0.0": gitError("unknown revision")
+      })
+    });
+    expect(noTag.ok).toBe(true);
+    expect(noTag.tagSha).toBeUndefined();
+
+    const tagAtHead = runReleaseTagAlignment({
+      root,
+      exec: mockGitExec({
+        "rev-parse --git-dir": ".git\n",
+        "rev-parse HEAD": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+        "rev-list -n 1 refs/tags/v1.0.0": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+      })
+    });
+    expect(tagAtHead.ok).toBe(true);
+
+    const tagElsewhere = runReleaseTagAlignment({
+      root,
+      exec: mockGitExec({
+        "rev-parse --git-dir": ".git\n",
+        "rev-parse HEAD": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+        "rev-list -n 1 refs/tags/v1.0.0": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+      })
+    });
+    expect(tagElsewhere.ok).toBe(false);
+    expect(tagElsewhere.failures.join("\n")).toContain("Version 1.0.0 is already tagged at bbbbbbb, but HEAD is aaaaaaa");
+  });
+
+  it("release tag alignment guard fails version mismatches and handles source archives without git", async () => {
+    const mismatchRoot = await mkdtemp(path.join(tmpdir(), "aicf-release-tag-mismatch-"));
+    await mkdir(path.join(mismatchRoot, "agent-skills", ".codex-plugin"), { recursive: true });
+    await writePackageSet(mismatchRoot, "1.0.0", { agentVersion: "1.0.1", includePlugin: true });
+
+    const mismatch = runReleaseTagAlignment({ root: mismatchRoot, exec: mockGitExec({}) });
+    expect(mismatch.ok).toBe(false);
+    expect(mismatch.failures.join("\n")).toContain("agent-skills package version 1.0.1 does not match root package version 1.0.0");
+
+    const sourceArchiveRoot = await mkdtemp(path.join(tmpdir(), "aicf-release-tag-no-git-"));
+    await mkdir(path.join(sourceArchiveRoot, "agent-skills", ".codex-plugin"), { recursive: true });
+    await writePackageSet(sourceArchiveRoot, "1.0.0", { includePlugin: true });
+
+    const noGit = runReleaseTagAlignment({ root: sourceArchiveRoot, exec: mockGitExec({}) });
+    expect(noGit.ok).toBe(true);
+    expect(noGit.warnings.join("\n")).toContain("Git metadata is unavailable");
+
+    const strictNoGit = runReleaseTagAlignment({ root: sourceArchiveRoot, requireGit: true, exec: mockGitExec({}) });
+    expect(strictNoGit.ok).toBe(false);
+    expect(strictNoGit.failures.join("\n")).toContain("Git metadata is unavailable");
+  });
+
   it("publish dry-run wrapper computes dist tags and runs both package dry-runs", async () => {
+    const prereleaseRoot = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-prerelease-"));
+    await mkdir(path.join(prereleaseRoot, "agent-skills"), { recursive: true });
+    await writePackageSet(prereleaseRoot, "1.0.0-rc.6");
     const prereleaseCommands: string[] = [];
     const prerelease = runPublishDryRun({
+      root: prereleaseRoot,
       exec: (_command, args) => {
         prereleaseCommands.push(args.join(" "));
         return "dry run ok";
@@ -246,14 +318,7 @@ describe("public repository release readiness", () => {
 
     const root = await mkdtemp(path.join(tmpdir(), "aicf-publish-dry-run-"));
     await mkdir(path.join(root, "agent-skills"), { recursive: true });
-    await writeFile(
-      path.join(root, "package.json"),
-      JSON.stringify({ name: "ai-capability-framework", version: "1.0.0", private: false, publishConfig: { access: "public" } })
-    );
-    await writeFile(
-      path.join(root, "agent-skills", "package.json"),
-      JSON.stringify({ name: "@aicf/agent-skills", version: "1.0.0", private: false, publishConfig: { access: "public" } })
-    );
+    await writePackageSet(root, "1.0.0");
     const stableCommands: string[] = [];
     const stable = runPublishDryRun({
       root,
@@ -297,10 +362,14 @@ describe("public repository release readiness", () => {
     expect(release).toContain("engines.node >=20");
     expect(release).toContain("npm run check:certification");
     expect(release).toContain("npm run check:metadata");
+    expect(release).toContain("npm run check:release-tag");
     expect(release).toContain("npm run release:preflight:npm");
     expect(release).toContain("npm run check:final-matrix");
     expect(release).toContain("npm run release:publish:dry");
     expect(release).toContain("npm run check:licenses");
+    expect(release).toContain("npm provenance and trusted publishing");
+    expect(release).toContain("Partial publish recovery");
+    expect(release).toContain("GitHub repository metadata");
     expect(release).toContain("Do not zip the workspace directory");
     expect(process).toContain("semantic versioning");
     expect(process).toContain("npm run check:certification");
@@ -308,6 +377,7 @@ describe("public repository release readiness", () => {
     expect(process).toContain("npm run check:final-matrix");
     expect(process).toContain("npm run release:publish:dry");
     expect(process).toContain("npm run check:licenses");
+    expect(process).toContain("npm run check:release-tag");
     expect(process).toContain("trusted publishing");
     expect(compatibility).toContain("Breaking changes include");
     expect(compatibility).toContain("Minor changes include");
@@ -317,6 +387,7 @@ describe("public repository release readiness", () => {
     expect(certification).toContain("npm run check:metadata");
     expect(certification).toContain("npm run check:final-matrix");
     expect(certification).toContain("npm run check:licenses");
+    expect(certification).toContain("npm run check:release-tag");
     expect(certification).toContain("Public API Policy");
     expect(certification).toContain("Node 20.x, 22.x, and 24.x");
     expect(certification).toContain("npm run release:preflight:npm");
@@ -325,7 +396,7 @@ describe("public repository release readiness", () => {
       "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework"
     );
     expect(normalizedCertification).toContain(
-      "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript"
+      "GitHub topics include at least: ai, agents, tool-calling, evals, governance, model-context-protocol, langchain, gemini, anthropic, openai, typescript"
     );
     expect(certification).toContain("Live integration tests are opt-in");
     expect(licenseDecision).toContain("AICF uses the MIT license");
@@ -337,6 +408,7 @@ describe("public repository release readiness", () => {
     expect(npmPreflight).toContain("npm owner ls");
     expect(npmPreflight).toContain("Trusted Publishing");
     expect(npmPreflight).toContain("npm run check:final-matrix");
+    expect(npmPreflight).toContain("npm run check:release-tag");
     expect(npmPreflight).toContain("npm run release:publish:dry");
     expect(npmPreflight).toContain("next");
     expect(npmPreflight).toContain("latest");
@@ -345,8 +417,12 @@ describe("public repository release readiness", () => {
     const finalMatrix = readFileSync("docs/public-framework/final-certification-matrix.md", "utf8");
     const normalizedFinalMatrix = finalMatrix.replace(/\s+/g, " ");
     expect(finalMatrix).toContain("Final Certification Matrix");
+    expect(finalMatrix).toContain("npm run check:release-tag");
     expect(normalizedFinalMatrix).toContain(
       "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework"
+    );
+    expect(normalizedFinalMatrix).toContain(
+      "GitHub topics include at least: ai, agents, tool-calling, evals, governance, model-context-protocol, langchain, gemini, anthropic, openai, typescript"
     );
   });
 
@@ -431,6 +507,47 @@ function mockNpmExec(responses: Record<string, unknown>) {
     }
     return typeof response === "string" ? response : JSON.stringify(response);
   };
+}
+
+function mockGitExec(responses: Record<string, unknown>) {
+  return (_command: string, args: string[]) => {
+    const key = args.join(" ");
+    const response = responses[key];
+    if (response instanceof Error) {
+      throw response;
+    }
+    if (response === undefined) {
+      throw gitError(`unexpected git command: ${key}`);
+    }
+    return String(response);
+  };
+}
+
+function gitError(message: string) {
+  return Object.assign(new Error(message), {
+    status: 1,
+    stdout: "",
+    stderr: message
+  });
+}
+
+async function writePackageSet(
+  root: string,
+  version: string,
+  options: { agentVersion?: string; includePlugin?: boolean } = {}
+) {
+  const agentVersion = options.agentVersion ?? version;
+  await writeFile(
+    path.join(root, "package.json"),
+    JSON.stringify({ name: "ai-capability-framework", version, private: false, publishConfig: { access: "public" } })
+  );
+  await writeFile(
+    path.join(root, "agent-skills", "package.json"),
+    JSON.stringify({ name: "@aicf/agent-skills", version: agentVersion, private: false, publishConfig: { access: "public" } })
+  );
+  if (options.includePlugin) {
+    await writeFile(path.join(root, "agent-skills", ".codex-plugin", "plugin.json"), JSON.stringify({ version }));
+  }
 }
 
 function npm404() {

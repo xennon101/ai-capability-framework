@@ -76,7 +76,7 @@ name: ${name}
 ${descriptionLine}license: MIT
 compatibility: Codex and Agent Skills-compatible coding agents.
 ${options.extraFrontmatter ?? ""}metadata:
-  aicf.skill.version: "1.0.0-rc.5"
+  aicf.skill.version: "1.0.0"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "test"
   aicf.skill.scope: "builder"

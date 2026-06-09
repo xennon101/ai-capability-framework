@@ -1,7 +1,6 @@
 # Release Checklist
 
-This checklist prepares an AICF 1.0 release candidate for GitHub and public npm
-distribution.
+This checklist prepares an AICF public release for GitHub and npm distribution.
 
 ## Preflight
 
@@ -66,6 +65,7 @@ npm run skills:check
 npm run skills:pack:dry
 npm run check:metadata
 npm run check:licenses
+npm run check:release-tag
 npm run check:final-matrix
 npm run check:release
 npm run check:release:providers
@@ -95,10 +95,11 @@ npm test -- openai-agents
 npm pack --dry-run --json
 npm run release:preflight:npm
 npm run release:publish:dry
-npm publish --dry-run --access public --tag next
-npm publish ./agent-skills --dry-run --access public --tag next
 npm pack
 ```
+
+`npm run release:publish:dry` wraps `npm publish --dry-run` for the root package and for
+`@aicf/agent-skills` with the computed `next` or `latest` dist tag.
 
 Then inspect:
 
@@ -204,7 +205,12 @@ and examples should be present at `docs/index.md`, `docs/getting-started/`,
 - `.github/workflows/docs.yml` runs TypeDoc generation and docs checks for docs and
   example changes.
 
-## Trusted Publishing
+## npm provenance and trusted publishing
+
+AICF uses npm Trusted Publishing / GitHub OIDC for both public packages:
+
+- `ai-capability-framework`
+- `@aicf/agent-skills`
 
 Before relying on GitHub Actions publishing, configure trusted publishing for both npm
 packages:
@@ -233,10 +239,42 @@ account before the first real publish, and npm trusted publishing must be config
 that scoped package too.
 
 The workflow publishes only when a `v*` tag is pushed and only if the tagged commit is
-already reachable from `origin/main`. Pre-release versions such as `1.0.0-rc.5` publish
+already reachable from `origin/main`. Pre-release versions such as `1.0.0-rc.6` publish
 with the `next` dist tag. Stable versions publish with the `latest` dist tag. Root and
-agent-skills releases use the same version and tag; for package version `1.0.0-rc.5`,
-push tag `v1.0.0-rc.5`.
+agent-skills releases use the same version and tag; for package version `1.0.0`, push
+tag `v1.0.0`.
+
+## Partial publish recovery
+
+Multi-package npm publishing is not atomic. If one package publishes and the second
+fails, first verify registry state:
+
+```bash
+VERSION=$(node -p "require('./package.json').version")
+npm view "ai-capability-framework@${VERSION}" version
+npm view "@aicf/agent-skills@${VERSION}" version
+```
+
+If only `@aicf/agent-skills` published, fix the workflow or npm ownership issue and
+retry the root package publish at the same version from the same tag. If only the root
+package published, retry the agent-skills publish at the same version from the same tag.
+Do not move the public tag, delete the published version, or reuse a published npm
+version as a normal recovery path.
+
+If the tagged code is wrong, or if the failed package cannot be safely published from
+the same commit, bump both package versions and ship a follow-up patch or release
+candidate. Update GitHub release notes to say which package versions were published,
+which package failed, and which follow-up version supersedes the partial release.
+
+## GitHub repository metadata
+
+Before stable v1, update the GitHub repository About panel manually:
+
+- Description: Provider-agnostic governed capability layer for AI-accessible application
+  functionality.
+- Website: use the docs site or npm package URL when available.
+- Topics: ai, agents, tool-calling, evals, governance, model-context-protocol,
+  langchain, gemini, anthropic, openai, typescript.
 
 ## GitHub Release
 
@@ -245,8 +283,8 @@ push tag `v1.0.0-rc.5`.
 - Summarize the framework as schemas, TypeScript core, CLI, deterministic decision APIs,
   OpenAI Responses adapter, eval runner, docs, and public examples, plus optional
   runtime, observability, live-eval, and self-hostable control-plane subpaths.
-- Publish both npm pre-release packages with a non-default dist tag such as `next` until
-  the final 1.0.0 release is ready.
+- Publish prerelease packages with a non-default dist tag such as `next`. Stable
+  releases publish with `latest`.
 - Link to `CHANGELOG.md`, `docs/start-here.md`, `docs/openai-walkthrough.md`,
   `docs/glossary.md`, `docs/api.md`, `docs/spec.md`, `docs/control-plane.md`,
   `docs/openai-responses.md`, `docs/ai-sdk-runtime.md`, `docs/anthropic-runtime.md`,

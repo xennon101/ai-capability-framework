@@ -272,15 +272,14 @@ npm run skills:check
 npm run skills:pack:dry
 npm pack
 npm run release:preflight:npm
-npm publish --dry-run --access public --tag next
-npm publish ./agent-skills --dry-run --access public --tag next
+npm run release:publish:dry
 npm run archive:source
 npm run check:source-archive
 ```
 
 Release tags publish two npm artifacts from the same commit and version:
-`ai-capability-framework` and `@aicf/agent-skills`. For example, package version
-`1.0.0-rc.5` uses tag `v1.0.0-rc.5` and the `next` dist tag for both packages.
+`ai-capability-framework` and `@aicf/agent-skills`. For example, package version `1.0.0`
+uses tag `v1.0.0` and the `latest` dist tag for both packages.
 
 Use `npm pack` for npm package review and `npm run archive:source` for public source
 review. Do not zip the working directory manually; raw workspace archives can include

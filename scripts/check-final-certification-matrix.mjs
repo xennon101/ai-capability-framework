@@ -44,9 +44,10 @@ export function runFinalCertificationMatrix(options = {}) {
     ["check:release-install", "node scripts/check-release-install.mjs"],
     ["check:metadata", "node scripts/check-metadata.mjs"],
     ["check:licenses", "node scripts/check-licenses.mjs"],
+    ["check:release-tag", "node scripts/check-release-tag-alignment.mjs"],
     ["check:final-matrix", "node scripts/check-final-certification-matrix.mjs"],
     ["check:readability", "node scripts/check-public-readability.mjs"],
-    ["release:publish:dry", "node scripts/check-publish-dry-run.mjs"],
+    ["release:publish:dry", "npm run check:release-tag && node scripts/check-publish-dry-run.mjs"],
     ["skills:ci", "npm --prefix agent-skills ci"],
     ["skills:check", "npm --prefix agent-skills run check"],
     ["skills:pack:dry", "npm --prefix agent-skills run pack:dry"]
@@ -59,6 +60,7 @@ export function runFinalCertificationMatrix(options = {}) {
   }
   expectContains(scripts["check:certification"], "npm run check:final-matrix", "check:certification must include check:final-matrix.", failures);
   expectContains(scripts["check:certification"], "npm run check:licenses", "check:certification must include check:licenses.", failures);
+  expectContains(scripts["check:certification"], "npm run check:release-tag", "check:certification must include check:release-tag.", failures);
   expectContains(scripts["check:certification"], "npm run check:readability", "check:certification must include check:readability.", failures);
   expectContains(scripts["check:certification"], "npm run skills:check", "check:certification must include skills:check.", failures);
 
@@ -106,9 +108,11 @@ export function runFinalCertificationMatrix(options = {}) {
       file: ".github/workflows/release-dry-run.yml",
       snippets: [
         "name: Release Dry Run",
+        "fetch-depth: 0",
         "npm run check:certification",
         "npm run archive:source",
         "npm run check:source-archive",
+        "npm run check:release-tag",
         "npm run release:publish:dry"
       ]
     },
@@ -116,7 +120,9 @@ export function runFinalCertificationMatrix(options = {}) {
       file: ".github/workflows/publish.yml",
       snippets: [
         "name: Publish",
+        "fetch-depth: 0",
         "id-token: write",
+        "npm run check:release-tag",
         "npm run check:certification",
         "npm publish --dry-run",
         "npm publish ./agent-skills --dry-run --access public --tag",

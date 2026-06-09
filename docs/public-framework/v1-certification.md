@@ -66,6 +66,12 @@ Run the local publish dry-run wrapper before a release tag:
 npm run release:publish:dry
 ```
 
+Run the release tag alignment guard before tagging or reviewing publish workflows:
+
+```bash
+npm run check:release-tag
+```
+
 For final manual release review, run
 `node scripts/check-npm-release-preflight.mjs --strict` after npm ownership and trusted
 publishing are configured.
@@ -120,8 +126,8 @@ Before a public v1.0 tag, manually inspect:
 - fresh-machine quickstart using the public npm package or a clean checkout.
 - GitHub repository About/description says AICF is a provider-agnostic governed AI
   capability framework.
-- GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp,
-  typescript.
+- GitHub topics include at least: ai, agents, tool-calling, evals, governance,
+  model-context-protocol, langchain, gemini, anthropic, openai, typescript.
 - examples with fake data.
 - generated API docs.
 - governance/lifecycle docs.

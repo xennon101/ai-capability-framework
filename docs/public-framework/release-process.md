@@ -22,6 +22,7 @@ npm run check:certification
 npm run check:final-matrix
 npm run check:metadata
 npm run check:licenses
+npm run check:release-tag
 npm run check:release-install
 npm run skills:ci
 npm run skills:check
@@ -29,8 +30,6 @@ npm run skills:pack:dry
 npm run release:preflight:npm
 npm run release:publish:dry
 npm pack --dry-run --json
-npm publish --dry-run --access public --tag next
-npm publish ./agent-skills --dry-run --access public --tag next
 ```
 
 Use `npm pack` for npm artifact review and `npm run archive:source` for source review.

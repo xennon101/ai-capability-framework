@@ -20,12 +20,13 @@ for (const [name, expected] of [
   ["format:check", "prettier --check ."],
   ["lint", "node scripts/check-repo-lint.mjs"],
   ["release:preflight:npm", "node scripts/check-npm-release-preflight.mjs"],
-  ["release:publish:dry", "node scripts/check-publish-dry-run.mjs"],
+  ["release:publish:dry", "npm run check:release-tag && node scripts/check-publish-dry-run.mjs"],
   ["conformance", "node dist/cli.js conformance run examples --format text"],
   ["gate:examples", "node dist/cli.js gate examples --env production"],
   ["check:secrets", "node scripts/check-secrets.mjs"],
   ["check:metadata", "node scripts/check-metadata.mjs"],
   ["check:licenses", "node scripts/check-licenses.mjs"],
+  ["check:release-tag", "node scripts/check-release-tag-alignment.mjs"],
   ["check:final-matrix", "node scripts/check-final-certification-matrix.mjs"],
   ["check:readability", "node scripts/check-public-readability.mjs"],
   ["check:package:contents", "node scripts/check-package.mjs"],
@@ -43,6 +44,7 @@ expect(scripts["check:certification"]?.includes("npm run skills:check"), "packag
 expect(scripts["check:certification"]?.includes("npm run skills:pack:dry"), "package script check:certification must dry-run pack agent-skills.");
 expect(scripts["check:certification"]?.includes("npm run check:metadata"), "package script check:certification must run metadata checks.");
 expect(scripts["check:certification"]?.includes("npm run check:licenses"), "package script check:certification must run dependency license checks.");
+expect(scripts["check:certification"]?.includes("npm run check:release-tag"), "package script check:certification must run release tag alignment checks.");
 expect(scripts["check:certification"]?.includes("npm run check:final-matrix"), "package script check:certification must run final certification matrix checks.");
 expect(scripts["check:certification"]?.includes("npm run format:check"), "package script check:certification must run format checks.");
 expect(scripts["check:certification"]?.includes("npm run check:readability"), "package script check:certification must run readability checks.");
@@ -80,9 +82,11 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "npm run skills:check"
 ]);
 expectWorkflowContains(".github/workflows/release-dry-run.yml", [
+  "fetch-depth: 0",
   "npm run check:certification",
   "npm run archive:source",
   "npm run check:source-archive",
+  "npm run check:release-tag",
   "npm run release:publish:dry"
 ]);
 expectWorkflowContains(".github/workflows/security.yml", [
@@ -98,11 +102,13 @@ expectWorkflowContains(".github/workflows/docs.yml", [
   "npm run docs:build"
 ]);
 expectWorkflowContains(".github/workflows/publish.yml", [
+  "fetch-depth: 0",
   "id-token: write",
   "AGENT_VERSION=$(node -p \"require('./agent-skills/package.json').version\")",
   "PLUGIN_VERSION=$(node -p \"require('./agent-skills/.codex-plugin/plugin.json').version\")",
   "npm view \"ai-capability-framework@${VERSION}\" version",
   "npm view \"@aicf/agent-skills@${VERSION}\" version",
+  "npm run check:release-tag",
   "npm run check:certification",
   "npm publish --dry-run",
   "npm publish ./agent-skills --dry-run --access public --tag",

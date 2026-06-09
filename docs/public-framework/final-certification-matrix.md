@@ -36,6 +36,7 @@ npm run check:release-install
 npm run check:metadata
 npm run check:licenses
 npm run check:final-matrix
+npm run check:release-tag
 npm run skills:check
 npm run check:certification
 ```
@@ -87,7 +88,7 @@ both package dry-runs with public access:
 npm run release:publish:dry
 ```
 
-Prereleases such as `1.0.0-rc.5` use `next`. Stable releases use `latest`. This command
+Prereleases such as `1.0.0-rc.6` use `next`. Stable releases use `latest`. This command
 does not publish.
 
 ## Manual Acceptance
@@ -99,5 +100,5 @@ live test boundaries, and root import optional-dependency isolation.
 
 - GitHub repository About/description says AICF is a provider-agnostic governed AI
   capability framework.
-- GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp,
-  typescript.
+- GitHub topics include at least: ai, agents, tool-calling, evals, governance,
+  model-context-protocol, langchain, gemini, anthropic, openai, typescript.

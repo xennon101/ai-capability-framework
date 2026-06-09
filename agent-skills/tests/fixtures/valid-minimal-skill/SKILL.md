@@ -4,7 +4,7 @@ description: Author a small valid AICF test skill. Use when testing skill valida
 license: MIT
 compatibility: Codex and Agent Skills-compatible coding agents.
 metadata:
-  aicf.skill.version: "1.0.0-rc.5"
+  aicf.skill.version: "1.0.0"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "test"
   aicf.skill.scope: "builder"

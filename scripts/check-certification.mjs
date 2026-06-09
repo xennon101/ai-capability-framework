@@ -39,7 +39,7 @@ const expectedExactScripts = new Map([
   ["lint", "node scripts/check-repo-lint.mjs"],
   ["check:readability", "node scripts/check-public-readability.mjs"],
   ["release:preflight:npm", "node scripts/check-npm-release-preflight.mjs"],
-  ["release:publish:dry", "node scripts/check-publish-dry-run.mjs"],
+  ["release:publish:dry", "npm run check:release-tag && node scripts/check-publish-dry-run.mjs"],
   ["test", "npm run build --silent && vitest run"],
   ["validate", "npm run build --silent && node dist/cli.js validate examples"],
   ["conformance", "node dist/cli.js conformance run examples --format text"],
@@ -49,6 +49,7 @@ const expectedExactScripts = new Map([
   ["check:package", "npm run build && npm run check:package:contents && npm run check:package-public && npm run check:release-install"],
   ["check:metadata", "node scripts/check-metadata.mjs"],
   ["check:licenses", "node scripts/check-licenses.mjs"],
+  ["check:release-tag", "node scripts/check-release-tag-alignment.mjs"],
   ["check:final-matrix", "node scripts/check-final-certification-matrix.mjs"],
   ["check:public", "npm run check:package-public && npm run check:workspace-public && npm run check:secrets"],
   ["skills:ci", "npm --prefix agent-skills ci"],
@@ -94,6 +95,7 @@ expectScriptContains("check:certification", [
   "npm run check:public",
   "npm run check:metadata",
   "npm run check:licenses",
+  "npm run check:release-tag",
   "npm run check:final-matrix",
   "npm run check:readability",
   "npm run check:runtime",
@@ -155,7 +157,7 @@ expectFileContains("docs/public-framework/v1-certification.md", [
   "Manual Review Checklist",
   "npm package contents",
   "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework",
-  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript",
+  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, model-context-protocol, langchain, gemini, anthropic, openai, typescript",
   "fresh-machine quickstart",
   "no private docs or planning artifacts",
   "no raw provider payloads",
@@ -180,7 +182,7 @@ expectFileContains("docs/public-framework/final-certification-matrix.md", [
   "npm run check:final-matrix",
   "npm run release:publish:dry",
   "GitHub repository About/description says AICF is a provider-agnostic governed AI capability framework",
-  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, mcp, typescript",
+  "GitHub topics include at least: ai, agents, tool-calling, evals, governance, model-context-protocol, langchain, gemini, anthropic, openai, typescript",
   "Node 20.x, 22.x, and 24.x",
   "Do not zip the working directory manually"
 ]);
@@ -212,9 +214,11 @@ expectWorkflowContains(".github/workflows/ci.yml", [
   "npm run skills:check"
 ]);
 expectWorkflowContains(".github/workflows/release-dry-run.yml", [
+  "fetch-depth: 0",
   "npm run check:certification",
   "npm run archive:source",
   "npm run check:source-archive",
+  "npm run check:release-tag",
   "npm run release:publish:dry"
 ]);
 expectWorkflowContains(".github/workflows/security.yml", [
@@ -228,11 +232,13 @@ expectWorkflowContains(".github/workflows/security.yml", [
 ]);
 expectWorkflowContains(".github/workflows/publish.yml", [
   "tags:",
+  "fetch-depth: 0",
   "id-token: write",
   "AGENT_VERSION=$(node -p \"require('./agent-skills/package.json').version\")",
   "PLUGIN_VERSION=$(node -p \"require('./agent-skills/.codex-plugin/plugin.json').version\")",
   "npm view \"ai-capability-framework@${VERSION}\" version",
   "npm view \"@aicf/agent-skills@${VERSION}\" version",
+  "npm run check:release-tag",
   "npm run check:certification",
   "npm publish --dry-run",
   "npm publish ./agent-skills --dry-run --access public --tag",
