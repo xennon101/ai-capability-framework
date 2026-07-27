@@ -4,6 +4,15 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.0.1 - 2026-07-27
+
+- Updated the resolved `fast-uri` dependency to `3.1.4` to address the high-severity URI
+  host-confusion advisories reported by the scheduled security audit.
+- Kept `ai-capability-framework`, `@aicf/agent-skills`, and Codex plugin metadata
+  aligned under the coordinated `1.0.1` patch release.
+
+## 1.0.0 - 2026-06-09
+
 - Prepared the `1.0.0` stable release and made `@aicf/agent-skills` a first-class
   same-version npm artifact in certification, CI, release dry-run, and
   trusted-publishing workflows.

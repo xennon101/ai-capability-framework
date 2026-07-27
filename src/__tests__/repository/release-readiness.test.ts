@@ -13,6 +13,8 @@ import { runPublishDryRun } from "../../../scripts/check-publish-dry-run.mjs";
 import { runPublicReadabilityCheck } from "../../../scripts/check-public-readability.mjs";
 import { runReleaseTagAlignment } from "../../../scripts/check-release-tag-alignment.mjs";
 
+const currentPackageVersion = JSON.parse(readFileSync("package.json", "utf8")).version as string;
+
 describe("public repository release readiness", () => {
   it("root policy docs contain F16 public repository guidance", () => {
     const security = readFileSync("SECURITY.md", "utf8");
@@ -168,10 +170,10 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0 version --json": npm404(),
+        [`view ai-capability-framework@${currentPackageVersion} version --json`]: npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0 version --json": npm404()
+        [`view @aicf/agent-skills@${currentPackageVersion} version --json`]: npm404()
       })
     });
 
@@ -189,15 +191,17 @@ describe("public repository release readiness", () => {
           version: "1.0.0",
           "dist-tags": { next: "1.0.0" }
         },
-        "view ai-capability-framework@1.0.0 version --json": "\"1.0.0\"",
+        [`view ai-capability-framework@${currentPackageVersion} version --json`]: JSON.stringify(currentPackageVersion),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0 version --json": npm404()
+        [`view @aicf/agent-skills@${currentPackageVersion} version --json`]: npm404()
       })
     });
 
     expect(alreadyPublished.ok).toBe(false);
-    expect(alreadyPublished.failures.join("\n")).toContain("ai-capability-framework@1.0.0 is already published");
+    expect(alreadyPublished.failures.join("\n")).toContain(
+      `ai-capability-framework@${currentPackageVersion} is already published`
+    );
 
     const strictFirstPublish = runNpmReleasePreflight({
       strict: true,
@@ -208,10 +212,10 @@ describe("public repository release readiness", () => {
           version: "1.0.0-rc.3",
           "dist-tags": { latest: "1.0.0-rc.1", next: "1.0.0-rc.3" }
         },
-        "view ai-capability-framework@1.0.0 version --json": npm404(),
+        [`view ai-capability-framework@${currentPackageVersion} version --json`]: npm404(),
         "owner ls ai-capability-framework": "aicf-maintainer <maintainer@example.com>\n",
         "view @aicf/agent-skills name version dist-tags --json": npm404(),
-        "view @aicf/agent-skills@1.0.0 version --json": npm404()
+        [`view @aicf/agent-skills@${currentPackageVersion} version --json`]: npm404()
       })
     });
 
