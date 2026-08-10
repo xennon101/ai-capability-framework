@@ -4,6 +4,13 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.0.2 - 2026-08-10
+
+- Updated the resolved `fast-uri` dependency to `3.1.5` to address
+  `GHSA-7p8r-x3mc-p8w7`, reported by the scheduled production dependency audit.
+- Kept `ai-capability-framework`, `@aicf/agent-skills`, and Codex plugin metadata
+  aligned under the coordinated `1.0.2` patch release.
+
 ## 1.0.1 - 2026-07-27
 
 - Updated the resolved `fast-uri` dependency to `3.1.4` to address the high-severity URI
