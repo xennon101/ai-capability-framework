@@ -2,6 +2,11 @@
 
 All notable public changes to the AICF Agent Skills package are documented here.
 
+## 1.0.3 - 2026-09-07
+
+- Aligned package, plugin, and skill metadata with the coordinated AICF `1.0.3` security
+  patch release. Skill behavior and content are unchanged.
+
 ## 1.0.2 - 2026-08-10
 
 - Aligned package, plugin, and skill metadata with the coordinated AICF `1.0.2` security
