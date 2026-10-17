@@ -1,3 +1,10 @@
+import { isDeepStrictEqual } from "node:util";
+import { assertProviderRunScope } from "../runtime/provider-run.js";
+import { aggregateProviderUsage, freezeProviderValue } from "../runtime/provider-usage.js";
+import type { ProviderStageUsage } from "../runtime/provider-types.js";
+import type { CapabilityRouteRequest } from "../runtime/types.js";
+import { stopReason } from "../runtime/provider-stop.js";
+import { enforceOpenAIInputTokens, normalizeOpenAIUsage } from "./selection-client.js";
 import {
   parseOpenAIResponsesToolCall,
   type OpenAIResponsesFunctionCall
@@ -33,9 +40,35 @@ const defaultMaxTurns = 6;
 const defaultMaxToolCalls = 10;
 
 export async function runOpenAIResponses(
-  request: AicfOpenAIRunRequest
+  input: AicfOpenAIRunRequest
 ): Promise<AicfOpenAIRunResult> {
+  const request = Object.freeze({ ...input });
+  const sourceExecution = request.providerExecution;
+  const providerExecution = sourceExecution ? Object.freeze({ ...sourceExecution, configuration: Object.freeze({ ...sourceExecution.configuration }) }) : undefined;
+  const clientCreate = request.client.responses.create;
+  const executionCurrent = () => !sourceExecution || !!providerExecution
+    && isDeepStrictEqual(sourceExecution.configuration, providerExecution.configuration)
+    && sourceExecution.mock === providerExecution.mock && sourceExecution.maxInputTokens === providerExecution.maxInputTokens
+    && sourceExecution.maxOutputTokens === providerExecution.maxOutputTokens
+    && sourceExecution.inputTokenPreflight === providerExecution.inputTokenPreflight
+    && sourceExecution.maxEstimatedCostPerCall === providerExecution.maxEstimatedCostPerCall
+    && sourceExecution.estimateCost === providerExecution.estimateCost;
   const runId = request.runtimeContext.runId;
+  const providerRun = request.providerRun ?? request.router.providerRun;
+  if (providerRun) {
+    assertProviderRunScope(providerRun, runId);
+    if (request.providerRun && request.router.providerRun && request.providerRun !== request.router.providerRun)
+      throw new Error("The router and runner provider scopes conflict.");
+    if (!request.providerExecution || request.providerExecution.configuration.model !== request.model
+      || typeof request.providerExecution.inputTokenPreflight !== "function" || typeof request.providerExecution.mock !== "boolean"
+      || !Number.isSafeInteger(request.providerExecution.maxInputTokens) || request.providerExecution.maxInputTokens < 1
+      || !Number.isSafeInteger(request.providerExecution.maxOutputTokens) || request.providerExecution.maxOutputTokens < 1
+      || providerRun.budget.policy.maxEstimatedCostPerRun !== undefined && request.providerExecution.maxEstimatedCostPerCall === undefined) throw new Error("Managed model turns require explicit token limits, provenance and a token preflight.");
+  }
+  const runtimeSignals = [request.signal, providerRun?.signal].filter((item): item is AbortSignal => !!item);
+  const runtimeSignal = runtimeSignals.length ? AbortSignal.any(runtimeSignals) : undefined;
+  const managedStages: ProviderStageUsage[] = [];
+  const history: Array<{ request: Readonly<Record<string, unknown>>; response: AicfOpenAIResponseLike }> = [];
   const requestId = request.runtimeContext.requestId;
   const traceEvents: AicfRuntimeTraceEvent[] = [];
   const toolCalls: AicfOpenAIRunResult["toolCalls"] = [];
@@ -80,6 +113,13 @@ export async function runOpenAIResponses(
       finalText?: string;
     } = {}
   ): Promise<AicfOpenAIRunResult> => {
+    if (providerRun) {
+      const totals = providerRun.snapshot().usage.totals;
+      providerRun.record("usage.summary", requestId, { outcome: status, providerAttempts: totals.providerAttempts,
+        completedResponses: totals.completedResponses, inputTokens: totals.inputTokens, outputTokens: totals.outputTokens,
+        totalTokens: totals.totalTokens, cachedInputTokens: totals.cachedInputTokens, reasoningTokens: totals.reasoningTokens,
+        estimatedCost: totals.estimatedCost, elapsedMs: totals.elapsedMs });
+    }
     await emit("runtime.end", { status });
     return {
       errors: input.errors ?? [],
@@ -91,7 +131,7 @@ export async function runOpenAIResponses(
       toolCalls,
       toolResults,
       traceEvents,
-      usage
+      usage, ...(providerRun ? { providerUsage: aggregateProviderUsage(managedStages, Date.now() - startedAt) } : {})
     };
   };
 
@@ -147,19 +187,23 @@ export async function runOpenAIResponses(
   await emit("capability.route.start", {
     capabilityCount: request.registry.capabilities.length
   });
-  selectedCapabilities = await request.router.route({
+  const routeRequest: CapabilityRouteRequest = {
     builtContext,
     controls: request.controls,
     includeRestricted: false,
     registry: request.registry,
-    userInput: request.userInput
-  });
+    userInput: request.userInput, providerRun, signal: runtimeSignal,
+    ...(Number.isFinite(Math.min(request.deadlineAt ?? Infinity, providerRun?.deadlineAt ?? Infinity))
+      ? { deadlineAt: Math.min(request.deadlineAt ?? Infinity, providerRun?.deadlineAt ?? Infinity) } : {})
+  };
+  selectedCapabilities = await request.router.route(routeRequest);
+  if (request.router.revalidate) selectedCapabilities = await request.router.revalidate(routeRequest, selectedCapabilities);
   await emit("capability.route.end", {
     capabilityIds: selectedCapabilities.items.map((item) => item.capabilityId),
     excludedCount: selectedCapabilities.excluded.length
   });
 
-  const toolset = buildRuntimeOpenAIToolset({
+  let toolset = buildRuntimeOpenAIToolset({
     builtContext,
     registry: request.registry,
     runtimeContext: request.runtimeContext,
@@ -179,7 +223,29 @@ export async function runOpenAIResponses(
     userInput: request.userInput
   });
 
+  const revalidate = async () => {
+    const stopped = stopReason({ signal: runtimeSignal,
+      deadlineAt: Math.min(request.deadlineAt ?? Infinity, providerRun?.deadlineAt ?? Infinity) });
+    if (stopped) return stopped;
+    if (request.router.revalidate) {
+      const previous = selectedCapabilities;
+      selectedCapabilities = await request.router.revalidate(routeRequest, selectedCapabilities);
+      if (previous.items.length && !selectedCapabilities.items.length || selectedCapabilities.warnings.some(warning =>
+        ["stale_binding", "discovery_unavailable", "discovery_cancelled", "selection_unavailable", "selection_invalid_output", "selection_cancelled"].includes(warning.code))) return "stale_binding";
+      toolset = buildRuntimeOpenAIToolset({ builtContext, registry: request.registry, runtimeContext: request.runtimeContext,
+        runtimeSlice: selectedCapabilities });
+    }
+    return undefined;
+  };
+  const initialStop = stopReason({ signal: runtimeSignal,
+    deadlineAt: Math.min(request.deadlineAt ?? Infinity, providerRun?.deadlineAt ?? Infinity) });
+  if (initialStop) return finish("cancelled", { errors: [{ code: initialStop, message: "The invocation was cancelled or its deadline elapsed." }] });
+  if (!selectedCapabilities.items.length && selectedCapabilities.warnings.some(warning => ["selection_abstained", "selection_not_submitted"].includes(warning.code))
+    && !selectedCapabilities.warnings.some(warning => ["discovery_unavailable", "discovery_cancelled"].includes(warning.code))) return finish("completed");
   for (let turn = 0; turn < maxTurns; turn += 1) {
+    const invalid = await revalidate();
+    if (invalid) return finish(invalid === "cancelled" || invalid === "deadline_exceeded" ? "cancelled" : "failed", {
+      errors: [{ code: invalid, message: "The task binding or invocation bounds no longer permit this model turn." }] });
     const providerControl = request.controls?.evaluate({
       model: request.model,
       operation: "provider_call",
@@ -217,7 +283,49 @@ export async function runOpenAIResponses(
 
     let response: AicfOpenAIResponseLike;
     try {
-      response = await request.client.responses.create(responseRequest);
+      if (providerRun) {
+        const execution = providerExecution!;
+        const configuration = freezeProviderValue({ ...execution.configuration });
+        const prepared = freezeProviderValue({ ...responseRequest, max_output_tokens: execution.maxOutputTokens, truncation: "disabled" });
+        const modelIdentity = JSON.stringify(execution.configuration), mock = execution.mock;
+        const result = await providerRun.attempt<AicfOpenAIResponseLike>({ requestId, stage: "model_tool_loop", configuration, mock,
+          signal: request.signal, deadlineAt: request.deadlineAt, maxInputTokens: execution.maxInputTokens,
+          maxOutputTokens: execution.maxOutputTokens, maxEstimatedCostPerCall: execution.maxEstimatedCostPerCall,
+          estimateCost: execution.estimateCost, controls: request.controls, runtimeContext: request.runtimeContext,
+          guard: () => !executionCurrent() || JSON.stringify(execution.configuration) !== modelIdentity || execution.mock !== mock ? "stale_binding" : undefined,
+          invoke: async context => {
+            await enforceOpenAIInputTokens({ request: prepared, history: Object.freeze([...history]), configuration, maxInputTokens: execution.maxInputTokens,
+              signal: context.signal, deadlineAt: context.deadlineAt }, execution.inputTokenPreflight);
+            const changed = await revalidate();
+            if (changed) throw Object.assign(new Error("The task binding changed before transport."), { providerAttempts: 0, usage: {} });
+            context.beforeProviderCall();
+            let completed = false;
+            try {
+              const value = await clientCreate.call(request.client.responses, prepared, { signal: context.signal,
+                timeout: Math.max(1, context.deadlineAt - Date.now()), maxRetries: 0 });
+              completed = true;
+              return { value, usage: normalizeOpenAIUsage(value?.usage), providerAttempts: 1 };
+            } catch (error) {
+              const failed = error as { usage?: unknown; providerAttempts?: number; completedResponses?: number } | undefined;
+              throw Object.assign(new Error("The managed Responses transport was unavailable."), { usage: normalizeOpenAIUsage(failed?.usage),
+                providerAttempts: Number.isSafeInteger(failed?.providerAttempts) && failed!.providerAttempts! >= 0 ? failed!.providerAttempts : 1,
+                completedResponses: completed ? 1 : Number.isSafeInteger(failed?.completedResponses) && failed!.completedResponses! >= 0 ? failed!.completedResponses : 0 });
+            }
+          },
+          validate: envelope => {
+            const value = (envelope as { value: AicfOpenAIResponseLike }).value;
+            return !value || typeof value !== "object" || value.status !== undefined && value.status !== "completed"
+              || value.output !== undefined && !Array.isArray(value.output) || value.output_text !== undefined && typeof value.output_text !== "string"
+              ? { code: "provider_unavailable" } : { value };
+          }
+        });
+        managedStages.push(...result.usage.stages);
+        if (result.code) return finish(result.code === "budget_denied" ? "budget_exceeded"
+          : result.code === "control_denied" ? "control_denied" : result.code === "cancelled" || result.code === "deadline_exceeded" ? "cancelled" : "provider_error",
+          { errors: [{ code: result.code, message: "The managed model turn was unavailable or denied." }] });
+        response = result.value!;
+        history.push({ request: prepared, response });
+      } else response = await request.client.responses.create(responseRequest);
     } catch (error) {
       const safeError = safeOpenAIError(error);
       await emit("runtime.error", { code: safeError.code });
@@ -234,6 +342,9 @@ export async function runOpenAIResponses(
       turn
     });
 
+    const changedAfterResponse = await revalidate();
+    if (changedAfterResponse) return finish(changedAfterResponse === "cancelled" || changedAfterResponse === "deadline_exceeded" ? "cancelled" : "failed", {
+      errors: [{ code: changedAfterResponse, message: "The invocation or task binding changed before the response could be used." }] });
     const calls = extractOpenAIResponsesFunctionCalls(response);
     if (calls.length === 0) {
       return finish("completed", {
@@ -307,6 +418,9 @@ export async function runOpenAIResponses(
         callId: call.call_id,
         toolName: call.name
       });
+      const invalid = await revalidate();
+      if (invalid) return finish(invalid === "cancelled" || invalid === "deadline_exceeded" ? "cancelled" : "failed", {
+        errors: [{ code: invalid, message: "The task binding changed before tool execution." }] });
       const envelope = await executeToolCall({
         builtContext,
         call,

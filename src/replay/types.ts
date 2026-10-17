@@ -125,6 +125,7 @@ export interface ReplayResult {
 }
 
 export interface ReplayTraceRecorderInput {
+  extensions?: Record<string, unknown>;
   actions?: ReplayTrace["actions"];
   approvals?: ReplayTrace["approvals"];
   capabilitySlice: CapabilitySliceSnapshot;
@@ -156,6 +157,8 @@ export interface TraceToGoldenOptions {
 }
 
 export interface RunReplayOptions {
+  routerRunner?: ReplayProviderRunner;
+  providerRun?: import("../runtime/provider-types.js").AicfProviderRun;
   allowProviderLive?: boolean;
   context?: DecisionRequest["context"];
   facts?: DecisionRequest["facts"];

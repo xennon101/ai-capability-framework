@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020.js";
+import type { ErrorObject } from "ajv";
 import type { CapabilityManifest } from "./generated/manifest-types.js";
 import type {
   AicfDiagnostic,
@@ -17,8 +18,10 @@ const schemaDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 const embeddedSchemaAjv = new Ajv2020({ allErrors: true, strict: false });
 const fixtureAjv = new Ajv2020({ allErrors: true, strict: false });
+fixtureAjv.addSchema(readSchema("capability-manifest.schema.json"));
 
 const adapterContextSchema = readSchema("adapter-context.schema.json");
+const discoveryMetadataValidator = ajv.compile(readSchema("discovery/metadata.schema.json"));
 
 const validators: Record<ManifestKind, ValidateFunction> = {
   capability: compileSchema("capability-manifest.schema.json"),
@@ -27,6 +30,8 @@ const validators: Record<ManifestKind, ValidateFunction> = {
 };
 
 const fixtureValidators: Record<Exclude<LoadedFixture["kind"], "unknown">, ValidateFunction> = {
+  discovery_eval_suite: fixtureAjv.compile(readSchema("discovery/eval-suite.schema.json")),
+  discovery_eval_observations: fixtureAjv.compile(readSchema("discovery/eval-observations.schema.json")),
   adapter_context: fixtureAjv.compile(adapterContextSchema),
   control_plane_state: fixtureAjv.compile(readSchema("control-plane/state.schema.json")),
   decision_request: fixtureAjv.compile(readSchema("decision-request.schema.json")),
@@ -52,6 +57,7 @@ export function validateManifests(
   const invariants = validateCapabilityInvariants(manifests);
   const errors: AicfDiagnostic[] = [
     ...validateSchemas(manifests),
+    ...validateDiscoveryMetadataExtensions(manifests),
     ...validateDuplicateIds(manifests),
     ...validateEvalReferences(manifests),
     ...validateEmbeddedCapabilitySchemas(manifests),
@@ -237,6 +243,32 @@ function validateSchemas(manifests: LoadedManifest[]): AicfDiagnostic[] {
   }
 
   return errors;
+}
+
+/** Internal schema boundary shared with the optional discovery metadata resolver. */
+export function validateDiscoveryMetadata(value: unknown): ErrorObject[] {
+  if (discoveryMetadataValidator(value)) return [];
+  return (discoveryMetadataValidator.errors ?? []).map((error) => ({
+    ...error,
+    params: { ...error.params },
+    instancePath: `/extensions/discovery${error.instancePath}`
+  }));
+}
+
+function validateDiscoveryMetadataExtensions(manifests: LoadedManifest[]): AicfDiagnostic[] {
+  return manifests.flatMap((loaded) => {
+    if (loaded.kind !== "capability" || !loaded.manifest || typeof loaded.manifest !== "object") return [];
+    const extensions = loaded.manifest.extensions;
+    if (!extensions || typeof extensions !== "object" || !Object.prototype.hasOwnProperty.call(extensions, "discovery")) return [];
+    return validateDiscoveryMetadata((extensions as Record<string, unknown>).discovery).map((error): AicfDiagnostic => ({
+      code: "schema",
+      details: error,
+      id: idFromManifest(loaded.manifest),
+      kind: loaded.kind,
+      message: `${error.instancePath}: ${error.message ?? "schema validation failed"}`,
+      path: loaded.path
+    }));
+  });
 }
 
 function validateDuplicateIds(manifests: LoadedManifest[]): AicfDiagnostic[] {

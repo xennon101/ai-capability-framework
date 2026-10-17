@@ -297,3 +297,27 @@ certification is documented in
 ## License
 
 MIT
+
+## Find capabilities for a task
+
+Install the discovery prerelease explicitly:
+
+```sh
+npm install ai-capability-framework@1.1.0-rc.1
+```
+
+Lexical retrieval with the ordinary model/tool loop is the recommended default. The
+[qualification report](docs/evals/discovery-qualification.md) records the tested lexical
+results and the unmet hybrid incremental-gain gate. Hybrid remains experimental and
+opt-in; dedicated selection remains optional.
+
+Use the optional release-candidate [discovery API](docs/discovery.md) when your
+application AI decomposes a customer request into tasks. Search each ready task and pass
+its result-bound router to the ordinary model/tool loop. Lexical search needs only a
+registry, task IDs/text, and existing runtime context. Hybrid retrieval and dedicated
+selection are optional and require caller-supplied model access and budgets.
+
+Run the
+[complete customer-request example](examples/12-capability-discovery-selection/README.md)
+with deterministic mocks and no provider key. Retrieval scores never authorize execution
+or guarantee a suitable first candidate.

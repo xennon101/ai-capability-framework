@@ -821,3 +821,10 @@ notes when relevant, and the GitHub release notes checklist in `docs/release.md`
 Final release readiness uses repository scripts rather than TypeScript APIs:
 `npm run check`, `npm run check:public`, and `npm run check:certification`. The final
 gate is documented in [Final v1 certification](public-framework/v1-certification.md).
+
+## Capability discovery
+
+The optional release-candidate `ai-capability-framework/discovery` API provides a simple
+search facade, result-bound routers, explicit hybrid retrieval and dedicated selection,
+and provider-free evaluation. Start with
+[finding capabilities for a task](discovery.md).

@@ -47,6 +47,13 @@ cloud, tracing, or CLI implementation dependencies.
 | CLI implementation helpers other than `runCli` and `CliRunOptions`                                                                                                                                                                                          | should move to subpath              | Keep private to the CLI module unless a future release documents a narrow public contract.                                                                  |
 | Undocumented source files, generated internals, and private helper functions                                                                                                                                                                                | should be removed before v1         | Do not expose through package exports.                                                                                                                      |
 
+The `ai-capability-framework/discovery` subpath is **release-candidate public**. It
+contains the documented facade, advanced retrieval/index/selection/replay contracts,
+budget helper, and evaluation API. Provider adapters stay in their existing subpaths.
+Discovery is optional and adds no implementation dependency to root/runtime imports. Its
+interface classification does not establish real-model retrieval quality. See
+[capability discovery](../discovery.md).
+
 ## Migration Note For Release-Candidate Users
 
 If a release-candidate app imported `runCli` from the package root, change it to:

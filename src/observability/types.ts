@@ -2,6 +2,11 @@ import type { AicfRedactionPolicy } from "../runtime/index.js";
 import type { JsonValue } from "../types.js";
 
 export type AicfTraceEventType =
+  | "discovery.end"
+  | "selection.end"
+  | "provider.attempt.start"
+  | "provider.attempt.end"
+  | "usage.summary"
   | "runtime.start"
   | "context.build.start"
   | "context.build.end"

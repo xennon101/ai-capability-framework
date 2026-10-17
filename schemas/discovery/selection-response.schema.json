@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/discovery/selection-response.schema.json",
+  "title": "CapabilitySelectionResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "decisions"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "decisions": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["query_id", "decision", "capability_id", "reason_code"],
+            "properties": {
+              "query_id": { "type": "string", "minLength": 1 },
+              "decision": { "const": "select" },
+              "capability_id": { "type": "string", "minLength": 1 },
+              "reason_code": { "const": "supported_candidate" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["query_id", "decision", "capability_id", "reason_code"],
+            "properties": {
+              "query_id": { "type": "string", "minLength": 1 },
+              "decision": { "const": "abstain" },
+              "capability_id": { "type": "null" },
+              "reason_code": {
+                "enum": [
+                  "no_suitable_candidate",
+                  "ambiguous_request",
+                  "insufficient_context"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

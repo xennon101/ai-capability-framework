@@ -1,0 +1,409 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/discovery/eval-observations.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "suite_id",
+    "suite_fingerprint",
+    "registry_source_fingerprint",
+    "corpus_fingerprint",
+    "retrieval_policy_fingerprint",
+    "configuration",
+    "usage_complete",
+    "attempts",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "suite_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "suite_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "registry_source_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "corpus_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "retrieval_policy_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "policyVersion",
+        "limits",
+        "aliasWeight",
+        "minRetrievalScore"
+      ],
+      "properties": {
+        "mode": {
+          "enum": ["lexical", "hybrid"]
+        },
+        "policyVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxQueries",
+            "maxFragmentsPerQuery",
+            "maxQueryCharacters",
+            "maxCandidates",
+            "aliasDiversitySlots"
+          ],
+          "properties": {
+            "maxQueries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            },
+            "maxFragmentsPerQuery": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            },
+            "maxQueryCharacters": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16000
+            },
+            "maxCandidates": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "aliasDiversitySlots": {
+              "enum": [0, 1]
+            }
+          }
+        },
+        "aliasWeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minRetrievalScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["semantic", "lexical"],
+          "properties": {
+            "semantic": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "lexical": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "failurePolicy": {
+          "enum": ["unavailable", "lexical_fallback"]
+        }
+      }
+    },
+    "custom_ranker_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "usage_complete": {
+      "type": "boolean"
+    },
+    "attempts": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "run_id",
+          "attempt_id",
+          "stage",
+          "configuration",
+          "mock",
+          "provider_attempts",
+          "completed_responses",
+          "retry_attempts",
+          "repair_attempts",
+          "usage",
+          "elapsed_ms",
+          "pending",
+          "outcome"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "attempt_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "stage": {
+            "enum": [
+              "embedding_build",
+              "query_embedding",
+              "selection",
+              "selection_repair",
+              "model_tool_loop",
+              "planning",
+              "response_assembly"
+            ]
+          },
+          "configuration": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "model", "configurationId"],
+            "properties": {
+              "provider": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "configurationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          },
+          "mock": {
+            "type": "boolean"
+          },
+          "provider_attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completed_responses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "retry_attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "repair_attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "usage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [],
+            "properties": {
+              "inputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "outputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "totalTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cachedInputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reasoningTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "estimatedCost": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pending": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "enum": ["completed", "failed", "cancelled", "discarded"]
+          }
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "status",
+          "actual_mode",
+          "eligibility_fingerprint",
+          "candidates",
+          "latency_ms"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "status": {
+            "enum": ["matched", "no_match", "unavailable", "cancelled"]
+          },
+          "actual_mode": {
+            "enum": ["lexical", "hybrid", null]
+          },
+          "eligibility_fingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "index_fingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "candidates": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["capability_id", "capability_version", "score"],
+              "properties": {
+                "capability_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "capability_version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "score": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "latency_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "status",
+                  "capability_id",
+                  "capability_version",
+                  "operation"
+                ],
+                "properties": {
+                  "mode": {
+                    "enum": ["native", "dedicated"]
+                  },
+                  "status": {
+                    "const": "selected"
+                  },
+                  "capability_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "capability_version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "operation": {
+                    "enum": ["read", "prepare", "commit"]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "status",
+                  "capability_id",
+                  "capability_version",
+                  "operation"
+                ],
+                "properties": {
+                  "mode": {
+                    "enum": ["native", "dedicated"]
+                  },
+                  "status": {
+                    "enum": [
+                      "abstained",
+                      "unavailable",
+                      "invalid_output",
+                      "cancelled",
+                      "not_performed"
+                    ]
+                  },
+                  "capability_id": {
+                    "type": "null"
+                  },
+                  "capability_version": {
+                    "type": "null"
+                  },
+                  "operation": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

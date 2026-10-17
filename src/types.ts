@@ -18,7 +18,7 @@ export type {
 
 export type ManifestKind = "capability" | "entity" | "eval";
 
-export type FixtureKind = "adapter_context" | "control_plane_state" | "decision_request" | "eval_result" | "generated_content_provenance" | "governance_gate_config" | "governed_memory" | "replay_trace" | "unknown";
+export type FixtureKind = "discovery_eval_suite" | "discovery_eval_observations" | "adapter_context" | "control_plane_state" | "decision_request" | "eval_result" | "generated_content_provenance" | "governance_gate_config" | "governed_memory" | "replay_trace" | "unknown";
 
 export type AicfErrorCode =
   | "duplicate_id"

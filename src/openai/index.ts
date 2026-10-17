@@ -32,3 +32,6 @@ export type {
   CreateDefaultAgentsSdkBridgeFactoryOptions,
   CreateDefaultOpenAIResponsesClientOptions
 } from "./types.js";
+
+export { createOpenAISelectionClient } from "./selection-client.js";
+export type { CreateOpenAISelectionClientOptions, OpenAIInputTokenPreflight, OpenAIInputPreflightInput } from "./selection-client.js";

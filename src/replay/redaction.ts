@@ -35,6 +35,8 @@ function redactValue(value: unknown, key = ""): unknown {
   }
 
   if (typeof value === "string") {
+    if ((key.endsWith("Fingerprint") || key.endsWith("Hash") || key === "matchedAliasHashes") && /^sha256:[0-9a-f]{64}$/.test(value)) return value;
+    if (key === "tokenizerVersion" && value === "nfkc-lower-unicode-letter-number.v1") return value;
     if (sensitiveKeyPattern.test(key)) {
       return "[REDACTED]";
     }
@@ -51,7 +53,7 @@ function redactValue(value: unknown, key = ""): unknown {
       if (childKey === "private_diagnostics") {
         continue;
       }
-      result[childKey] = sensitiveKeyPattern.test(childKey) ? "[REDACTED]" : redactValue(childValue, childKey);
+      result[childKey] = sensitiveKeyPattern.test(childKey) && childKey !== "tokenizerVersion" ? "[REDACTED]" : redactValue(childValue, childKey);
     }
     return result;
   }

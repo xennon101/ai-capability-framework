@@ -36,7 +36,11 @@ export async function runReplay(trace: ReplayTrace, options: RunReplayOptions): 
   }
 
   if (options.mode === "deterministic_mock") {
-    return result(trace.traceId, options.mode, [], deterministicMockSteps(trace));
+    const steps = deterministicMockSteps(trace);
+    if (trace.extensions?.discovery) steps.push(
+      { name: "discovery_ranking", status: "skipped", message: "Recorded snapshots do not reproduce discovery ranking." },
+      { name: "model_semantic_correctness", status: "skipped", message: "Recorded decisions do not establish model semantic correctness." });
+    return result(trace.traceId, options.mode, [], steps);
   }
 
   if (options.mode === "policy_only") {
@@ -44,6 +48,11 @@ export async function runReplay(trace: ReplayTrace, options: RunReplayOptions): 
   }
 
   if (options.mode === "router_only") {
+    if (trace.extensions?.discovery) {
+      if (options.routerRunner) return options.routerRunner(trace, options);
+      return result(trace.traceId, options.mode, [], [{ name: "discovery_replay_handler", status: "skipped",
+        message: "Discovery routing requires a supplied discovery replay handler; Core filtering cannot reproduce it." }], "refused");
+    }
     return result(trace.traceId, options.mode, [], routerOnlySteps(trace, options));
   }
 
@@ -220,6 +229,9 @@ function toolValidationSteps(trace: ReplayTrace, options: RunReplayOptions): Rep
 }
 
 async function runProviderLiveReplay(trace: ReplayTrace, options: RunReplayOptions): Promise<ReplayResult> {
+  if (trace.extensions?.discovery && (!options.providerRun || options.providerRun.runId === trace.runId)) return result(trace.traceId, "provider_live", [], [{
+    name: "discovery_live_run", status: "skipped", message: "Discovery live replay requires a separately supplied run and budget."
+  }], "refused");
   const enabled = options.allowProviderLive || process.env.AICF_ENABLE_LIVE_REPLAY === "1";
   if (!enabled || !options.providerRunner) {
     return result(trace.traceId, "provider_live", [{

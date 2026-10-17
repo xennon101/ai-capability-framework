@@ -80,6 +80,8 @@ export async function loadManifests(options: LoadManifestsOptions = {}): Promise
 export function kindFromPath(filePath: string): ManifestKind | null {
   const parts = filePath.replaceAll("\\", "/").split("/");
 
+  if (parts.includes("discovery-fixtures")) return null;
+
   if (parts.includes("capabilities")) return "capability";
   if (parts.includes("entities")) return "entity";
   if (parts.includes("evals")) return "eval";
@@ -91,6 +93,11 @@ export function fixtureKindFromPath(filePath: string): LoadedFixture["kind"] {
   const normalized = filePath.replaceAll("\\", "/");
   const parts = normalized.split("/");
   const fileName = parts.at(-1) ?? "";
+
+  if (parts.includes("discovery-fixtures")) {
+    if (/\.suite\.(?:json|ya?ml)$/u.test(fileName)) return "discovery_eval_suite";
+    if (/\.observations\.(?:json|ya?ml)$/u.test(fileName)) return "discovery_eval_observations";
+  }
 
   if (fileName === "aicf.config.json" || fileName === "aicf.config.yaml" || fileName === "aicf.config.yml") {
     return "governance_gate_config";

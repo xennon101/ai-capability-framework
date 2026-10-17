@@ -29,6 +29,8 @@ export async function runLiveEvalSuite(
 ): Promise<AicfLiveEvalResult[]> {
   const results: AicfLiveEvalResult[] = [];
   const runner = resolveLiveEvalRunner(options);
+  const issuedRuns = new WeakSet<object>();
+  const issuedRunIds = new Set<string>();
 
   for (const testCase of options.cases) {
     const loadedEval = options.registry.evalById.get(testCase.evalId);
@@ -59,7 +61,11 @@ export async function runLiveEvalSuite(
         sink: options.traceSink,
         type: "eval.score"
       });
+      const providerRun = options.providerRunFactory?.(testCase);
+      if (providerRun && (issuedRuns.has(providerRun) || issuedRunIds.has(providerRun.runId) || providerRun.runId !== testCase.runtimeContext.runId)) throw new Error("Live eval cases require independent provider-run invocations.");
+      if (providerRun) { issuedRuns.add(providerRun); issuedRunIds.add(providerRun.runId); }
       const providerResult = await runner.runCase({
+        providerRun,
         caseId: testCase.evalId,
         contextBuilder: options.contextBuilderFactory(testCase),
         executor: options.executor,
@@ -139,6 +145,7 @@ export function createOpenAILiveEvalRunner(options: {
   maxTurns?: number;
   model: string;
   runtimeName?: string;
+  providerExecution?: import("../openai/types.js").AicfOpenAIRunRequest["providerExecution"];
   systemInstructions?: string;
   temperature?: number;
 }): AicfLiveEvalRunner {
@@ -147,7 +154,7 @@ export function createOpenAILiveEvalRunner(options: {
     runtimeName: options.runtimeName ?? "openai-responses",
     async runCase(input) {
       const runResult = await runOpenAIResponses({
-        client: options.client,
+        client: options.client, providerRun: input.providerRun, providerExecution: options.providerExecution, signal: input.abortSignal,
         contextBuilder: input.contextBuilder,
         executor: input.executor,
         maxToolCalls: options.maxToolCalls,
@@ -440,6 +447,7 @@ function normalizeOpenAIRunResult(
     })),
     toolResults: runResult.toolResults,
     traceEvents: runResult.traceEvents,
+    providerUsage: runResult.providerUsage,
     usage: runResult.usage
   };
 }

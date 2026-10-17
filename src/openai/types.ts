@@ -18,7 +18,7 @@ import type {
 
 export interface AicfOpenAIResponsesClient {
   responses: {
-    create(input: Record<string, unknown>): Promise<AicfOpenAIResponseLike>;
+    create(input: Record<string, unknown>, options?: { signal?: AbortSignal; timeout?: number; maxRetries?: number }): Promise<AicfOpenAIResponseLike>;
   };
 }
 
@@ -32,6 +32,7 @@ export interface AicfOpenAIResponseLike {
 
 export type AicfOpenAIRunStatus =
   | "completed"
+  | "cancelled"
   | "budget_exceeded"
   | "control_denied"
   | "tool_limit_exceeded"
@@ -42,6 +43,18 @@ export type AicfOpenAIRunStatus =
 export type AicfOpenAIRuntimeEvent = AicfRuntimeTraceEvent;
 
 export interface AicfOpenAIRunRequest {
+  providerRun?: import("../runtime/provider-types.js").AicfProviderRun;
+  providerExecution?: {
+    configuration: import("../runtime/provider-types.js").ProviderModelConfiguration;
+    mock: boolean;
+    maxInputTokens: number;
+    maxOutputTokens: number;
+    inputTokenPreflight: import("./selection-client.js").OpenAIInputTokenPreflight;
+    maxEstimatedCostPerCall?: number;
+    estimateCost?: import("../runtime/provider-types.js").ProviderAttemptInput<unknown>["estimateCost"];
+  };
+  signal?: AbortSignal;
+  deadlineAt?: number;
   client: AicfOpenAIResponsesClient;
   contentCapture?: AicfTraceContentCapture;
   controls?: AicfRuntimeControls;
@@ -61,6 +74,7 @@ export interface AicfOpenAIRunRequest {
 }
 
 export interface AicfOpenAIRunResult {
+  providerUsage?: import("../runtime/provider-types.js").ProviderUsage;
   errors: Array<{
     code: string;
     message: string;

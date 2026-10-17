@@ -33,6 +33,7 @@ export interface AicfLiveEvalCaseInput {
 }
 
 export interface AicfNormalizedLiveEvalRunResult {
+  providerUsage?: import("../runtime/provider-types.js").ProviderUsage;
   errors: Array<{ code: string; message: string }>;
   finalText: string;
   providerId: AicfLiveEvalProviderId;
@@ -53,6 +54,7 @@ export interface AicfNormalizedLiveEvalRunResult {
 }
 
 export interface AicfLiveEvalCaseRunInput<TProviderConfig = unknown> {
+  providerRun?: import("../runtime/provider-types.js").AicfProviderRun;
   abortSignal?: AbortSignal;
   caseId: string;
   contextBuilder: AicfContextBuilder;
@@ -90,6 +92,7 @@ export interface AicfLiveEvalScorer {
 }
 
 export interface AicfLiveEvalOptions {
+  providerRunFactory?: (testCase: AicfLiveEvalCaseInput) => import("../runtime/provider-types.js").AicfProviderRun;
   cases: AicfLiveEvalCaseInput[];
   contextBuilderFactory: (testCase: AicfLiveEvalCaseInput) => AicfContextBuilder;
   executor: AicfToolExecutor;

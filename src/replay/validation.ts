@@ -1,3 +1,4 @@
+import { validateDiscoverySnapshotStructure } from "./discovery-snapshot.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +23,10 @@ const forbiddenRawKeys = new Set([
 
 export function validateReplayTrace(trace: unknown, tracePath = "replay-trace"): ValidateReplayTraceResult {
   const diagnostics: AicfDiagnostic[] = [];
+  const extension = trace && typeof trace === "object" ? (trace as ReplayTrace).extensions?.discovery : undefined;
+  if (extension !== undefined && !validateDiscoverySnapshotStructure(extension).valid) return {
+    valid: false, diagnostics: [{ code: "invalid_replay_trace", message: "The discovery snapshot is invalid or exceeds its serialized limit.", path: tracePath + "/extensions/discovery" }]
+  };
   const valid = replayTraceValidator(trace);
 
   if (!valid) {

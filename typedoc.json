@@ -17,7 +17,8 @@
     "src/memory/index.ts",
     "src/provenance/index.ts",
     "src/cli.ts",
-    "src/providers/index.ts"
+    "src/providers/index.ts",
+    "src/discovery/index.ts"
   ],
   "entryPointStrategy": "resolve",
   "excludePrivate": true,

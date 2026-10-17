@@ -83,6 +83,11 @@ export class AicfMcpServer {
     }
 
     try {
+      if (prepared.routing && this.options.router.revalidate) {
+        const slice = await this.options.router.revalidate(prepared.routing.request, prepared.routing.slice);
+        if (!slice.items.some(item => item.capabilityId === parsed.parsed!.capabilityId))
+          return mcpErrorResult("stale_binding", "The task binding no longer permits this tool.");
+      }
       const envelope = await this.options.executor.execute({
         args: parsed.parsed.args,
         builtContext: prepared.builtContext,
@@ -105,13 +110,15 @@ export class AicfMcpServer {
       registry: this.options.registry,
       userInput
     });
-    const runtimeSlice = await this.options.router.route({
+    const routeRequest = {
       builtContext,
       includeRestricted: this.options.includeRestricted,
       maxCapabilities: this.options.maxCapabilities,
       registry: this.options.registry,
       userInput
-    });
+    };
+    let runtimeSlice = await this.options.router.route(routeRequest);
+    if (this.options.router.revalidate) runtimeSlice = await this.options.router.revalidate(routeRequest, runtimeSlice);
     const decisionContext = decisionContextFromRuntime(runtimeContext);
     const toolset = buildMcpProviderToolDescriptors({
       includeRestricted: this.options.includeRestricted,
@@ -125,6 +132,7 @@ export class AicfMcpServer {
       decisionContext,
       request,
       runtimeContext,
+      routing: { request: routeRequest, slice: runtimeSlice },
       toolset,
       userInput
     };

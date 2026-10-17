@@ -18,6 +18,8 @@ export const requiredRootDocs = [
 
 export const requiredDocs = [
   "docs/index.md",
+  "docs/discovery.md",
+  "docs/evals/discovery-qualification.md",
   "docs/api/public-api-policy.md",
   "docs/getting-started/provider-neutral-quickstart.md",
   "docs/getting-started/openai-quickstart.md",
@@ -76,6 +78,7 @@ export const numberedExamples = [
   "examples/08-aws-step-functions-approval/README.md",
   "examples/09-security-packs-promptfoo/README.md",
   "examples/10-trace-to-golden/README.md",
+  "examples/12-capability-discovery-selection/README.md",
   "examples/11-control-plane/README.md"
 ];
 

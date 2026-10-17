@@ -55,6 +55,7 @@ export interface AicfMcpListToolsResult extends Pick<McpProviderToolDescriptorSe
 }
 
 export interface AicfMcpPreparedRequest {
+  routing?: { request: import("../runtime/types.js").CapabilityRouteRequest; slice: import("../runtime/types.js").CapabilitySlice };
   builtContext: AicfBuiltContext;
   decisionContext: DecisionRequest["context"];
   request: unknown;

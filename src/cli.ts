@@ -203,6 +203,31 @@ export async function runCli(argv: string[], options: CliRunOptions = {}): Promi
   const fixtureValidation = validatePublicFixtures(loadResult.fixtures);
   const errors = [...loadResult.errors, ...validation.errors, ...fixtureValidation.errors];
 
+  if (!errors.length && loadResult.fixtures.some(fixture => fixture.kind === "discovery_eval_suite" || fixture.kind === "discovery_eval_observations")) {
+    const { validateDiscoveryEvaluationSuite, evaluateCapabilityDiscovery } = await import("./discovery/evaluation.js");
+    const suites = loadResult.fixtures.filter(fixture => fixture.kind === "discovery_eval_suite");
+    for (const fixture of suites) {
+      for (const diagnostic of validateDiscoveryEvaluationSuite(fixture.fixture)) {
+        errors.push({ code: "invalid_fixture", message: diagnostic.code, path: fixture.path, id: diagnostic.caseId });
+      }
+    }
+    for (const fixture of loadResult.fixtures.filter(fixture => fixture.kind === "discovery_eval_observations")) {
+      const observations = fixture.fixture as import("./generated/manifest-types.js").DiscoveryEvaluationObservations;
+      const matches = suites.filter(candidate => (candidate.fixture as { id: string }).id === observations.suite_id);
+      if (matches.length !== 1) {
+        errors.push({ code: "invalid_fixture", message: "discovery_evaluation_suite_required", path: fixture.path });
+        continue;
+      }
+      const suite = matches[0]!.fixture as import("./generated/manifest-types.js").DiscoveryEvaluationSuite;
+      const registry = buildRegistry(suite.capabilities.map(manifest => ({ kind: "capability" as const, manifest,
+        path: `synthetic/${manifest.id}.yaml`, absolutePath: `/synthetic/${manifest.id}.yaml` })));
+      const result = evaluateCapabilityDiscovery({ suite, registry, observations });
+      if (!result.valid) for (const diagnostic of result.diagnostics) {
+        errors.push({ code: "invalid_fixture", message: diagnostic.code, path: fixture.path, id: diagnostic.caseId });
+      }
+    }
+  }
+
   if (errors.length > 0) {
     stderr.write(formatDiagnostics(errors));
     return 1;

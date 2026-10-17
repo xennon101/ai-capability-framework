@@ -1,3 +1,4 @@
+import { validateDiscoverySnapshotStructure } from "./discovery-snapshot.js";
 import { hashReplayValue } from "./hash.js";
 import { redactReplayTrace } from "./redaction.js";
 import type {
@@ -8,7 +9,10 @@ import type {
 
 export class DefaultReplayRecorder implements ReplayTraceRecorder {
   record(input: ReplayTraceRecorderInput): ReplayTrace {
+    if (input.extensions?.discovery !== undefined && !validateDiscoverySnapshotStructure(input.extensions.discovery).valid)
+      throw new Error("The discovery replay snapshot is invalid or exceeds its serialized limit.");
     const trace: ReplayTrace = {
+      ...(input.extensions ? { extensions: structuredClone(input.extensions) } : {}),
       actions: input.actions ?? [],
       approvals: input.approvals,
       capabilitySlice: {

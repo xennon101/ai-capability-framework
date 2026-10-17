@@ -1,3 +1,5 @@
+import { sanitizeProviderTraceMetadata } from "../runtime/provider-run.js";
+import type { ProviderTraceMetadata } from "../runtime/provider-types.js";
 import { DefaultRedactionPolicy } from "../runtime/index.js";
 import {
   createContextSegment,
@@ -24,7 +26,7 @@ export function sanitizeTraceEvent(
 ): AicfRuntimeTraceEvent {
   return {
     ...event,
-    attributes: sanitizeTraceAttributes(event.attributes, options.contentCapture ?? "metadata")
+    attributes: isProviderMetadataEvent(event.type) ? sanitizeProviderTraceMetadata(event.attributes as ProviderTraceMetadata) : sanitizeTraceAttributes(event.attributes, options.contentCapture ?? "metadata")
   };
 }
 
@@ -53,7 +55,7 @@ export function createTraceEvent(input: {
   type: AicfRuntimeTraceEvent["type"];
 }): AicfRuntimeTraceEvent {
   return {
-    attributes: sanitizeTraceAttributes(input.attributes ?? {}, input.contentCapture ?? "metadata"),
+    attributes: isProviderMetadataEvent(input.type) ? sanitizeProviderTraceMetadata((input.attributes ?? {}) as ProviderTraceMetadata) : sanitizeTraceAttributes(input.attributes ?? {}, input.contentCapture ?? "metadata"),
     message: input.message,
     requestId: input.requestId,
     runId: input.runId,
@@ -231,4 +233,8 @@ function redactSensitiveText(value: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isProviderMetadataEvent(type: string): boolean {
+  return ["discovery.end", "selection.end", "provider.attempt.start", "provider.attempt.end", "usage.summary"].includes(type);
 }

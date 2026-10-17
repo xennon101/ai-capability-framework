@@ -4,6 +4,34 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.1.0-rc.1 - 2026-10-17
+
+- Published discovery as release-candidate public, with lexical retrieval and ordinary
+  model tool selection as the recommended default. Dedicated selection is optional.
+- Documented the tested synthetic configuration: both lexical modes qualify after a
+  separately versioned offline wording correction; hybrid remains experimental and
+  opt-in because its incremental-gain gate was not met. See the
+  [qualification report](docs/evals/discovery-qualification.md).
+- Tightened registry-error handling and retained tag-only OIDC publication to next. No
+  model defaults, retrieval scoring or application deployment changed.
+
+- Corrected the synthetic workflow app's planning, terminal dependency states and
+  response grading. Added versioned readiness fixtures, fresh qualification families,
+  and a remaining-budget continuation protocol. These offline changes preserve
+  historical live results and do not qualify a model or change framework defaults.
+
+- Added scoped discovery evaluation reports, corrected versioned domain fixtures, and
+  opt-in live campaign tooling with durable budgets and independent per-mode gates.
+  Default invocation validates offline; synthetic campaign results do not qualify
+  models.
+
+- Added the optional release-candidate discovery subpath with task search, reusable
+  task-bound routers, explicit hybrid retrieval and dedicated selection, shared-run
+  accounting, metadata tracing, and bounded replay. Default routing remains unchanged.
+- Added portable no-key customer-request examples, public discovery schemas, and frozen
+  synthetic evaluation fixtures. Mock integration and offline metrics do not qualify
+  real-model retrieval or selection quality.
+
 ## 1.0.3 - 2026-09-07
 
 - Updated the resolved `fast-uri` dependency to `3.1.7` to address the high-severity

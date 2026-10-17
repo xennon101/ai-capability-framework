@@ -13,6 +13,8 @@ jobs:
   ci:
     name: Public repository checks (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    env:
+      VITEST_MAX_WORKERS: "2"
     strategy:
       fail-fast: false
       matrix:
@@ -40,9 +42,6 @@ jobs:
       - name: Install agent skills dependencies
         run: npm --prefix agent-skills ci
 
-      - name: Generate public types
-        run: npm run generate:types
-
       - name: Check generated type freshness
         run: npm run check:generated
 
@@ -60,6 +59,9 @@ jobs:
 
       - name: Validate manifests and fixtures
         run: npm run validate
+
+      - name: Run offline discovery evaluation
+        run: npm run eval:discovery:mock
 
       - name: Run provider conformance
         run: npm run conformance
