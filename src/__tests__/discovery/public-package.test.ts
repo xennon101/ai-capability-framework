@@ -17,7 +17,9 @@ describe("public discovery package surface", () => {
       const key = `./schemas/discovery/${name}.schema.json`;
       expect(metadata.exports[key]).toBe(key);
     }
-    expect(metadata.version).toBe("1.0.3");
+    const skills = JSON.parse(await readFile("agent-skills/package.json", "utf8"));
+    expect(metadata.version).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
+    expect(metadata.version).toBe(skills.version);
     expect(metadata.exports["./discovery/*"]).toBeUndefined();
     expect(discovery).not.toHaveProperty("runProviderAttempt");
     expect(discovery).not.toHaveProperty("resolveDiscoveryConfiguration");
