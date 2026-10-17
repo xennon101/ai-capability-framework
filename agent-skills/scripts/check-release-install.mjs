@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -25,15 +25,20 @@ try {
   await mkdir(packDirectory, { recursive: true });
   await mkdir(consumerDirectory, { recursive: true });
 
-  execFileSync(npmCommand, npmArgs("pack", "--pack-destination", packDirectory, "--json"), {
+  const registryVersion = process.env.AICF_RELEASE_REGISTRY_VERSION;
+  if (registryVersion !== undefined && (registryVersion !== JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).version
+    || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(registryVersion))) {
+    throw new Error("Registry smoke tests require the exact reviewed package version.");
+  }
+  if (registryVersion === undefined) execFileSync(npmCommand, npmArgs("pack", "--pack-destination", packDirectory, "--json"), {
     cwd: root,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
   });
 
-  const tarball = readdirSync(packDirectory)
+  const tarball = registryVersion === undefined ? readdirSync(packDirectory)
     .filter((file) => file.endsWith(".tgz"))
-    .map((file) => path.join(packDirectory, file))[0];
+    .map((file) => path.join(packDirectory, file))[0] : `@aicf/agent-skills@${registryVersion}`;
   if (!tarball) {
     throw new Error("npm pack did not produce an agent-skills tarball.");
   }

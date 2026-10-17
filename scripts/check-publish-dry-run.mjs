@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isNpmNotFound } from "./npm-registry-state.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -133,8 +134,7 @@ function checkPublishedVersion(exec, root, packageName, version, registryChecks,
 }
 
 function isNotFoundError(error) {
-  const text = String(`${error?.status ?? ""} ${error?.stderr ?? ""} ${error?.message ?? ""}`);
-  return text.includes("E404") || text.includes("404") || text.includes("No match found");
+  return isNpmNotFound(error);
 }
 
 function readJson(file, failures, label) {

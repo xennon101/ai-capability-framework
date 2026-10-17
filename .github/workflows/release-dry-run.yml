@@ -10,6 +10,8 @@ jobs:
   release-dry-run:
     name: Release artifact dry run
     runs-on: ubuntu-latest
+    env:
+      VITEST_MAX_WORKERS: "2"
 
     steps:
       - name: Check out repository
@@ -34,7 +36,7 @@ jobs:
         run: npm run check:release-tag
 
       - name: Run final certification gate
-        run: npm run check:certification
+        run: npm run check && npm run check:certification
 
       - name: Create source review archive
         run: npm run archive:source
