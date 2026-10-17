@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
+import { checkDiscoveryInstall } from "./check-discovery-install.mjs";
 
 const keepTmp = process.env.AICF_KEEP_TMP === "1";
 const npmExecPath = process.env.npm_execpath;
@@ -12,20 +14,31 @@ let tarballPath;
 let tempDirectory;
 
 try {
-  const packOutput = execFileSync(npmCommand, npmArgs("pack", "--json"), {
-    cwd: repoRoot,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  const packResult = JSON.parse(packOutput)[0];
-  tarballPath = path.resolve(repoRoot, packResult.filename);
   tempDirectory = await mkdtemp(path.join(tmpdir(), "aicf-release-install-"));
+  const registryVersion = process.env.AICF_RELEASE_REGISTRY_VERSION;
+  let installSource;
+  if (registryVersion !== undefined) {
+    const expectedVersion = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).version;
+    if (registryVersion !== expectedVersion || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(registryVersion)) {
+      throw new Error("Registry smoke tests require the exact reviewed package version.");
+    }
+    installSource = `ai-capability-framework@${registryVersion}`;
+  } else {
+    const packOutput = execFileSync(npmCommand, npmArgs("pack", "--pack-destination", tempDirectory, "--json"), {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    const packResult = JSON.parse(packOutput)[0];
+    tarballPath = path.join(tempDirectory, packResult.filename);
+    installSource = tarballPath;
+  }
 
   execFileSync(npmCommand, npmArgs("init", "-y"), {
     cwd: tempDirectory,
     stdio: "ignore"
   });
-  execFileSync(npmCommand, npmArgs("install", "--omit=dev", tarballPath), {
+  execFileSync(npmCommand, npmArgs("install", "--omit=dev", installSource), {
     cwd: tempDirectory,
     stdio: "pipe"
   });
@@ -40,6 +53,7 @@ try {
       const subpaths = [
         ["cli", "ai-capability-framework/cli", "runCli"],
         ["runtime", "ai-capability-framework/runtime", "DefaultCapabilityRouter"],
+        ["discovery", "ai-capability-framework/discovery", "createCapabilityDiscovery"],
         ["openai", "ai-capability-framework/openai", "runOpenAIResponses"],
         ["observability", "ai-capability-framework/observability", "CollectingTraceSink"],
         ["governance", "ai-capability-framework/governance", "compileCapabilityRisk"],
@@ -198,13 +212,11 @@ try {
     stdio: "pipe"
   });
 
+  await checkDiscoveryInstall({ directory: tempDirectory, repoRoot, npmCommand, npmArgs });
   console.log(`Release install smoke test passed in ${tempDirectory}.`);
 } finally {
   if (!keepTmp && tempDirectory) {
     await rm(tempDirectory, { force: true, recursive: true });
   }
 
-  if (!keepTmp && tarballPath) {
-    await rm(tarballPath, { force: true });
-  }
 }

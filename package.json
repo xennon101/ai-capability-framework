@@ -1,6 +1,6 @@
 {
   "name": "ai-capability-framework",
-  "version": "1.0.3",
+  "version": "1.1.0-rc.1",
   "private": false,
   "description": "Provider-agnostic AI capability contracts, runtime controls, evals, and model/provider adapters.",
   "license": "MIT",
@@ -198,7 +198,17 @@
     "./schemas/security-packs/promptfoo-red-team-config.schema.json": "./schemas/security-packs/promptfoo-red-team-config.schema.json",
     "./schemas/security-packs/security-case-suite.schema.json": "./schemas/security-packs/security-case-suite.schema.json",
     "./schemas/security-packs/security-pack.schema.json": "./schemas/security-packs/security-pack.schema.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./discovery": {
+      "types": "./dist/discovery/index.d.ts",
+      "import": "./dist/discovery/index.js"
+    },
+    "./schemas/discovery/metadata.schema.json": "./schemas/discovery/metadata.schema.json",
+    "./schemas/discovery/embedding-index.schema.json": "./schemas/discovery/embedding-index.schema.json",
+    "./schemas/discovery/selection-response.schema.json": "./schemas/discovery/selection-response.schema.json",
+    "./schemas/discovery/eval-suite.schema.json": "./schemas/discovery/eval-suite.schema.json",
+    "./schemas/discovery/eval-observations.schema.json": "./schemas/discovery/eval-observations.schema.json",
+    "./schemas/replay/discovery-snapshot.schema.json": "./schemas/replay/discovery-snapshot.schema.json"
   },
   "publishConfig": {
     "access": "public"
@@ -223,7 +233,7 @@
     "archive:source": "node scripts/create-source-archive.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check": "npm run check:generated && npm run build && npm run typecheck && npm run lint && npm test && npm run validate && npm run conformance && npm run format:check && npm run check:readability && npm run gate:examples && npm run docs:build && npm run check:package && npm run check:workspace-public",
+    "check": "npm run check:generated && npm run build && npm run typecheck && npm run lint && npm test && npm run validate && npm run conformance && npm run eval:discovery:mock && npm run format:check && npm run check:readability && npm run gate:examples && npm run docs:build && npm run check:package && npm run check:workspace-public",
     "check:docs": "node scripts/check-docs.mjs",
     "check:generated": "node scripts/check-generated.mjs",
     "check:readability": "node scripts/check-public-readability.mjs",
@@ -296,7 +306,10 @@
     "validate": "npm run build --silent && node dist/cli.js validate examples",
     "skills:ci": "npm --prefix agent-skills ci",
     "skills:pack:dry": "npm --prefix agent-skills run pack:dry",
-    "skills:publish:dry": "npm publish ./agent-skills --dry-run --access public"
+    "skills:publish:dry": "npm publish ./agent-skills --dry-run --access public",
+    "eval:discovery:mock": "npm run build --silent && node examples/12-capability-discovery-selection/run-evaluation-mock.mjs",
+    "eval:discovery:live": "npm run build --silent && node examples/12-capability-discovery-selection/run-evaluation-live.mjs",
+    "eval:discovery:campaign:mock": "npm run build --silent && node examples/12-capability-discovery-selection/run-campaign-mock.mjs"
   },
   "engines": {
     "node": ">=20"

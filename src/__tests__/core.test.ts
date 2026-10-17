@@ -169,7 +169,7 @@ describe("AICF CLI", () => {
     const exitCode = await runCli(["validate", "examples"], { stderr, stdout });
 
     expect(exitCode).toBe(0);
-    expect(stdout.value).toContain("Validated 16 manifest(s) and 18 fixture(s).");
+    expect(stdout.value).toContain("Validated 16 manifest(s) and 21 fixture(s).");
     expect(stderr.value).toBe("");
   });
 
@@ -1845,7 +1845,7 @@ describe("AICF core repair hardening", () => {
     const fixtureValidation = validatePublicFixtures(loaded.fixtures);
 
     expect(loaded.errors).toEqual([]);
-    expect(loaded.fixtures).toHaveLength(18);
+    expect(loaded.fixtures).toHaveLength(21);
     expect(fixtureValidation.errors).toEqual([]);
     expect(fixtureValidation.valid).toBe(true);
   });

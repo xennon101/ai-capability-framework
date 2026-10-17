@@ -19,7 +19,8 @@ describe("public docs and developer experience", () => {
     expect(docsCheck.requiredDocs).toContain("docs/public-framework/final-certification-matrix.md");
     expect(docsCheck.requiredDocs).toContain("docs/public/npm-release-preflight.md");
     expect(docsCheck.requiredDocs).toContain("docs/public/license-exceptions.md");
-    expect(docsCheck.numberedExamples).toHaveLength(11);
+    expect(docsCheck.numberedExamples).toHaveLength(12);
+    expect(docsCheck.numberedExamples).toContain("examples/12-capability-discovery-selection/README.md");
     expect(docsCheck.runDocsCheck()).toEqual([]);
   });
 

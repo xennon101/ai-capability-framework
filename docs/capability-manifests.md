@@ -25,6 +25,30 @@ See [the 1.0 spec](spec.md) for the shared vocabulary.
 - `idempotency`: Optional commit idempotency requirements.
 - `observability`: Logging and trace expectations.
 
+## Optional Discovery Metadata
+
+The reserved `extensions.discovery` object accepts authored retrieval vocabulary:
+
+```yaml
+extensions:
+  discovery:
+    schema_version: "1.0"
+    summary: Read the recorded details of a support ticket.
+    aliases:
+      - ticket details
+      - support case status
+```
+
+When present, this object is validated against the
+[discovery metadata schema](../schemas/discovery/metadata.schema.json). Its version is
+required; summary and aliases are optional. A summary must be nonblank and at most 500
+characters. Supply at most 32 nonblank aliases of at most 120 characters each. Other
+fields inside this object are rejected; unrelated extensions remain valid.
+
+This metadata does not change default routing, authorization, or execution. The default
+router continues to use its existing lexical metadata. Optional retrieval and selection
+are available through the [discovery subpath](discovery.md).
+
 ## Lifecycle Guidance
 
 Use `write_prepare_only` for capabilities that assemble a proposed action but do not

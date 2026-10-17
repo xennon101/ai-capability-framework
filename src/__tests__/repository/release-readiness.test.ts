@@ -151,8 +151,7 @@ describe("public repository release readiness", () => {
     expect(publish).toContain("id-token: write");
     expect(publish).toContain("AGENT_VERSION=$(node -p \"require('./agent-skills/package.json').version\")");
     expect(publish).toContain("PLUGIN_VERSION=$(node -p \"require('./agent-skills/.codex-plugin/plugin.json').version\")");
-    expect(publish).toContain("npm view \"ai-capability-framework@${VERSION}\" version");
-    expect(publish).toContain("npm view \"@aicf/agent-skills@${VERSION}\" version");
+    expect(publish).toContain("npm run release:preflight:npm");
     expect(publish).toContain("npm run check:release-tag");
     expect(publish).toContain("npm run check:certification");
     expect(publish).toContain("npm publish --dry-run");
@@ -178,7 +177,7 @@ describe("public repository release readiness", () => {
     });
 
     expect(report.ok).toBe(true);
-    expect(report.expectedDistTag).toBe("latest");
+    expect(report.expectedDistTag).toBe(currentPackageVersion.includes("-") ? "next" : "latest");
     expect(report.warnings.join("\n")).toContain("@aicf/agent-skills is not published yet");
   });
 

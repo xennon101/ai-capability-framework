@@ -1,10 +1,8 @@
-import { isRestrictedCapability } from "../adapter-common.js";
-import { readOnlyBlocks } from "../controls/index.js";
+import { filterEligibleCapabilities } from "./eligibility.js";
 import type { CapabilityManifest } from "../generated/manifest-types.js";
 import type { LoadedCapabilityManifest, RiskTier } from "../types.js";
 import type {
   AicfCapabilityRouter,
-  AicfRuntimeContext,
   AicfRuntimeWarning,
   CapabilityRouteRequest,
   CapabilitySlice,
@@ -25,25 +23,15 @@ const maxCapabilitiesHardLimit = 20;
 
 export class DefaultCapabilityRouter implements AicfCapabilityRouter {
   route(request: CapabilityRouteRequest): CapabilitySlice {
-    const excluded: CapabilitySlice["excluded"] = [];
+    const { eligible, excluded } = filterEligibleCapabilities(request);
     const warnings: AicfRuntimeWarning[] = [];
     const maxCapabilities = Math.min(
       request.maxCapabilities ?? maxCapabilitiesDefault,
       maxCapabilitiesHardLimit
     );
-    const maxRiskTier = request.maxRiskTier ?? request.builtContext.runtimeContext.autonomy.maxRiskTier;
     const candidates: CapabilitySliceItem[] = [];
 
-    for (const loadedCapability of request.registry.capabilities) {
-      const exclusion = exclusionReason(request, loadedCapability, maxRiskTier);
-      if (exclusion) {
-        excluded.push({
-          capabilityId: loadedCapability.manifest.id,
-          reason: exclusion
-        });
-        continue;
-      }
-
+    for (const loadedCapability of eligible) {
       candidates.push(scoreCapability(request, loadedCapability));
     }
 
@@ -98,94 +86,6 @@ export function formatCapabilitySliceForModel(input: {
   }
 
   return lines.join("\n").trimEnd();
-}
-
-function exclusionReason(
-  request: CapabilityRouteRequest,
-  loadedCapability: LoadedCapabilityManifest,
-  maxRiskTier: Exclude<RiskTier, "none">
-): string | null {
-  const capability = loadedCapability.manifest;
-
-  if (request.includeCapabilityIds && !request.includeCapabilityIds.includes(capability.id)) {
-    return "Capability was not explicitly included.";
-  }
-
-  if (request.excludeCapabilityIds?.includes(capability.id)) {
-    return "Capability was explicitly excluded.";
-  }
-
-  const statusReason = statusExclusionReason(request, capability);
-  if (statusReason) {
-    return statusReason;
-  }
-
-  if (riskRank[capability.risk_tier] > riskRank[maxRiskTier]) {
-    return `Capability risk tier ${capability.risk_tier} exceeds ${maxRiskTier}.`;
-  }
-
-  if (isRestrictedCapability(capability) && !request.includeRestricted) {
-    return "Restricted side-effect capability was excluded.";
-  }
-
-  const controlsReason = controlsExclusionReason(request, loadedCapability);
-  if (controlsReason) {
-    return controlsReason;
-  }
-
-  const contextReason = requiredContextReason(capability, request.builtContext.runtimeContext);
-  if (contextReason) {
-    return contextReason;
-  }
-
-  const permissionReason = permissionExclusionReason(request, capability);
-  if (permissionReason) {
-    return permissionReason;
-  }
-
-  if (request.allowedDomains && (!capability.domain || !request.allowedDomains.includes(capability.domain))) {
-    return "Capability domain was not allowed.";
-  }
-
-  if (request.allowedCapabilityTypes && !request.allowedCapabilityTypes.includes(capability.capability_type)) {
-    return "Capability type was not allowed.";
-  }
-
-  return null;
-}
-
-function controlsExclusionReason(
-  request: CapabilityRouteRequest,
-  loadedCapability: LoadedCapabilityManifest
-): string | null {
-  if (!request.controls) {
-    return null;
-  }
-
-  const decision = request.controls.evaluate({
-    capability: loadedCapability,
-    capabilityId: loadedCapability.manifest.id,
-    domain: loadedCapability.manifest.domain,
-    operation: "export",
-    registry: request.registry,
-    riskTier: loadedCapability.manifest.risk_tier,
-    runtimeContext: request.builtContext.runtimeContext
-  });
-
-  if (decision.status === "denied") {
-    return decision.reasons[0]?.message ?? "Capability was denied by runtime controls.";
-  }
-
-  if (decision.status === "read_only" && readOnlyBlocks({
-    capability: loadedCapability,
-    capabilityId: loadedCapability.manifest.id,
-    operation: "export",
-    runtimeContext: request.builtContext.runtimeContext
-  })) {
-    return decision.reasons[0]?.message ?? "Read-only controls exclude this capability.";
-  }
-
-  return null;
 }
 
 function scoreCapability(
@@ -264,60 +164,6 @@ function compareCapabilityItems(
   return left.capabilityId.localeCompare(right.capabilityId);
 }
 
-function statusExclusionReason(
-  request: CapabilityRouteRequest,
-  capability: CapabilityManifest
-): string | null {
-  switch (capability.status) {
-    case "active":
-      return null;
-    case "disabled":
-      return request.includeDisabledForTests ? null : "Disabled capability was excluded.";
-    case "deprecated":
-      return request.includeDeprecated ? null : "Deprecated capability was excluded.";
-    case "draft":
-      return request.includeDraft ? null : "Draft capability was excluded.";
-    case "experimental":
-      return request.includeExperimental ? null : "Experimental capability was excluded.";
-  }
-}
-
-function requiredContextReason(
-  capability: CapabilityManifest,
-  context: AicfRuntimeContext
-): string | null {
-  if (capability.authorization.requires_user_context && !hasText(context.subject.userId)) {
-    return "Capability requires user context.";
-  }
-
-  if (capability.authorization.tenant_scoped && !hasText(context.account.tenantId)) {
-    return "Capability requires tenant context.";
-  }
-
-  if (!hasText(context.account.accountId)) {
-    return "Runtime account context is required.";
-  }
-
-  return null;
-}
-
-function permissionExclusionReason(
-  request: CapabilityRouteRequest,
-  capability: CapabilityManifest
-): string | null {
-  const override = request.capabilityPermissions?.[capability.id];
-  if (override && !override.allowed) {
-    return override.reason ?? "Capability permission adapter denied access.";
-  }
-
-  const permissionSet = new Set([
-    ...request.builtContext.runtimeContext.subject.permissions,
-    ...(override?.permissions ?? [])
-  ]);
-  const missingPermission = capability.authorization.permissions.find((permission) => !permissionSet.has(permission));
-  return missingPermission ? `Missing permission ${missingPermission}.` : null;
-}
-
 function inputFields(capability: CapabilityManifest): string[] {
   const properties = capability.input_schema.properties;
   if (!isRecord(properties)) {
@@ -341,10 +187,6 @@ function lifecycleSummary(capability: CapabilityManifest): string {
 
 function tokens(value: string): string[] {
   return value.toLowerCase().split(/[^a-z0-9_]+/).filter((token) => token.length > 1);
-}
-
-function hasText(value: string | undefined): boolean {
-  return typeof value === "string" && value.trim().length > 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

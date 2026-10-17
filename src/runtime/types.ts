@@ -171,6 +171,9 @@ export interface AicfRedactionPolicy {
 }
 
 export interface CapabilityRouteRequest {
+  signal?: AbortSignal;
+  deadlineAt?: number;
+  providerRun?: import("./provider-types.js").AicfProviderRun;
   allowedCapabilityTypes?: CapabilityManifest["capability_type"][];
   allowedDomains?: string[];
   builtContext: AicfBuiltContext;
@@ -193,6 +196,11 @@ export interface CapabilityRouteRequest {
   userInput: AicfRuntimeUserInput;
 }
 
+export interface CapabilityEligibilityResult {
+  eligible: LoadedCapabilityManifest[];
+  excluded: RuntimeCapabilitySlice["excluded"];
+}
+
 export interface CapabilitySliceItem {
   capabilityId: string;
   exposedOperations: Array<"select" | "prepare">;
@@ -212,6 +220,8 @@ export interface RuntimeCapabilitySlice {
 export type CapabilitySlice = RuntimeCapabilitySlice;
 
 export interface AicfCapabilityRouter {
+  readonly providerRun?: import("./provider-types.js").AicfProviderRun;
+  revalidate?(request: CapabilityRouteRequest, slice: CapabilitySlice): Promise<CapabilitySlice> | CapabilitySlice;
   route(request: CapabilityRouteRequest): Promise<CapabilitySlice> | CapabilitySlice;
 }
 

@@ -13,6 +13,11 @@ const schemas = [
   ["schemas/conformance/conformance-report.schema.json", "ConformanceReportFixture"],
   ["schemas/conformance/provider-target-matrix.schema.json", "ProviderTargetMatrixFixture"],
   ["schemas/decision-request.schema.json", "DecisionRequestFixture"],
+  ["schemas/discovery/metadata.schema.json", "DiscoveryMetadata"],
+  ["schemas/discovery/eval-suite.schema.json", "DiscoveryEvaluationSuite"],
+  ["schemas/discovery/eval-observations.schema.json", "DiscoveryEvaluationObservations"],
+  ["schemas/discovery/embedding-index.schema.json", "CapabilityEmbeddingIndexArtifact"],
+  ["schemas/discovery/selection-response.schema.json", "CapabilitySelectionResponse"],
   ["schemas/entity-manifest.schema.json", "EntityManifest"],
   ["schemas/eval-case.schema.json", "EvalCase"],
   ["schemas/eval-result.schema.json", "EvalResultFixture"],
@@ -25,6 +30,7 @@ const schemas = [
   ["schemas/memory/governed-memory-fixture.schema.json", "GovernedMemoryFixture"],
   ["schemas/provenance/generated-content-provenance.schema.json", "GeneratedContentProvenanceFixture"],
   ["schemas/provenance/provenance-adapter-hook-result.schema.json", "ProvenanceAdapterHookResultFixture"],
+  ["schemas/replay/discovery-snapshot.schema.json", "CapabilityDiscoverySnapshot"],
   ["schemas/replay/replay-result.schema.json", "ReplayResultFixture"],
   ["schemas/replay/replay-trace.schema.json", "ReplayTraceFixture"],
   ["schemas/replay/trace-to-golden-options.schema.json", "TraceToGoldenOptionsFixture"],
@@ -49,7 +55,16 @@ export async function renderGeneratedTypes() {
     const schema = JSON.parse(await readFile(path.join(repoRoot, schemaPath), "utf8"));
     delete schema.$id;
     delete schema.title;
+    // Reuse the canonical manifest type instead of redeclaring its shared definitions.
+    if (typeName === "DiscoveryEvaluationSuite") {
+      schema.properties.capabilities.items = { tsType: "CapabilityManifest" };
+      schema.properties.contexts.additionalProperties.properties.runtime_context = {
+        tsType: 'import("../runtime/types.js").AicfRuntimeContext'
+      };
+    }
     const compiled = await compile(schema, typeName, {
+      cwd: path.dirname(path.join(repoRoot, schemaPath)),
+      ignoreMinAndMaxItems: typeName.startsWith("DiscoveryEvaluation"),
       additionalProperties: false,
       bannerComment: "",
       unreachableDefinitions: true

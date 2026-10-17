@@ -2,6 +2,25 @@
 
 This checklist prepares an AICF public release for GitHub and npm distribution.
 
+## Discovery prerelease
+
+Discovery is release-candidate public. Recommend lexical retrieval with ordinary model
+tool selection; dedicated selection is optional and hybrid remains experimental. Link
+the [qualification report](evals/discovery-qualification.md) in release notes. Its
+qualified lexical results apply to a tested synthetic configuration, and the revised
+workflow assessment is an offline checker correction rather than new live trials.
+
+Use a reviewed pull request, passing hosted Linux Node 20/22/24 checks, merge, and an
+exact-commit manual release dry-run before pushing the matching prerelease tag. Local
+checks do not replace hosted checks. Publish both packages to `next`, preserving
+`latest`, then verify exact-version registry installs.
+
+The publication and dry-run workflows run `npm run check` plus certification with
+`VITEST_MAX_WORKERS=2`. Publication is serialized; registry failures fail closed unless
+npm explicitly reports E404 for an absent version. Local npm login is not the OIDC
+publishing mechanism. Verify package ownership and the trusted publisher for both
+packages before tagging; never substitute a stored npm token.
+
 ## Preflight
 
 - Confirm the release branch contains only public framework material.
@@ -261,11 +280,12 @@ npm view "ai-capability-framework@${VERSION}" version
 npm view "@aicf/agent-skills@${VERSION}" version
 ```
 
-If only `@aicf/agent-skills` published, fix the workflow or npm ownership issue and
-retry the root package publish at the same version from the same tag. If only the root
-package published, retry the agent-skills publish at the same version from the same tag.
-Do not move the public tag, delete the published version, or reuse a published npm
-version as a normal recovery path.
+If only one package published, mark the release incomplete and inspect its registry
+metadata before taking further action. The ordinary workflow rejects already-published
+targets, so do not blindly rerun it. Use a new coordinated release candidate when the
+existing workflow cannot safely complete the missing package. Do not move the public
+tag, delete the published version, or reuse a published npm version as a normal recovery
+path.
 
 If the tagged code is wrong, or if the failed package cannot be safely published from
 the same commit, bump both package versions and ship a follow-up patch or release

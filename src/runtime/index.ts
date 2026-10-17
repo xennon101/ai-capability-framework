@@ -18,6 +18,7 @@ export {
 export { DefaultPolicyBroker } from "./policy.js";
 export { DefaultRedactionPolicy } from "./redaction.js";
 export { DefaultCapabilityRouter, formatCapabilitySliceForModel } from "./router.js";
+export { filterEligibleCapabilities } from "./eligibility.js";
 export {
   InMemoryApprovalStore,
   InMemoryIdempotencyStore,
@@ -77,6 +78,7 @@ export type {
   AicfWorkflowContext,
   BuildRuntimeContextInput,
   CapabilityRouteRequest,
+  CapabilityEligibilityResult,
   CapabilitySlice,
   CapabilitySliceItem,
   CreateToolEnvelopeInput,
@@ -87,3 +89,8 @@ export type {
   ModelSafeEnvelopeOptions,
   RuntimeCapabilitySlice
 } from "./types.js";
+
+export { createAicfProviderRun } from "./provider-run.js";
+export type { AicfProviderRun, CreateAicfProviderRunOptions, ProviderRunSnapshot, ProviderAttemptInput, ProviderAttemptResult, ProviderBudgetScope, ProviderBudgetLedger, ProviderUsage, ModelUsage, UsageQuantity, ProviderModelConfiguration, ProviderTraceMetadata } from "./provider-types.js";
+export type { ProviderDiagnostic, ProviderStage, ProviderInvocation, ProviderUsageTotals, ProviderStageUsage,
+  ProviderAttemptReservation, ProviderAttemptSettlement, ProviderBudgetReservation, ProviderFailureCode } from "./provider-types.js";

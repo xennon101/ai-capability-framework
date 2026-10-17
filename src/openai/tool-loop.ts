@@ -46,7 +46,7 @@ export function createOpenAIResponsesClientFromSdk(client: unknown): AicfOpenAIR
 
   return {
     responses: {
-      create: async (input) => (responses.create as (request: Record<string, unknown>) => Promise<AicfOpenAIResponseLike>).call(responses, input)
+      create: async (input, options) => (responses.create as (request: Record<string, unknown>, options?: unknown) => Promise<AicfOpenAIResponseLike>).call(responses, input, options)
     }
   };
 }

@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/discovery/eval-suite.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "version", "capabilities", "contexts", "cases"],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "capabilities": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "../capability-manifest.schema.json"
+      }
+    },
+    "contexts": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 128,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["runtime_context"],
+        "properties": {
+          "runtime_context": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "account",
+              "subject",
+              "autonomy",
+              "environment",
+              "facts",
+              "metadata",
+              "requestId",
+              "runId",
+              "startedAt"
+            ],
+            "properties": {
+              "account": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["accountId", "tenantId"],
+                "properties": {
+                  "accountId": {
+                    "type": "string"
+                  },
+                  "tenantId": {
+                    "type": "string"
+                  },
+                  "dataResidency": {
+                    "type": "string"
+                  },
+                  "plan": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "riskFlags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "subscriptionStatus": {
+                    "enum": [
+                      "active",
+                      "trialing",
+                      "past_due",
+                      "cancelled",
+                      "suspended",
+                      "unknown"
+                    ]
+                  }
+                }
+              },
+              "subject": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["actorType", "permissions", "roles", "userId"],
+                "properties": {
+                  "actorType": {
+                    "enum": ["user", "operator", "service", "system"]
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "emailHash": {
+                    "type": "string"
+                  },
+                  "entitlements": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "userId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "autonomy": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "allowExternalMessages",
+                  "allowMoneyMovement",
+                  "allowPermissionChanges",
+                  "allowSideEffects",
+                  "autonomyTier",
+                  "maxRiskTier"
+                ],
+                "properties": {
+                  "allowExternalMessages": {
+                    "type": "boolean"
+                  },
+                  "allowMoneyMovement": {
+                    "type": "boolean"
+                  },
+                  "allowPermissionChanges": {
+                    "type": "boolean"
+                  },
+                  "allowSideEffects": {
+                    "type": "boolean"
+                  },
+                  "autonomyTier": {
+                    "enum": ["A0", "A1", "A2", "A3", "A4", "A5"]
+                  },
+                  "maxRiskTier": {
+                    "enum": ["low", "medium", "high", "critical"]
+                  }
+                }
+              },
+              "workflow": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {
+                  "currentEntityId": {
+                    "type": "string"
+                  },
+                  "currentEntityType": {
+                    "type": "string"
+                  },
+                  "locale": {
+                    "type": "string"
+                  },
+                  "pageOrSurface": {
+                    "type": "string"
+                  },
+                  "timezone": {
+                    "type": "string"
+                  },
+                  "workflowId": {
+                    "type": "string"
+                  },
+                  "workflowType": {
+                    "type": "string"
+                  }
+                }
+              },
+              "environment": {
+                "enum": ["development", "test", "staging", "production"]
+              },
+              "facts": {
+                "type": "object"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "runId": {
+                "type": "string"
+              },
+              "startedAt": {
+                "type": "string"
+              }
+            }
+          },
+          "eligibility": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [],
+            "properties": {
+              "includeCapabilityIds": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "maxItems": 128
+              },
+              "excludeCapabilityIds": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "maxItems": 128
+              },
+              "allowedDomains": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "maxItems": 128
+              },
+              "allowedCapabilityTypes": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "read_data",
+                    "retrieve_documents",
+                    "compute",
+                    "write_prepare_only",
+                    "write_commit",
+                    "external_message_prepare",
+                    "external_message_send",
+                    "workflow_start",
+                    "workflow_step",
+                    "human_handoff"
+                  ]
+                }
+              },
+              "maxRiskTier": {
+                "enum": ["low", "medium", "high", "critical"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "family_id",
+          "partition",
+          "domain",
+          "cohorts",
+          "context_id",
+          "fragments",
+          "compatible_ids",
+          "forbidden_ids",
+          "forbidden_operations",
+          "expected_operation"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "family_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "partition": {
+            "enum": ["train", "calibration", "held_out"]
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "cohorts": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "maxItems": 128
+          },
+          "context_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "fragments": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["key", "text"],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "text": {
+                  "type": "string",
+                  "maxLength": 16000
+                }
+              }
+            }
+          },
+          "compatible_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "maxItems": 128
+          },
+          "forbidden_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "maxItems": 128
+          },
+          "forbidden_operations": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": ["read", "prepare", "commit"]
+            }
+          },
+          "expected_operation": {
+            "enum": ["read", "prepare"]
+          }
+        }
+      }
+    }
+  }
+}

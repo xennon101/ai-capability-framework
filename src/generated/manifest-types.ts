@@ -361,6 +361,252 @@ export interface AdapterContext {
   ];
 }
 
+/**
+ * Optional authored retrieval metadata under capability extensions.discovery.
+ */
+export interface DiscoveryMetadata {
+  schema_version: "1.0";
+  summary?: string;
+  /**
+   * @maxItems 32
+   */
+  aliases?: string[];
+}
+
+export interface DiscoveryEvaluationSuite {
+  schema_version: "1.0";
+  id: string;
+  version: string;
+  /**
+   * @maxItems 1000
+   */
+  capabilities: CapabilityManifest[];
+  contexts: {
+    [k: string]: {
+      runtime_context: import("../runtime/types.js").AicfRuntimeContext;
+      eligibility?: {
+        /**
+         * @maxItems 128
+         */
+        includeCapabilityIds?: string[];
+        /**
+         * @maxItems 128
+         */
+        excludeCapabilityIds?: string[];
+        /**
+         * @maxItems 128
+         */
+        allowedDomains?: string[];
+        allowedCapabilityTypes?: (
+          | "read_data"
+          | "retrieve_documents"
+          | "compute"
+          | "write_prepare_only"
+          | "write_commit"
+          | "external_message_prepare"
+          | "external_message_send"
+          | "workflow_start"
+          | "workflow_step"
+          | "human_handoff"
+        )[];
+        maxRiskTier?: "low" | "medium" | "high" | "critical";
+      };
+    };
+  };
+  /**
+   * @maxItems 10000
+   */
+  cases: {
+    id: string;
+    family_id: string;
+    partition: "train" | "calibration" | "held_out";
+    domain: string;
+    /**
+     * @maxItems 128
+     */
+    cohorts: string[];
+    context_id: string;
+    /**
+     * @maxItems 32
+     */
+    fragments: {
+      key: string;
+      text: string;
+    }[];
+    /**
+     * @maxItems 128
+     */
+    compatible_ids: string[];
+    /**
+     * @maxItems 128
+     */
+    forbidden_ids: string[];
+    forbidden_operations: ("read" | "prepare" | "commit")[];
+    expected_operation: "read" | "prepare";
+  }[];
+}
+
+export interface DiscoveryEvaluationObservations {
+  schema_version: "1.0";
+  suite_id: string;
+  suite_fingerprint: string;
+  registry_source_fingerprint: string;
+  corpus_fingerprint: string;
+  retrieval_policy_fingerprint: string;
+  configuration: {
+    mode: "lexical" | "hybrid";
+    policyVersion: string;
+    limits: {
+      maxQueries: number;
+      maxFragmentsPerQuery: number;
+      maxQueryCharacters: number;
+      maxCandidates: number;
+      aliasDiversitySlots: 0 | 1;
+    };
+    aliasWeight: number;
+    minRetrievalScore: number;
+    weights?: {
+      semantic: number;
+      lexical: number;
+    };
+    failurePolicy?: "unavailable" | "lexical_fallback";
+  };
+  custom_ranker_version?: string;
+  usage_complete: boolean;
+  /**
+   * @maxItems 100000
+   */
+  attempts: {
+    run_id: string;
+    attempt_id: string;
+    stage:
+      | "embedding_build"
+      | "query_embedding"
+      | "selection"
+      | "selection_repair"
+      | "model_tool_loop"
+      | "planning"
+      | "response_assembly";
+    configuration: {
+      provider: string;
+      model: string;
+      configurationId: string;
+      revision?: string;
+    };
+    mock: boolean;
+    provider_attempts: number;
+    completed_responses: number;
+    retry_attempts: number;
+    repair_attempts: number;
+    usage: {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      cachedInputTokens?: number;
+      reasoningTokens?: number;
+      estimatedCost?: number;
+    };
+    elapsed_ms: number;
+    pending: boolean;
+    outcome: "completed" | "failed" | "cancelled" | "discarded";
+  }[];
+  /**
+   * @maxItems 10000
+   */
+  cases: {
+    case_id: string;
+    status: "matched" | "no_match" | "unavailable" | "cancelled";
+    actual_mode: "lexical" | "hybrid" | null;
+    eligibility_fingerprint: string;
+    index_fingerprint?: string;
+    /**
+     * @maxItems 20
+     */
+    candidates: {
+      capability_id: string;
+      capability_version: string;
+      score: number;
+    }[];
+    latency_ms: number;
+    selection?:
+      | {
+          mode: "native" | "dedicated";
+          status: "selected";
+          capability_id: string;
+          capability_version: string;
+          operation: "read" | "prepare" | "commit";
+        }
+      | {
+          mode: "native" | "dedicated";
+          status: "abstained" | "unavailable" | "invalid_output" | "cancelled" | "not_performed";
+          capability_id: null;
+          capability_version: null;
+          operation: null;
+        };
+  }[];
+}
+
+/**
+ * This interface was referenced by `CapabilityEmbeddingIndexArtifact`'s JSON-Schema
+ * via the `definition` "hash".
+ */
+export type Hash = string;
+/**
+ * This interface was referenced by `CapabilityEmbeddingIndexArtifact`'s JSON-Schema
+ * via the `definition` "nonblank".
+ */
+export type Nonblank = string;
+
+export interface CapabilityEmbeddingIndexArtifact {
+  schemaVersion: "1.0";
+  projectionVersion: string;
+  registrySourceFingerprint: Hash;
+  corpusFingerprint: Hash;
+  embeddingConfigurationFingerprint: Hash;
+  indexFingerprint: Hash;
+  mock: boolean;
+  vectorDimension: number;
+  builtAt: string;
+  embedding: {
+    provider: Nonblank;
+    model: Nonblank;
+    configurationId: Nonblank;
+    revision?: Nonblank;
+    dimensions?: number;
+  };
+  entries: {
+    capabilityId: Nonblank;
+    capabilityVersion: Nonblank;
+    documentHash: Hash;
+    vectorHash: Hash;
+    /**
+     * @minItems 1
+     */
+    vector: [number, ...number[]];
+  }[];
+}
+
+export interface CapabilitySelectionResponse {
+  schema_version: "1.0";
+  /**
+   * @maxItems 32
+   */
+  decisions: (
+    | {
+        query_id: string;
+        decision: "select";
+        capability_id: string;
+        reason_code: "supported_candidate";
+      }
+    | {
+        query_id: string;
+        decision: "abstain";
+        capability_id: null;
+        reason_code: "no_suitable_candidate" | "ambiguous_request" | "insufficient_context";
+      }
+  )[];
+}
+
 export interface EntityManifest {
   schema_version: "1.0";
   id: string;
@@ -1051,6 +1297,3466 @@ export interface Diagnostic {
   message: string;
   path?: string;
   severity: "info" | "warning" | "error";
+}
+
+export interface CapabilityDiscoverySnapshot {
+  schemaVersion: "1.0";
+  projectionVersion: string;
+  tokenizerVersion: string;
+  rankerVersion: string;
+  registrySourceFingerprint: string;
+  corpusFingerprint: string;
+  retrievalPolicyFingerprint: string;
+  configuration: {
+    mode: "lexical" | "hybrid";
+    policyVersion: string;
+    limits: {
+      maxQueries: number;
+      maxFragmentsPerQuery: number;
+      maxQueryCharacters: number;
+      maxCandidates: number;
+      aliasDiversitySlots: 0 | 1;
+    };
+    aliasWeight: number;
+    minRetrievalScore: number;
+    weights?: {
+      semantic: number;
+      lexical: number;
+    };
+    failurePolicy?: "unavailable" | "lexical_fallback";
+  };
+  /**
+   * @maxItems 32
+   */
+  tasks: {
+    queryId: string;
+    queryHash: string;
+    status: "matched" | "no_match" | "unavailable" | "cancelled";
+    requestedMode: "lexical" | "hybrid";
+    actualMode: "lexical" | "hybrid" | null;
+    eligibilityFingerprint: string;
+    retrievalPolicyFingerprint: string;
+    indexFingerprint?: string;
+    degradedReason?: string;
+    /**
+     * @maxItems 32
+     */
+    reasonCodes: string[];
+    /**
+     * @maxItems 20
+     */
+    candidates:
+      | []
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ]
+      | [
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          },
+          {
+            capabilityId: string;
+            capabilityVersion: string;
+            rank: number;
+            scores: {
+              lexical: number;
+              aliasPhrase: 0 | 1;
+              semantic: number | null;
+              final: number;
+            };
+            inclusionReason: "aggregate_ranking" | "alias_diversity";
+            /**
+             * @maxItems 32
+             */
+            matchedAliasHashes: string[];
+          }
+        ];
+    selection?: {
+      status: "selected" | "abstained" | "unavailable" | "invalid_output" | "cancelled";
+      capabilityId: string | null;
+      capabilityVersion?: string;
+      reasonCode: string;
+      selectorFingerprint: string;
+      inputBindingHash: string;
+    };
+  }[];
+  snapshotFingerprint: string;
 }
 
 export interface ReplayResultFixture {

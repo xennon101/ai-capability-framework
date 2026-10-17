@@ -89,6 +89,12 @@ are incompatible with active read-only controls.
 Use `formatCapabilitySliceForModel()` to render concise model-facing capability guidance
 without private diagnostics, internal policy rules, or full output schemas.
 
+`filterEligibleCapabilities(request)` exposes the same runtime eligibility filters
+without ranking or count truncation. It returns `eligible` manifests in registry order
+and `excluded` capability IDs with their existing reasons. The default router uses this
+helper before scoring and applying its capability limit. Eligibility is a request-time
+filter; normal execution authorization still applies.
+
 ## Policy Broker
 
 `DefaultPolicyBroker` wraps the Core `decideCapability()` control plane and adds runtime
@@ -167,3 +173,19 @@ node examples/runtime-support-billing/run-mock.mjs
 It loads the support manifests, routes read and prepare capabilities, executes a ticket
 read, prepares a refund case that requires approval, records a host approval, and
 commits only through `AicfActionLifecycleManager`.
+
+### Optional shared provider runs
+
+`createAicfProviderRun` joins explicitly managed application planning, discovery,
+selection, and Responses tool-loop calls under one reservation ledger and absolute
+deadline. Its immutable snapshots retain unknown usage, pending work, and unique
+attempts. The default router and ordinary runner calls remain source-compatible. See the
+[shared-run example](../examples/12-capability-discovery-selection/README.md#shared-run-integration)
+for task-bound routing, optional selection, metadata tracing, and offline replay.
+
+## Optional capability discovery
+
+Use [capability discovery](discovery.md) to retrieve an eligible shortlist and pass its
+result-bound router to an ordinary model/tool runner. The optional discovery subpath
+preserves runtime authorization and read/prepare boundaries; default routing stays
+unchanged. Dedicated model selection is explicitly invoked.

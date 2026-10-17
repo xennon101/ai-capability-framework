@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/xennon101/ai-capability-framework/main/schemas/replay/discovery-snapshot.schema.json",
+  "title": "CapabilityDiscoverySnapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projectionVersion",
+    "tokenizerVersion",
+    "rankerVersion",
+    "registrySourceFingerprint",
+    "corpusFingerprint",
+    "retrievalPolicyFingerprint",
+    "configuration",
+    "tasks",
+    "snapshotFingerprint"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "projectionVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "tokenizerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "rankerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "registrySourceFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "corpusFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "retrievalPolicyFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "policyVersion",
+        "limits",
+        "aliasWeight",
+        "minRetrievalScore"
+      ],
+      "properties": {
+        "mode": {
+          "enum": ["lexical", "hybrid"]
+        },
+        "policyVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxQueries",
+            "maxFragmentsPerQuery",
+            "maxQueryCharacters",
+            "maxCandidates",
+            "aliasDiversitySlots"
+          ],
+          "properties": {
+            "maxQueries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            },
+            "maxFragmentsPerQuery": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            },
+            "maxQueryCharacters": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16000
+            },
+            "maxCandidates": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "aliasDiversitySlots": {
+              "enum": [0, 1]
+            }
+          }
+        },
+        "aliasWeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minRetrievalScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["semantic", "lexical"],
+          "properties": {
+            "semantic": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "lexical": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "failurePolicy": {
+          "enum": ["unavailable", "lexical_fallback"]
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "queryId",
+          "queryHash",
+          "status",
+          "requestedMode",
+          "actualMode",
+          "eligibilityFingerprint",
+          "retrievalPolicyFingerprint",
+          "reasonCodes",
+          "candidates"
+        ],
+        "properties": {
+          "queryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "queryHash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "status": {
+            "enum": ["matched", "no_match", "unavailable", "cancelled"]
+          },
+          "requestedMode": {
+            "enum": ["lexical", "hybrid"]
+          },
+          "actualMode": {
+            "enum": ["lexical", "hybrid", null]
+          },
+          "eligibilityFingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "retrievalPolicyFingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "indexFingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "degradedReason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "reasonCodes": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "capabilityId",
+                "capabilityVersion",
+                "rank",
+                "scores",
+                "inclusionReason",
+                "matchedAliasHashes"
+              ],
+              "properties": {
+                "capabilityId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                },
+                "capabilityVersion": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                },
+                "rank": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "scores": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["lexical", "aliasPhrase", "semantic", "final"],
+                  "properties": {
+                    "lexical": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "aliasPhrase": {
+                      "enum": [0, 1]
+                    },
+                    "semantic": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "final": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  }
+                },
+                "inclusionReason": {
+                  "enum": ["aggregate_ranking", "alias_diversity"]
+                },
+                "matchedAliasHashes": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              }
+            }
+          },
+          "selection": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "capabilityId",
+              "reasonCode",
+              "selectorFingerprint",
+              "inputBindingHash"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "selected",
+                  "abstained",
+                  "unavailable",
+                  "invalid_output",
+                  "cancelled"
+                ]
+              },
+              "capabilityId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "capabilityVersion": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "reasonCode": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "selectorFingerprint": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "inputBindingHash": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "snapshotFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

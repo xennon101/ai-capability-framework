@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isNpmNotFound } from "./npm-registry-state.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const expectedPackages = [
@@ -190,11 +191,6 @@ function defaultExec(command, args) {
     shell: process.platform === "win32" && command === "npm",
     stdio: ["ignore", "pipe", "pipe"]
   });
-}
-
-function isNpmNotFound(result) {
-  const text = `${result.stdout}\n${result.stderr}`;
-  return result.status === 1 && (/E404|404 Not Found|not found/i.test(text) || /No match found/i.test(text));
 }
 
 function safeError(result) {

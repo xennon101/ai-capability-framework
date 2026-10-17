@@ -9,7 +9,7 @@ compatibility:
   Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
   migrating to AICF.
 metadata:
-  aicf.skill.version: "1.0.3"
+  aicf.skill.version: "1.1.0-rc.1"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "skill-pack-maintenance"
   aicf.skill.scope: "builder"

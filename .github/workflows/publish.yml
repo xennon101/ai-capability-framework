@@ -9,10 +9,16 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: npm-publication
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    env:
+      VITEST_MAX_WORKERS: "2"
 
     steps:
       - name: Check out repository
@@ -63,20 +69,10 @@ jobs:
         run: npm run check:release-tag
 
       - name: Run final certification checks
-        run: npm run check:certification
+        run: npm run check && npm run check:certification
 
       - name: Ensure npm versions are unpublished
-        shell: bash
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "ai-capability-framework@${VERSION}" version >/dev/null 2>&1; then
-            echo "ai-capability-framework@${VERSION} is already published. Bump the version before tagging." >&2
-            exit 1
-          fi
-          if npm view "@aicf/agent-skills@${VERSION}" version >/dev/null 2>&1; then
-            echo "@aicf/agent-skills@${VERSION} is already published. Bump the version before tagging." >&2
-            exit 1
-          fi
+        run: npm run release:preflight:npm
 
       - name: Select npm dist tag
         id: dist-tag
