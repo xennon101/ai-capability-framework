@@ -7,6 +7,9 @@ import { checkGettingStarted } from "./check-getting-started.mjs";
 /** Runs against a tarball-installed consumer, using only documented package imports. */
 export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, npmArgs }) {
   const packageDirectory = path.join(directory, "node_modules/ai-capability-framework");
+  await writeFile(path.join(directory, "no-network.mjs"), "globalThis.fetch = async () => { throw new Error('Network forbidden in mock examples.'); };\n");
+  // Prove the user's first app before installing the qualification-only compiler.
+  await checkGettingStarted({ directory, packageDirectory, npmCommand, npmArgs });
   const dependencies = {};
   for (const name of ["typescript", "@types/node"]) {
     const metadata = JSON.parse(await readFile(path.join(repoRoot, "node_modules", name, "package.json"), "utf8"));
@@ -88,8 +91,6 @@ export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, n
     if (buildRegistry([]).capabilities.length !== 0) throw new Error("Core import failed.");
   `);
   execFileSync(process.execPath, ["discovery-imports.mjs"], { cwd: directory, stdio: "pipe" });
-  await writeFile(path.join(directory, "no-network.mjs"), "globalThis.fetch = async () => { throw new Error('Network forbidden in mock examples.'); };\n");
-  await checkGettingStarted({ directory, packageDirectory, npmCommand, npmArgs });
   for (const file of ["run-mock.mjs", "run-hybrid-mock.mjs", "run-customer-mock.mjs", "run-selector-mock.mjs", "run-pipeline-mock.mjs", "run-evaluation-mock.mjs", "run-evaluation-live.mjs"]) {
     const output = execFileSync(process.execPath, ["--import", pathToFileURL(path.join(directory, "no-network.mjs")).href,
       path.join(packageDirectory, "examples/12-capability-discovery-selection", file)], { cwd: directory, encoding: "utf8", stdio: "pipe" });
