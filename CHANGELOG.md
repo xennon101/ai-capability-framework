@@ -4,6 +4,17 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.1.0 - 2026-10-17
+
+- Stabilized the recommended lexical/native search-to-tool workflow and its named
+  runtime/provider contracts. Advanced APIs retain their documented maturity; hybrid
+  remains experimental and dedicated selection optional.
+- Made installed-package onboarding primary, with a complete manifest and mock app
+  checked directly from the published documentation in fresh consumers.
+- Corrected obsolete checkout-only guidance and a nonexistent registry-helper import.
+  Retrieval behavior, authorization, approval boundaries and model configuration are
+  unchanged. Frozen qualification evidence is reused without new live trials.
+
 ## 1.1.0-rc.1 - 2026-10-17
 
 - Published discovery as release-candidate public, with lexical retrieval and ordinary

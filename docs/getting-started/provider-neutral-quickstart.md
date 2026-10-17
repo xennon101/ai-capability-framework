@@ -1,106 +1,265 @@
 # Provider-Neutral Quickstart
 
-Use this path first if you want to understand AICF without choosing a model provider. It
-uses the public support/refund examples and does not require API keys, provider SDKs,
-live calls, or credentials.
+Start in an empty project with Node.js 20, 22 or 24 and npm. This walkthrough uses
+synthetic data and a deterministic mock model: no API key, provider SDK, source checkout
+or framework build is required.
 
-## What You Will Prove
+## 1. Install
 
-- Capability manifests can describe app functionality without provider-specific schemas.
-- AICF can validate the registry and inspect the capability set.
-- Deterministic decisions and evals run without calling a model.
-- Provider adapters are optional layers over the same AICF contracts.
-
-## 1. Install And Build
-
-```bash
-npm ci
-npm run build
+```sh
+mkdir aicf-example
+cd aicf-example
+npm init -y
+npm install ai-capability-framework
 ```
 
-Expected output excerpt:
+The stable package includes discovery. Your ordinary model/tool loop chooses among
+eligible tools; lexical discovery makes no model or embedding calls.
 
-```text
-added ... packages
-tsc -p tsconfig.json
+## 2. Describe your capability
+
+Create a `capabilities` directory. Save this as `capabilities/ticket.json`:
+
+```json
+{
+  "schema_version": "1.0",
+  "id": "support.ticket.get",
+  "version": "1.0.0",
+  "status": "active",
+  "name": "Read support ticket",
+  "summary": "Read a support ticket by ticket ID.",
+  "model_description": "Read a synthetic ticket the current user is allowed to view. Does not change data.",
+  "capability_type": "read_data",
+  "autonomy_tier": "A1",
+  "risk_tier": "low",
+  "input_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["ticket_id"],
+    "properties": { "ticket_id": { "type": "string", "pattern": "^TCK-[0-9]+$" } }
+  },
+  "output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["ticket_id", "status"],
+    "properties": { "ticket_id": { "type": "string" }, "status": { "type": "string" } }
+  },
+  "side_effects": {
+    "reads_data": true,
+    "writes_data": false,
+    "creates_records": false,
+    "updates_records": false,
+    "deletes_records": false,
+    "sends_external_messages": false,
+    "charges_money": false,
+    "refunds_money": false,
+    "changes_permissions": false,
+    "triggers_external_workflow": false,
+    "irreversible": false
+  },
+  "authorization": {
+    "permissions": ["ticket.read"],
+    "tenant_scoped": true,
+    "requires_user_context": true
+  },
+  "policy": { "approval_required": false, "max_autonomy_tier": "A1" },
+  "lifecycle": {
+    "prepare": false,
+    "preview": false,
+    "approve": false,
+    "commit": false,
+    "verify": false,
+    "audit": true
+  },
+  "observability": { "log_inputs": "redacted", "log_outputs": "summary" }
+}
 ```
 
-## 2. Inspect A Capability Manifest
+The manifest describes the contract; your handler supplies the implementation.
+Production identity and permissions must come from trusted host authentication. Handlers
+must enforce access to the requested resource within that tenant.
 
-Open `examples/support/capabilities/support.ticket.get.yaml`. It defines a read-only
-support ticket capability with input/output schemas, permissions, risk, status, and
-lifecycle metadata.
+## 3. Load, discover and execute
 
-The important point is that the manifest is provider-neutral. It is not an OpenAI,
-Anthropic, Gemini, MCP, LangChain, or AI SDK schema.
+Save this as `app.mjs`:
 
-## 3. Validate Public Examples
+```js
+import {
+  buildRegistry,
+  loadManifests,
+  validateManifests,
+  toOpenAIResponsesToolName
+} from "ai-capability-framework";
+import { createCapabilityDiscovery } from "ai-capability-framework/discovery";
+import {
+  AicfHandlerRegistry,
+  AicfToolExecutor,
+  AicfActionLifecycleManager,
+  DefaultContextBuilder,
+  DefaultPolicyBroker,
+  InMemoryApprovalStore,
+  InMemoryIdempotencyStore,
+  InMemoryPreparedActionStore
+} from "ai-capability-framework/runtime";
+import {
+  MockOpenAIResponsesClient,
+  mockFunctionCallResponse,
+  mockTextResponse,
+  runOpenAIResponses
+} from "ai-capability-framework/openai";
 
-```bash
-npm run validate
+const loaded = await loadManifests({ path: "capabilities" });
+if (loaded.errors.length || !validateManifests(loaded.manifests).valid) {
+  throw new Error("Invalid capability manifests.");
+}
+const registry = buildRegistry(loaded.manifests);
+// Synthetic identity for this mock only. Production identity comes from your host.
+const runtimeContext = {
+  environment: "test",
+  runId: "run_example",
+  requestId: "request_example",
+  startedAt: new Date().toISOString(),
+  account: { accountId: "account_example", tenantId: "tenant_example" },
+  subject: {
+    actorType: "user",
+    userId: "user_example",
+    roles: [],
+    permissions: ["ticket.read"]
+  },
+  autonomy: {
+    autonomyTier: "A1",
+    maxRiskTier: "low",
+    allowSideEffects: false,
+    allowExternalMessages: false,
+    allowMoneyMovement: false,
+    allowPermissionChanges: false
+  },
+  facts: {},
+  metadata: {}
+};
+
+// Set up the existing runtime once. These example stores live in one process.
+const handlers = new AicfHandlerRegistry({ registry });
+let reads = 0;
+handlers.register({
+  capabilityId: "support.ticket.get",
+  read: ({ args }) => {
+    reads += 1;
+    return { ticket_id: args.ticket_id, status: "open" };
+  }
+});
+const policyBroker = new DefaultPolicyBroker();
+const actionLifecycle = new AicfActionLifecycleManager({
+  registry,
+  handlers,
+  policyBroker,
+  approvalStore: new InMemoryApprovalStore(),
+  idempotencyStore: new InMemoryIdempotencyStore(),
+  preparedActionStore: new InMemoryPreparedActionStore()
+});
+const executor = new AicfToolExecutor({
+  registry,
+  handlers,
+  policyBroker,
+  actionLifecycle
+});
+
+const task = { id: "read-ticket", text: "Read ticket TCK-100." };
+const discovery = createCapabilityDiscovery({ registry });
+const [result] = await discovery.search({ tasks: [task], runtimeContext });
+if (result.status !== "matched")
+  throw new Error("No actionable shortlist; clarify or handle the failure.");
+const client = new MockOpenAIResponsesClient([
+  mockFunctionCallResponse({
+    name: toOpenAIResponsesToolName("support.ticket.get"),
+    callId: "read_example",
+    args: { ticket_id: "TCK-100" }
+  }),
+  mockTextResponse("Ticket TCK-100 is open.")
+]);
+const loop = await runOpenAIResponses({
+  registry,
+  executor,
+  client,
+  model: "mock-model",
+  runtimeContext,
+  contextBuilder: new DefaultContextBuilder(),
+  userInput: { text: task.text },
+  router: discovery.routerFor(result),
+  maxToolCalls: 1,
+  maxTurns: 2
+});
+if (
+  loop.status !== "completed" ||
+  reads !== 1 ||
+  loop.toolResults[0]?.status !== "success"
+) {
+  throw new Error("The mock read did not complete.");
+}
+console.log(
+  JSON.stringify(
+    {
+      queryId: result.queryId,
+      capabilityId: loop.toolCalls[0].capabilityId,
+      toolStatus: loop.toolResults[0].status,
+      data: loop.toolResults[0].data,
+      reads,
+      ordinaryModelTurns: client.requests.length,
+      discoveryProviderCalls: result.usage.totals.providerAttempts
+    },
+    null,
+    2
+  )
+);
 ```
 
-Expected output excerpt:
+Run the installed CLI and app:
 
-```text
-Validated 16 manifest(s) and 18 fixture(s).
+```sh
+npx aicf validate capabilities
+node app.mjs
 ```
 
-## 4. Inspect The Registry
+The CLI validates one manifest. The app reports `queryId: "read-ticket"`,
+`capabilityId: "support.ticket.get"`, `toolStatus: "success"`, one read, two mocked
+ordinary-model turns and zero discovery-provider calls. The ticket is `TCK-100` with
+status `open`. No real provider calls occur.
 
-```bash
-node dist/cli.js inspect examples
+## 4. Try the complete customer request
+
+Run the packaged example from this same project:
+
+```sh
+node node_modules/ai-capability-framework/examples/12-capability-discovery-selection/run-customer-mock.mjs
 ```
 
-Expected output excerpt:
+It models “Read ticket TCK-100 and prepare a refund for its order.” Application code
+searches each ready task once, carries the authorized order ID to its dependent task,
+then prepares a preview requiring approval. Expect one mocked planning turn, four
+ordinary-model turns, one read, one preparation and zero commits. The customer response
+explains that approval is still pending. Dependencies and response assembly belong to
+the example application, not a framework workflow engine.
 
-```text
-Capabilities:
-- support.ticket.get
-- support.refund.prepare_case
-- support.refund.commit_case
-```
+## Connect your model and application
 
-## 5. Run A Deterministic Decision
+Keep the same task text and invocation context when passing a result-bound router to
+your ordinary runner. Do not reconstruct, persist or reuse results across requests.
+Permissions, controls, source changes, cancellation and expiry are rechecked before
+export and execution. A retrieval score never authorizes an action.
 
-```bash
-node dist/cli.js decide examples --request examples/support/decisions/support.ticket.get.select.json
-```
+Replace the mock with your configured Responses-compatible client and an explicit model
+when using `runOpenAIResponses`; the framework supplies no account, credentials or model
+default. Existing configured clients need no additional discovery model. The optional
+OpenAI SDK is needed only if your application chooses it. See the
+[OpenAI quickstart](openai-quickstart.md) or
+[choose another runtime](../providers/choose-a-runtime.md).
 
-Expected output excerpt:
+For `no_match`, clarify; for `unavailable` or `cancelled`, handle the operational
+outcome. Do not execute the first candidate automatically. Lexical/native is
+recommended. [Dedicated selection](../discovery.md#optional-dedicated-selection) is
+optional; hybrid is experimental with
+[qualification limits](../evals/discovery-qualification.md).
 
-```text
-allowed: true
-capability: support.ticket.get
-```
-
-This proves the policy/selection path without a model. The request uses a synthetic
-user, tenant, permissions, and arguments.
-
-## 6. Run Deterministic Evals
-
-```bash
-node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json
-```
-
-Expected output excerpt:
-
-```text
-Eval suite passed
-```
-
-The eval runner checks expected selected capabilities, tool calls, arguments,
-approval-required behavior, and no-commit boundaries from public fixtures. It does not
-call a provider.
-
-## 7. Export Provider Descriptors Later
-
-When you are ready to connect a provider, choose a runtime from
-[Choose a Runtime](../providers/choose-a-runtime.md). The provider adapter will export a
-routed AICF capability slice, but AICF validation and policy remain the authority.
-
-Useful next steps:
-
-- [OpenAI quickstart](openai-quickstart.md)
-- [Anthropic quickstart](anthropic-quickstart.md)
-- [Gemini quickstart](gemini-quickstart.md)
+The [stable workflow contract](../api/stable-workflow.md) defines compatibility for this
+path. Production authentication, resource access checks and durable stores remain
+host-owned. [Repository development](../development.md) is separate from package use.

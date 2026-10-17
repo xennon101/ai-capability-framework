@@ -76,9 +76,10 @@ Models propose; applications validate, authorize, execute, and audit.
 
 ## Capability discovery
 
-The optional release-candidate `ai-capability-framework/discovery` API provides a simple
-search facade, result-bound routers, explicit hybrid retrieval and dedicated selection,
-and provider-free evaluation. Start with
-[finding capabilities for a task](discovery.md). For opt-in provider evaluation, see the
+The optional `ai-capability-framework/discovery` API provides a
+[stable lexical/native workflow](api/stable-workflow.md), a simple search facade,
+result-bound routers, explicit hybrid retrieval and dedicated selection, and
+provider-free evaluation. Start with [finding capabilities for a task](discovery.md).
+For opt-in provider evaluation, see the
 [discovery live evaluation guide](evals/discovery-live.md) and the
 [qualification results and limits](evals/discovery-qualification.md).

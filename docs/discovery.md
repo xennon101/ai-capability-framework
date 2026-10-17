@@ -1,8 +1,9 @@
 # Find capabilities for a task
 
-Install the release-candidate package with
-`npm install ai-capability-framework@1.1.0-rc.1`. Lexical retrieval with ordinary model
-tool selection is the recommended default.
+Install with `npm install ai-capability-framework`. The lexical/native workflow is
+[stable public from 1.1.0](api/stable-workflow.md) and is the recommended default. For a
+complete first app, use the
+[installed-package quickstart](getting-started/provider-neutral-quickstart.md).
 
 ```ts
 import { createCapabilityDiscovery } from "ai-capability-framework/discovery";
@@ -27,14 +28,14 @@ returns a shortlist → ordinary model/tool loop chooses → runtime validates a
 executes**. Applications own decomposition, task dependencies, argument completion, and
 customer responses. Search each dependent task when its context is ready.
 
-Discovery is an optional **release-candidate public API**. It does not change
+The named lexical/native facade is **stable public**. Advanced discovery APIs retain
+their [individual maturity labels](api/stable-workflow.md). Discovery does not change
 `DefaultCapabilityRouter`. Results contain eligible candidates, scores, diagnostics,
 usage, and version bindings. A useful shortlist is the goal; neither ranking first nor a
 high score authorizes execution or guarantees a suitable tool.
 
-Until a release includes this subpath, use a locally packed tarball for
-installed-package examples. The unreleased source and tarball checks do not publish a
-new npm version.
+The stable npm package includes this subpath; no checkout, framework build or locally
+packed tarball is required.
 
 ## Defaults and result handling
 
@@ -62,13 +63,7 @@ operations are never exposed through discovery routers.
 
 ## Complete no-key example
 
-Run from a source checkout after `npm run build`:
-
-```sh
-node examples/12-capability-discovery-selection/run-customer-mock.mjs
-```
-
-For an installed package, run the packaged example from your project directory:
+Run the packaged example from your project directory after installation:
 
 ```sh
 node node_modules/ai-capability-framework/examples/12-capability-discovery-selection/run-customer-mock.mjs

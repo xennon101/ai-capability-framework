@@ -1,5 +1,10 @@
 # Runtime Contracts
 
+The [named lexical/native workflow](api/stable-workflow.md) and its required runtime
+members are stable public from 1.1.0. Other runtime APIs retain their existing maturity;
+this does not promote every export. Start with the
+[installed-package walkthrough](getting-started/provider-neutral-quickstart.md).
+
 AICF Runtime is an additive TypeScript subpath for host applications that want
 deterministic runtime context, capability routing, policy brokering, handler execution,
 action lifecycle control, and model-safe tool result envelopes.

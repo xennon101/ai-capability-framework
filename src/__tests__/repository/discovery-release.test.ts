@@ -43,7 +43,8 @@ describe("discovery release guards", () => {
       expect(guide).toContain(text);
     }
     const overview = readFileSync("docs/discovery.md", "utf8");
-    expect(overview).toContain("ai-capability-framework@1.1.0-rc.1");
+    expect(overview).toContain("npm install ai-capability-framework");
+    expect(overview).toContain("api/stable-workflow.md");
     expect(overview).toContain("evals/discovery-qualification.md");
   });
 });

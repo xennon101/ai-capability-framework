@@ -47,12 +47,15 @@ cloud, tracing, or CLI implementation dependencies.
 | CLI implementation helpers other than `runCli` and `CliRunOptions`                                                                                                                                                                                          | should move to subpath              | Keep private to the CLI module unless a future release documents a narrow public contract.                                                                  |
 | Undocumented source files, generated internals, and private helper functions                                                                                                                                                                                | should be removed before v1         | Do not expose through package exports.                                                                                                                      |
 
-The `ai-capability-framework/discovery` subpath is **release-candidate public**. It
-contains the documented facade, advanced retrieval/index/selection/replay contracts,
-budget helper, and evaluation API. Provider adapters stay in their existing subpaths.
-Discovery is optional and adds no implementation dependency to root/runtime imports. Its
-interface classification does not establish real-model retrieval quality. See
-[capability discovery](../discovery.md).
+The [named lexical/native workflow](stable-workflow.md) is **stable public from 1.1.0**,
+including its documented runtime/provider dependencies. Member-specific classifications
+override the broad subpath rows above; they do not stabilize every export in those
+modules. Advanced discovery remains **release-candidate public** and hybrid remains
+experimental. It contains the documented facade, advanced
+retrieval/index/selection/replay contracts, budget helper, and evaluation API. Provider
+adapters stay in their existing subpaths. Discovery is optional and adds no
+implementation dependency to root/runtime imports. Its interface classification does not
+establish real-model retrieval quality. See [capability discovery](../discovery.md).
 
 ## Migration Note For Release-Candidate Users
 

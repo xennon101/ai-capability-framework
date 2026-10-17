@@ -2,18 +2,22 @@
 
 This checklist prepares an AICF public release for GitHub and npm distribution.
 
-## Discovery prerelease
+## Stable discovery workflow
 
-Discovery is release-candidate public. Recommend lexical retrieval with ordinary model
-tool selection; dedicated selection is optional and hybrid remains experimental. Link
-the [qualification report](evals/discovery-qualification.md) in release notes. Its
-qualified lexical results apply to a tested synthetic configuration, and the revised
-workflow assessment is an offline checker correction rather than new live trials.
+The [named lexical/native workflow](api/stable-workflow.md) is stable public in 1.1.0.
+Advanced APIs retain their individual maturity labels. Recommend lexical retrieval with
+ordinary model tool selection; dedicated selection is optional and hybrid remains
+experimental. Link the [qualification report](evals/discovery-qualification.md) in
+release notes. Its qualified lexical results apply to a tested synthetic configuration,
+and the revised workflow assessment is an offline checker correction rather than new
+live trials.
 
 Use a reviewed pull request, passing hosted Linux Node 20/22/24 checks, merge, and an
-exact-commit manual release dry-run before pushing the matching prerelease tag. Local
-checks do not replace hosted checks. Publish both packages to `next`, preserving
-`latest`, then verify exact-version registry installs.
+exact-commit manual release dry-run before pushing the matching version tag. Local
+checks do not replace hosted checks. Prereleases publish both packages to `next`,
+preserving `latest` for prereleases. Stable 1.1.0 publishes to `latest` while preserving
+the existing `next` tag and prerelease versions. Verify normal installation as well as
+exact-version registry installs.
 
 The publication and dry-run workflows run `npm run check` plus certification with
 `VITEST_MAX_WORKERS=2`. Publication is serialized; registry failures fail closed unless

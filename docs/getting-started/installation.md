@@ -1,21 +1,20 @@
 # Installation
 
-Install the public package:
+Use Node.js 20, 22 or 24. Install the stable package in your application:
 
-```bash
+```sh
 npm install ai-capability-framework
 ```
 
-For repository development:
+Version 1.1.0 includes the stable lexical/native search-to-tool workflow. The
+[complete quickstart](provider-neutral-quickstart.md) runs with deterministic mocks,
+without a provider SDK, API key, repository checkout or framework build.
 
-```bash
-npm ci
-npm run build
-npm run validate
-```
+Live calls require caller-supplied model access and explicit configuration. Optional
+SDKs are installed only when your chosen provider integration needs them.
 
-The default examples use fake data and do not call live model providers. Live provider
-tests are opt-in and require explicit environment variables documented in the provider
-guides.
+For reproducible deployments, pin the tested version in your lockfile. Existing
+prereleases remain available by explicit version; `next` is a separate channel.
 
-Next: [Quickstart](quickstart.md).
+[Framework repository development](../development.md) has separate install/build/check
+commands.

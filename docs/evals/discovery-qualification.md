@@ -1,5 +1,10 @@
 # Discovery qualification for 1.1.0-rc.1
 
+Stable 1.1.0 reuses these frozen observations without new live trials or retrieval
+changes. The [named lexical/native workflow](../api/stable-workflow.md) now has a stable
+compatibility commitment; the historical prerelease classification below describes the
+assessed release. Hybrid qualification is unchanged.
+
 Lexical retrieval with ordinary model tool selection (**lexical/native**) is the
 recommended default. Lexical/dedicated also qualified for the tested configuration; it
 remains an optional additional model call. Hybrid/native and hybrid/dedicated remain
