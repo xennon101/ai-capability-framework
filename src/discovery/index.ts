@@ -1,4 +1,4 @@
-/** Optional, release-candidate public capability discovery API. */
+/** Stable lexical/native facade; advanced APIs retain their documented maturity. */
 export { ModelCapabilitySelector } from "./selection.js";
 export { buildCapabilitySelectionTasks } from "./selection-cards.js";
 export type { BuildCapabilitySelectionTasksRequest } from "./selection-cards.js";

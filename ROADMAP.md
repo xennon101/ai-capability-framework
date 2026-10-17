@@ -27,11 +27,14 @@ systems, credentials, side effects, and deployment.
 
 ## Capability Discovery
 
-The optional release-candidate discovery API supports application-produced tasks,
-eligible shortlists, and ordinary model tool selection. Hybrid retrieval and dedicated
-selection remain explicit. No-key examples, a frozen synthetic dataset, and packed
-consumer checks cover integration. The tested synthetic configuration qualifies both
-lexical modes after an offline wording correction. Lexical/native is recommended; hybrid
-remains experimental because incremental benefit was not qualified. See the
+The stable lexical/native workflow supports application-produced tasks, eligible
+shortlists, and ordinary model tool selection. Hybrid retrieval and dedicated selection
+remain explicit. No-key examples, a frozen synthetic dataset, and packed consumer checks
+cover integration. The tested synthetic configuration qualifies both lexical modes after
+an offline wording correction. Lexical/native is recommended; hybrid remains
+experimental because incremental benefit was not qualified. See the
 [qualification report](docs/evals/discovery-qualification.md). Application-specific
-qualification and adoption remain separate from prerelease publication.
+qualification and adoption remain separate from framework publication. Normal npm
+installation includes the stable workflow; advanced features retain their own maturity
+labels. The active framework roadmap is complete when installed-package usability and
+verified stable publication pass; application migrations are outside its scope.

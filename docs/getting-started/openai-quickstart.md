@@ -20,28 +20,39 @@ npm install openai
 Root and runtime imports remain lightweight:
 
 ```ts
-import { loadRegistryFromPath } from "ai-capability-framework";
+import {
+  loadManifests,
+  validateManifests,
+  buildRegistry
+} from "ai-capability-framework";
 import { runOpenAIResponses } from "ai-capability-framework/openai";
 ```
 
+Load and validate your manifests with `loadManifests` and `validateManifests`, then pass
+them to `buildRegistry`; the [complete quickstart](provider-neutral-quickstart.md) shows
+runnable code.
+
 ## Mock-Tested Flow
 
-Run the existing mock runtime tests:
+Run the installed no-key customer flow:
 
 ```bash
-npm run test:openai:mock
+node node_modules/ai-capability-framework/examples/12-capability-discovery-selection/run-customer-mock.mjs
 ```
 
 Expected output excerpt:
 
 ```text
-Test Files ... passed
+"ordinaryModelTurns": 4
 ```
 
 The OpenAI runtime exports only routed read/prepare tools. Commit tools remain
 host-controlled through AICF action lifecycle APIs.
 
-## Live Opt-In
+## Repository development and live opt-in
+
+The commands below are for an optional [framework source checkout](../development.md).
+Normal package consumers supply their own configured client and explicit model.
 
 Live tests are skipped unless you explicitly opt in:
 

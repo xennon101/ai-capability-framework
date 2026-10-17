@@ -2,6 +2,11 @@
 
 All notable public changes to the AICF Agent Skills package are documented here.
 
+## 1.1.0 - 2026-10-17
+
+- Aligned package, plugin and skill metadata with the stable framework release. Skill
+  behavior is unchanged.
+
 ## 1.1.0-rc.1 - 2026-10-17
 
 - Aligned package, plugin and skill metadata with the coordinated discovery prerelease.

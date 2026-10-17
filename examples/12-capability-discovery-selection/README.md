@@ -1,6 +1,6 @@
 # From a customer request to a tool
 
-Use `ai-capability-framework@1.1.0-rc.1` for these discovery APIs. Lexical/native is the
+Install `ai-capability-framework` (stable 1.1.0 or later). Lexical/native is the
 recommended default. Hybrid is experimental and opt-in; the
 [qualification report](../../docs/evals/discovery-qualification.md) explains its limits.
 
@@ -155,8 +155,9 @@ construction.
 The selector returns decisions; application argument completion and runtime execution
 remain separate. Native search and `routerFor` never call the dedicated selector.
 Selected-result routers, the optional Responses adapter, and managed full-run accounting
-are available; see the shared-run integration below. Imports use the public
-release-candidate discovery subpath.
+are available; see the shared-run integration below. Imports use the public discovery
+subpath; the [named lexical/native workflow](../../docs/api/stable-workflow.md) is
+stable.
 
 Run the explicit selector companion:
 

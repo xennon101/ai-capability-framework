@@ -36,7 +36,10 @@ describe("public discovery package surface", () => {
 
   it("documents maturity, current integration and keeps CI freshness ahead of generation", async () => {
     const guide = await readFile("docs/discovery.md", "utf8");
-    expect(guide).toContain("release-candidate public API");
+    expect(guide).toContain("**stable public**");
+    expect(guide).toContain("api/stable-workflow.md");
+    const policy = await readFile("docs/api/public-api-policy.md", "utf8");
+    expect(policy).toContain("Advanced discovery remains **release-candidate public**");
     expect(guide).toContain("ordinary model/tool loop");
     expect(guide).toContain("Real embedding quality");
     expect(await readFile("docs/index.md", "utf8")).toContain("discovery.md");

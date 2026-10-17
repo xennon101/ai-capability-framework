@@ -2,10 +2,14 @@ import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { checkGettingStarted } from "./check-getting-started.mjs";
 
 /** Runs against a tarball-installed consumer, using only documented package imports. */
 export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, npmArgs }) {
   const packageDirectory = path.join(directory, "node_modules/ai-capability-framework");
+  await writeFile(path.join(directory, "no-network.mjs"), "globalThis.fetch = async () => { throw new Error('Network forbidden in mock examples.'); };\n");
+  // Prove the user's first app before installing the qualification-only compiler.
+  await checkGettingStarted({ directory, packageDirectory, npmCommand, npmArgs });
   const dependencies = {};
   for (const name of ["typescript", "@types/node"]) {
     const metadata = JSON.parse(await readFile(path.join(repoRoot, "node_modules", name, "package.json"), "utf8"));
@@ -42,9 +46,27 @@ export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, n
     export type { CreateOpenAISelectionClientOptions, DiscoveryEvaluationSuite, DiscoveryEvaluationObservations };
   `;
   await writeFile(path.join(directory, "discovery-consumer.mts"), typeFixture);
+  await writeFile(path.join(directory, "stable-consumer.mts"), `
+    import type { ManifestRegistry } from "ai-capability-framework";
+    import { createCapabilityDiscovery, type CapabilitySearchRequest, type CapabilityResultRouter } from "ai-capability-framework/discovery";
+    import { DefaultContextBuilder, type AicfRuntimeContext, type AicfToolExecutor, type AicfCapabilityRouter } from "ai-capability-framework/runtime";
+    import { runOpenAIResponses, type AicfOpenAIResponsesClient } from "ai-capability-framework/openai";
+    export async function application(registry: ManifestRegistry, runtimeContext: AicfRuntimeContext,
+      client: AicfOpenAIResponsesClient, executor: AicfToolExecutor, signal?: AbortSignal) {
+      const discovery = createCapabilityDiscovery({ registry, mode: "lexical" });
+      const request: CapabilitySearchRequest = { tasks: [{ id: "read-ticket", text: "Read ticket TCK-100." }],
+        runtimeContext, signal, deadlineAt: Date.now() + 10000, eligibility: { allowedCapabilityTypes: ["read_data"] } };
+      const [result] = await discovery.search(request);
+      if (result?.status !== "matched") return { outcome: result?.status };
+      const resultRouter: CapabilityResultRouter = discovery.routerFor(result);
+      const router: AicfCapabilityRouter = resultRouter;
+      return runOpenAIResponses({ registry, runtimeContext, client, executor, model: "host-model",
+        contextBuilder: new DefaultContextBuilder(), router, userInput: { text: request.tasks[0]!.text } });
+    }
+  `);
   execFileSync(process.execPath, [path.join(directory, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict",
     "--skipLibCheck", "false", "--target", "ES2022", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--types", "node",
-    "discovery-consumer.mts"], { cwd: directory, stdio: "pipe" });
+    "discovery-consumer.mts", "stable-consumer.mts"], { cwd: directory, stdio: "pipe" });
 
   await writeFile(path.join(directory, "discovery-imports.mjs"), `
     import { createRequire } from "node:module";
@@ -69,7 +91,6 @@ export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, n
     if (buildRegistry([]).capabilities.length !== 0) throw new Error("Core import failed.");
   `);
   execFileSync(process.execPath, ["discovery-imports.mjs"], { cwd: directory, stdio: "pipe" });
-  await writeFile(path.join(directory, "no-network.mjs"), "globalThis.fetch = async () => { throw new Error('Network forbidden in mock examples.'); };\n");
   for (const file of ["run-mock.mjs", "run-hybrid-mock.mjs", "run-customer-mock.mjs", "run-selector-mock.mjs", "run-pipeline-mock.mjs", "run-evaluation-mock.mjs", "run-evaluation-live.mjs"]) {
     const output = execFileSync(process.execPath, ["--import", pathToFileURL(path.join(directory, "no-network.mjs")).href,
       path.join(packageDirectory, "examples/12-capability-discovery-selection", file)], { cwd: directory, encoding: "utf8", stdio: "pipe" });

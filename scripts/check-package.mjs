@@ -56,6 +56,8 @@ const requiredExact = [
   "docs/glossary.md",
   "docs/index.md",
   "docs/discovery.md",
+  "docs/api/stable-workflow.md",
+  "docs/development.md",
   "docs/evals/discovery-qualification.md",
   "docs/api/public-api-policy.md",
   "docs/core/capability-manifests.md",

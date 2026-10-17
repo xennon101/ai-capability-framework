@@ -21,6 +21,8 @@ export const requiredDocs = [
   "docs/discovery.md",
   "docs/evals/discovery-qualification.md",
   "docs/api/public-api-policy.md",
+  "docs/api/stable-workflow.md",
+  "docs/development.md",
   "docs/getting-started/provider-neutral-quickstart.md",
   "docs/getting-started/openai-quickstart.md",
   "docs/getting-started/anthropic-quickstart.md",

@@ -110,40 +110,23 @@ In plain terms:
 
 ## Try It
 
-Install and validate the public examples:
+Start in a new project:
 
-```bash
-npm install
-npm run validate
+```sh
+npm init -y
+npm install ai-capability-framework
+node node_modules/ai-capability-framework/examples/12-capability-discovery-selection/run-customer-mock.mjs
 ```
 
-Build the CLI and inspect the example registry:
+The mock flow reads a ticket, carries its order ID into refund preparation, and returns
+a preview awaiting approval. It exposes no commit and makes no real provider calls. No
+repository checkout, framework build or optional provider SDK is required.
 
-```bash
-npm run build
-node dist/cli.js inspect examples
-```
-
-Export OpenAI Responses function tools without calling a model:
-
-```bash
-node dist/cli.js openai-tools examples --context examples/support/openai/context.support_agent.json
-```
-
-Run the public mock runtime flow:
-
-```bash
-node examples/runtime-support-billing/run-mock.mjs
-```
-
-Run deterministic evals:
-
-```bash
-node dist/cli.js eval examples --results examples/eval-results/public.results.passing.json
-```
-
-For expected output excerpts and what each command proves, use
-[Start here](docs/start-here.md).
+Follow the
+[complete first-app walkthrough](docs/getting-started/provider-neutral-quickstart.md) to
+author a capability, load a registry, register a handler and use the stable
+lexical/native workflow. [Repository development](docs/development.md) has separate
+build and validation commands.
 
 ## Documentation Map
 
@@ -300,10 +283,10 @@ MIT
 
 ## Find capabilities for a task
 
-Install the discovery prerelease explicitly:
+Install the stable framework:
 
 ```sh
-npm install ai-capability-framework@1.1.0-rc.1
+npm install ai-capability-framework
 ```
 
 Lexical retrieval with the ordinary model/tool loop is the recommended default. The
@@ -311,11 +294,12 @@ Lexical retrieval with the ordinary model/tool loop is the recommended default. 
 results and the unmet hybrid incremental-gain gate. Hybrid remains experimental and
 opt-in; dedicated selection remains optional.
 
-Use the optional release-candidate [discovery API](docs/discovery.md) when your
-application AI decomposes a customer request into tasks. Search each ready task and pass
-its result-bound router to the ordinary model/tool loop. Lexical search needs only a
-registry, task IDs/text, and existing runtime context. Hybrid retrieval and dedicated
-selection are optional and require caller-supplied model access and budgets.
+Use the [stable lexical/native workflow](docs/api/stable-workflow.md) and optional
+[discovery API](docs/discovery.md) when your application AI decomposes a customer
+request into tasks. Search each ready task and pass its result-bound router to the
+ordinary model/tool loop. Lexical search needs only a registry, task IDs/text, and
+existing runtime context. Hybrid retrieval and dedicated selection are optional and
+require caller-supplied model access and budgets.
 
 Run the
 [complete customer-request example](examples/12-capability-discovery-selection/README.md)
