@@ -14,6 +14,9 @@ selection is optional; hybrid remains experimental with
 decomposition, dependencies, arguments, authentication, resource access and customer
 responses.
 
+The model can see read and prepare tools, but the commit capability is not exposed.
+Runtime validation, authorization and approval policy remain the authority for actions.
+
 - [Installation](getting-started/installation.md)
 - [Capability manifests](capability-manifests.md)
 - [Choose a runtime](providers/choose-a-runtime.md)
