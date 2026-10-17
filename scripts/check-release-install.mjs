@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
+import assert from "node:assert/strict";
 import { checkDiscoveryInstall } from "./check-discovery-install.mjs";
 
 const keepTmp = process.env.AICF_KEEP_TMP === "1";
@@ -207,10 +208,12 @@ try {
     cwd: tempDirectory,
     stdio: "pipe"
   });
-  execFileSync(npmCommand, npmArgs("exec", "--", "aicf", "--help"), {
+  const help = execFileSync(npmCommand, npmArgs("exec", "--", "aicf", "--help"), {
     cwd: tempDirectory,
+    encoding: "utf8",
     stdio: "pipe"
   });
+  assert.match(help, /Usage: aicf <command> \[path\]/u);
 
   await checkDiscoveryInstall({ directory: tempDirectory, repoRoot, npmCommand, npmArgs });
   console.log(`Release install smoke test passed in ${tempDirectory}.`);

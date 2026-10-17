@@ -6,6 +6,9 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## 1.1.0 - 2026-10-17
 
+- Fixed the installed CLI's POSIX symlink entrypoint so `npx aicf` runs commands
+  instead of silently returning. Programmatic CLI imports remain side-effect-free.
+
 - Stabilized the recommended lexical/native search-to-tool workflow and its named
   runtime/provider contracts. Advanced APIs retain their documented maturity; hybrid
   remains experimental and dedicated selection optional.
