@@ -4,6 +4,18 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.1.1 - 2026-10-26
+
+- Updated locked `fast-uri` to 3.1.9 and Zod to 4.6.7. The optional Zod peer now
+  requires 4.6.6 or newer, addressing URI normalization advisories and oversized
+  collection validation resource consumption. Lexical/native users do not need Zod.
+- Added weekly Dependabot npm update PRs for both packages, with manual review and CI
+  required. No automatic merge or publication is configured.
+- Added bounded dependency regressions and installed-consumer security checks. See
+  [consumer update instructions](SECURITY.md#dependency-security-updates): existing
+  application lockfiles require their own dependency refresh. Host input limits remain
+  necessary. Framework APIs, retrieval and authorization behavior are unchanged.
+
 ## 1.1.0 - 2026-10-17
 
 - Fixed the installed CLI's POSIX symlink entrypoint so `npx aicf` runs commands instead

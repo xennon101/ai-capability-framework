@@ -15,15 +15,22 @@ live trials.
 Use a reviewed pull request, passing hosted Linux Node 20/22/24 checks, merge, and an
 exact-commit manual release dry-run before pushing the matching version tag. Local
 checks do not replace hosted checks. Prereleases publish both packages to `next`,
-preserving `latest` for prereleases. Stable 1.1.0 publishes to `latest` while preserving
-the existing `next` tag and prerelease versions. Verify normal installation as well as
-exact-version registry installs.
+preserving `latest` for prereleases. Stable releases publish to `latest` while
+preserving the existing `next` tag and prerelease versions. Verify normal installation
+as well as exact-version registry installs.
 
 The publication and dry-run workflows run `npm run check` plus certification with
 `VITEST_MAX_WORKERS=2`. Publication is serialized; registry failures fail closed unless
 npm explicitly reports E404 for an absent version. Local npm login is not the OIDC
 publishing mechanism. Verify package ownership and the trusted publisher for both
 packages before tagging; never substitute a stored npm token.
+
+For dependency security patches, include the
+[consumer lockfile update instructions](../SECURITY.md#dependency-security-updates) and
+verify both an SDK-free consumer and the minimum supported optional peer version.
+Repository lockfile changes alone do not update existing applications. Retain the frozen
+discovery qualification evidence; dependency maintenance does not establish new
+model-quality results.
 
 ## Preflight
 
