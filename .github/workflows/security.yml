@@ -36,8 +36,14 @@ jobs:
       - name: Audit root production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Audit root full dependency tree
+        run: npm audit --audit-level=high
+
       - name: Audit agent skills production dependencies
         run: npm --prefix agent-skills audit --omit=dev --audit-level=high
+
+      - name: Audit agent skills full dependency tree
+        run: npm --prefix agent-skills audit --audit-level=high
 
       - name: Check dependency licenses
         run: npm run check:licenses

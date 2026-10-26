@@ -66,6 +66,14 @@ remain authoritative.
 caller-provided MCP SDK server object that exposes `registerTool()` or `tool()`. It does
 not import MCP transports or create a long-running process.
 
+Use MCP SDK 1.32.0 or newer; 1.32.0 and 1.32.2 are tested with actual in-memory SDK
+clients. The helper converts JSON schemas for SDK registration and returns the runtime
+envelope as structured content. Registration captures a tool-list snapshot; refresh
+registration when the host changes scopes. Every call still rechecks current
+authorization, so an old registration cannot bypass a revoked permission. Refresh
+existing consumer lockfiles as described in the
+[security policy](../SECURITY.md#dependency-security-updates).
+
 ```ts
 await registerAicfMcpTools({
   aicfServer,

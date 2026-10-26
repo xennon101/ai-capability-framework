@@ -2,6 +2,11 @@
 
 All notable public changes to the AICF Agent Skills package are documented here.
 
+## 1.1.2 - 2026-10-26
+
+- Aligned package, plugin and skill metadata with the full dependency security cleanup.
+  Skill behavior is unchanged.
+
 ## 1.1.1 - 2026-10-26
 
 - Aligned package, plugin and skill metadata with the framework dependency security

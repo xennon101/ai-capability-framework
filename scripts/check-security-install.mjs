@@ -19,6 +19,7 @@ export async function checkSecurityInstall({ directory, repoRoot, installSource,
   };
   const baseLock = JSON.parse(await readFile(path.join(directory, "package-lock.json"), "utf8"));
   assert.equal(baseLock.packages["node_modules/zod"], undefined, "SDK-free installation must not acquire Zod.");
+  assert.equal(baseLock.packages["node_modules/@modelcontextprotocol/sdk"], undefined, "SDK-free installation must not acquire MCP.");
   audit(directory);
   const temporary = [];
   const create = async (dependencies = {}) => {
@@ -58,12 +59,37 @@ export async function checkSecurityInstall({ directory, repoRoot, installSource,
       checks.push(`Zod ${version}`);
     }
 
+    for (const version of ["1.32.0", "1.32.2"]) {
+      const cwd = await create();
+      invoke(cwd, "install", "--strict-peer-deps", "--ignore-scripts", "--no-audit", "--no-fund", installSource, `@modelcontextprotocol/sdk@${version}`);
+      await writeFile(path.join(cwd, "check.mjs"), await readFile(path.join(repoRoot, "scripts/fixtures/mcp-sdk-consumer.mjs")));
+      execFileSync(process.execPath, ["check.mjs"], { cwd, stdio: "pipe" });
+      await writeFile(path.join(cwd, "types.mts"), `
+        import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+        import { AicfMcpServer, registerAicfMcpTools } from "ai-capability-framework/mcp-server";
+        declare const aicfServer: AicfMcpServer;
+        const mcpServer = new McpServer({ name: "synthetic-consumer", version: "1.0.0" });
+        const result: Promise<{ registered: number; toolNames: string[] }> = registerAicfMcpTools({ aicfServer, mcpServer });
+        void result;
+      `);
+      execFileSync(process.execPath, [path.join(repoRoot, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--target", "ES2022", "--skipLibCheck", "types.mts"], { cwd, stdio: "pipe" });
+      audit(cwd);
+      checks.push(`MCP ${version} read/prepare/revocation`);
+    }
+
     const conflicting = await create({ zod: "4.4.3" });
     const rejected = spawnSync(npmCommand, npmArgs("install", "--strict-peer-deps", "--ignore-scripts", "--no-audit", "--no-fund", installSource), {
       cwd: conflicting, encoding: "utf8"
     });
     assert.notEqual(rejected.status, 0, "An explicitly installed unsupported peer must conflict.");
     assert.match((rejected.stdout ?? "") + (rejected.stderr ?? ""), /ERESOLVE/u);
+
+    const oldMcp = await create({ "@modelcontextprotocol/sdk": "1.29.0" });
+    const rejectedMcp = spawnSync(npmCommand, npmArgs("install", "--strict-peer-deps", "--ignore-scripts", "--no-audit", "--no-fund", installSource), {
+      cwd: oldMcp, encoding: "utf8"
+    });
+    assert.notEqual(rejectedMcp.status, 0, "An explicitly installed unsupported MCP peer must conflict.");
+    assert.match((rejectedMcp.stdout ?? "") + (rejectedMcp.stderr ?? ""), /ERESOLVE/u);
 
     const legacy = await create();
     invoke(legacy, "install", "--ignore-scripts", "--no-audit", "--no-fund", "ai-capability-framework@1.1.0");

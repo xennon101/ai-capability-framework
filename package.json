@@ -1,6 +1,6 @@
 {
   "name": "ai-capability-framework",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": false,
   "description": "Provider-agnostic AI capability contracts, runtime controls, evals, and model/provider adapters.",
   "license": "MIT",
@@ -330,7 +330,7 @@
     "@google/genai": ">=2.8.0",
     "@langchain/core": ">=1.1.0 <2",
     "@langfuse/client": ">=5.4.1",
-    "@modelcontextprotocol/sdk": ">=1.29.0",
+    "@modelcontextprotocol/sdk": ">=1.32.0",
     "@openai/agents": ">=0.11.6",
     "@opentelemetry/api": ">=1.9.1",
     "ai": ">=6.0.0",
@@ -402,14 +402,14 @@
     "@aws-sdk/client-kms": "^3.1061.0",
     "@aws-sdk/client-sfn": "^3.1061.0",
     "@aws-sdk/lib-dynamodb": "^3.1061.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@openai/agents": "^0.11.6",
     "@types/node": "^24.12.4",
     "json-schema-to-typescript": "^15.0.4",
     "prettier": "^3.8.3",
     "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8",
+    "vitest": "^4.1.12",
     "zod": "^4.6.6"
   }
 }
