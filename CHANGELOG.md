@@ -4,6 +4,20 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.1.2 - 2026-10-26
+
+- Cleared the full development and optional-SDK dependency advisory backlog with
+  targeted compatible updates, including MCP/HTTP, test, documentation, source-map and
+  compression dependencies. Full-tree audits now accompany production audits.
+- Raised the optional MCP SDK minimum to 1.32.0 and tested 1.32.0 and 1.32.2 through
+  actual in-memory SDK clients. Corrected the private SDK bridge to convert JSON schemas
+  into SDK-supported schemas and describe the returned runtime envelope. Authorization,
+  approval requirements and commit exclusion are unchanged.
+- Preserved the 1.1.1 Zod and URI fixes. Existing consumer lockfiles need their own
+  targeted update and audit; see
+  [security update instructions](SECURITY.md#dependency-security-updates).
+  Lexical/native discovery still requires no optional SDK or model for retrieval.
+
 ## 1.1.1 - 2026-10-26
 
 - Updated locked `fast-uri` to 3.1.9 and Zod to 4.6.7. The optional Zod peer now

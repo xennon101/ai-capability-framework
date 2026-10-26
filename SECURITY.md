@@ -43,6 +43,11 @@ redacted or removed to protect users.
 
 ## Dependency Security Updates
 
+Version 1.1.2 updates the full repository dependency tree, including development tools
+and optional MCP/HTTP integrations. The optional MCP SDK now requires 1.32.0 or newer;
+the repository tests 1.32.0 and locks 1.32.2. Full and production audits run for both
+packages. The dependency updates preserve the existing runtime and discovery contracts.
+
 Version 1.1.1 raises the optional Zod minimum to 4.6.6 and updates the repository's
 locked Zod to 4.6.7 and `fast-uri` to 3.1.9. Zod's collection-validation issue can
 consume excessive memory; the `fast-uri` advisories concern URI normalization and
@@ -54,10 +59,10 @@ Publishing a framework patch does not rewrite an application's existing lockfile
 and verify your application dependencies:
 
 ```sh
-npm install ai-capability-framework@1.1.1
+npm install ai-capability-framework@1.1.2
 npm update fast-uri
 npm ls fast-uri zod
-npm audit --omit=dev
+npm audit
 ```
 
 If your application already uses Zod, also update it:
@@ -65,6 +70,22 @@ If your application already uses Zod, also update it:
 ```sh
 npm install zod@^4.6.6
 ```
+
+If your application uses MCP, update its existing SDK and compatible HTTP dependency
+resolutions, then inspect every nested resolution:
+
+```sh
+npm install @modelcontextprotocol/sdk@^1.32.2
+npm update proxy-addr hono @hono/node-server ip-address body-parser qs
+npm ls @modelcontextprotocol/sdk proxy-addr hono @hono/node-server ip-address body-parser qs
+npm audit
+```
+
+Verify that no old nested resolutions remain. Relevant security floors are `proxy-addr`
+2.0.8, Hono 4.13.11, Hono Node adapter 1.19.15, `ip-address` 10.7.4, `body-parser` 2.4.0
+and `qs` 6.16.1. A newer compatible parent may be required when a parent pins an
+affected version exactly. Keep host authentication, trusted-proxy configuration and
+request limits explicit; these updates do not configure them.
 
 Then repeat the dependency listing, audit and application tests. `npm update fast-uri`
 selects a compatible patched release within the installed dependency ranges; for the
