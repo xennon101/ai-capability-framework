@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { checkDiscoveryInstall } from "./check-discovery-install.mjs";
+import { checkSecurityInstall } from "./check-security-install.mjs";
 
 const keepTmp = process.env.AICF_KEEP_TMP === "1";
 const npmExecPath = process.env.npm_execpath;
@@ -216,6 +217,7 @@ try {
   assert.match(help, /Usage: aicf <command> \[path\]/u);
 
   await checkDiscoveryInstall({ directory: tempDirectory, repoRoot, npmCommand, npmArgs });
+  await checkSecurityInstall({ directory: tempDirectory, repoRoot, installSource, npmCommand, npmArgs });
   console.log(`Release install smoke test passed in ${tempDirectory}.`);
 } finally {
   if (!keepTmp && tempDirectory) {

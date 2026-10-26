@@ -41,6 +41,46 @@ redacted or removed to protect users.
 - MCP server integrations and caller-provided identity context.
 - Host policy, auth, storage, and provider adapter hooks.
 
+## Dependency Security Updates
+
+Version 1.1.1 raises the optional Zod minimum to 4.6.6 and updates the repository's
+locked Zod to 4.6.7 and `fast-uri` to 3.1.9. Zod's collection-validation issue can
+consume excessive memory; the `fast-uri` advisories concern URI normalization and
+reference handling. See the
+[Zod advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) and
+[URI advisory](https://github.com/advisories/GHSA-w74x-v6f9-j3xg).
+
+Publishing a framework patch does not rewrite an application's existing lockfile. Update
+and verify your application dependencies:
+
+```sh
+npm install ai-capability-framework@1.1.1
+npm update fast-uri
+npm ls fast-uri zod
+npm audit --omit=dev
+```
+
+If your application already uses Zod, also update it:
+
+```sh
+npm install zod@^4.6.6
+```
+
+Then repeat the dependency listing, audit and application tests. `npm update fast-uri`
+selects a compatible patched release within the installed dependency ranges; for the
+framework's current Ajv resolution this is 3.1.9. Do not use a forced major upgrade or
+assume a clean new installation repairs a different application's pinned dependency
+tree. Lexical/native discovery needs neither Zod nor an optional provider SDK.
+
+Maintain host request-size and collection limits. A patched validator does not turn an
+unbounded application schema into a bounded one.
+
+Dependabot monitors npm dependencies in both packages and proposes weekly version
+updates on Monday at 05:00 Europe/London. Security alerts and security-update PRs
+operate separately from that weekly schedule. Dependency PRs require review and passing
+CI; they do not merge or publish automatically. The existing weekly audit remains
+enabled.
+
 ## Public Safety
 
 Security fixes should preserve the repository boundary:
