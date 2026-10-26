@@ -45,7 +45,7 @@ const expectedExactScripts = new Map([
   ["conformance", "node dist/cli.js conformance run examples --format text"],
   ["gate:examples", "node dist/cli.js gate examples --env production"],
   ["docs:api", "typedoc --options typedoc.json"],
-  ["docs:build", "npm run docs:api && npm run check:docs && npm run check:readability"],
+  ["docs:build", "npm run docs:api && npm run check:docs && npm run check:readability && node scripts/check-api-docs.mjs"],
   ["check:package", "npm run build && npm run check:package:contents && npm run check:package-public && npm run check:release-install"],
   ["check:metadata", "node scripts/check-metadata.mjs"],
   ["check:licenses", "node scripts/check-licenses.mjs"],

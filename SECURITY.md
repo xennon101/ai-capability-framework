@@ -59,7 +59,7 @@ Publishing a framework patch does not rewrite an application's existing lockfile
 and verify your application dependencies:
 
 ```sh
-npm install ai-capability-framework@1.1.2
+npm install ai-capability-framework@1.1.3
 npm update fast-uri
 npm ls fast-uri zod
 npm audit

@@ -13,7 +13,10 @@ export type {
   EntityManifest,
   EvalCandidateResult,
   EvalCase,
-  EvalResultFixture
+  EvalResultFixture,
+  ExpectedBehavior,
+  JsonSchemaObject,
+  PolicyRule
 } from "./generated/manifest-types.js";
 
 export type ManifestKind = "capability" | "entity" | "eval";

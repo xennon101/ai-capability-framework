@@ -19,7 +19,9 @@ export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, n
     ...Object.entries(dependencies).map(([name, version]) => `${name}@${version}`)), { cwd: directory, stdio: "pipe" });
 
   const typeFixture = `
-    import { buildRegistry } from "ai-capability-framework";
+    import { buildRegistry, type LoadedManifestBase, type AutonomyTier, type JsonSchemaObject,
+      type ExpectedBehavior, type PolicyRule, type ToolResultInput } from "ai-capability-framework";
+    import type { AicfVerifyActionInput } from "ai-capability-framework/runtime";
     import { DefaultContextBuilder, createAicfProviderRun, type AicfRuntimeContext, type ProviderBudgetLedger } from "ai-capability-framework/runtime";
     import { createOpenAISelectionClient, type CreateOpenAISelectionClientOptions } from "ai-capability-framework/openai";
     import { createCapabilityDiscovery, createInMemoryDiscoveryBudget, evaluateCapabilityDiscovery,
@@ -44,6 +46,7 @@ export async function checkDiscoveryInstall({ directory, repoRoot, npmCommand, n
     const scopedEvaluation: Parameters<typeof evaluateCapabilityDiscovery>[0]["caseIds"] = ["synthetic.task"];
     export { application, selection, embedding, ledger, createAicfProviderRun, createOpenAISelectionClient, evaluateCapabilityDiscovery, scopedEvaluation };
     export type { CreateOpenAISelectionClientOptions, DiscoveryEvaluationSuite, DiscoveryEvaluationObservations };
+    export type { LoadedManifestBase, AutonomyTier, JsonSchemaObject, ExpectedBehavior, PolicyRule, ToolResultInput, AicfVerifyActionInput };
   `;
   await writeFile(path.join(directory, "discovery-consumer.mts"), typeFixture);
   await writeFile(path.join(directory, "stable-consumer.mts"), `

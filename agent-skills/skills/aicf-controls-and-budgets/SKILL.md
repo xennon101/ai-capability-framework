@@ -8,7 +8,7 @@ compatibility:
   Codex and Agent Skills-compatible coding agents. Works in repositories using AICF or
   migrating to AICF.
 metadata:
-  aicf.skill.version: "1.1.2"
+  aicf.skill.version: "1.1.3"
   aicf.skill.package: "@aicf/agent-skills"
   aicf.skill.category: "controls-budgets"
   aicf.skill.scope: "builder"

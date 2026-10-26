@@ -4,6 +4,21 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+## 1.1.3 - 2026-10-26
+
+- Consolidated reviewed test, documentation, formatting, YAML and optional AWS SDK
+  maintenance. Preserved the 1.1.2 security floors and optional SDK boundaries.
+- Qualified Agents SDK 0.11.6/0.21.0, OpenAI 6.42.0/7.43.0 and the seven AWS
+  integrations at 3.1061.0/3.1156.0 using real SDKs with local transports. Model-facing
+  requests, approvals, revocation, safe failures and tool receipts remain compatible; no
+  live provider calls were made.
+- Exported existing public signature helper types, completed their API documentation and
+  made TypeDoc warnings fail the documentation build. No runtime API or behavior
+  changed. Lexical/native remains recommended; existing hybrid qualification limits are
+  unchanged.
+- Replaced the agent-skills test shell glob with Node's default discovery and added
+  targeted Windows Node 20/22/24 CI coverage for the npm commands.
+
 ## 1.1.2 - 2026-10-26
 
 - Cleared the full development and optional-SDK dependency advisory backlog with
