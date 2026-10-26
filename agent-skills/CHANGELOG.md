@@ -2,6 +2,13 @@
 
 All notable public changes to the AICF Agent Skills package are documented here.
 
+## 1.1.3 - 2026-10-26
+
+- Made the development npm test command portable across Windows and Linux using Node's
+  default test discovery, with regressions for discovery and failure propagation.
+- Updated YAML and aligned package, plugin and skill metadata with the framework
+  maintenance release. Skill behavior is unchanged.
+
 ## 1.1.2 - 2026-10-26
 
 - Aligned package, plugin and skill metadata with the full dependency security cleanup.

@@ -63,7 +63,7 @@ function checkPackageMetadata() {
     "check:triggers": "node scripts/check-trigger-coverage.mjs ./skills ./tests/fixtures/trigger-prompts.json",
     index: "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md",
     "check:index": "node scripts/generate-skill-index.mjs ./skills ./docs/skill-index.md --check",
-    test: "node --test tests/*.test.mjs",
+    test: "node --test",
     "check:release": "node scripts/check-release-readiness.mjs",
     "check:release-install": "node scripts/check-release-install.mjs",
     "pack:dry": "npm pack --dry-run"

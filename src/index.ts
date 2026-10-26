@@ -22,6 +22,7 @@ export { validateCapabilityInvariants, validateManifests, validatePublicFixtures
 export type {
   AdapterExcludedCapability,
   AdapterToolBinding,
+  AutonomyTier,
   AicfEvidenceRef,
   AicfDiagnostic,
   AicfErrorCode,
@@ -63,6 +64,7 @@ export type {
   EvalRunStatus,
   EvalScorerResult,
   EvalSuiteResult,
+  ExpectedBehavior,
   FixtureKind,
   GeminiFunctionCall,
   GeminiFunctionDeclaration,
@@ -78,6 +80,7 @@ export type {
   LoadedEntityManifest,
   LoadedEvalCase,
   LoadedManifest,
+  LoadedManifestBase,
   LoadedFixture,
   LoadManifestsOptions,
   LoadManifestsResult,
@@ -90,6 +93,7 @@ export type {
   BuildOpenAIResponsesToolsOptions,
   BuildSemanticKernelFunctionsOptions,
   JsonObject,
+  JsonSchemaObject,
   JsonValue,
   OpenAIResponsesExcludedCapability,
   OpenAIResponsesFunctionCall,
@@ -114,6 +118,7 @@ export type {
   ParseOpenAIResponsesToolCallResult,
   ParseSemanticKernelFunctionCallResult,
   PolicyEvaluation,
+  PolicyRule,
   RegistryInspection,
   RiskTier,
   RunEvalSuiteOptions,
@@ -125,3 +130,4 @@ export type {
   ValidateManifestsOptions,
   ValidationResult
 } from "./types.js";
+export type { ToolResultInput } from "./tool-result.js";

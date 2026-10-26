@@ -4,7 +4,7 @@ import type {
   AicfToolResultEnvelope
 } from "./types.js";
 
-type ToolResultInput<TData = unknown> = Omit<
+export type ToolResultInput<TData = unknown> = Omit<
   AicfToolResultEnvelope<TData>,
   "schema_version" | "status"
 >;

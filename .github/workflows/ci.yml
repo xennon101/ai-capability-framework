@@ -83,3 +83,33 @@ jobs:
 
       - name: Check agent skills package
         run: npm run skills:check
+
+  skills-windows:
+    name: Agent skills Windows (Node ${{ matrix.node }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - "20.x"
+          - "22.x"
+          - "24.x"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: agent-skills/package-lock.json
+
+      - name: Install agent skills dependencies
+        run: npm --prefix agent-skills ci
+
+      - name: Run agent skills tests through npm
+        run: npm --prefix agent-skills test
+
+      - name: Check installed agent skills consumer
+        run: npm --prefix agent-skills run check:release-install

@@ -5,6 +5,12 @@ stable Core and descriptor API. Runtime, provider, governance, security, storage
 control-plane, eval, and CLI utilities live behind explicit subpaths so applications can
 import only the surface they use.
 
+Types referenced by public signatures have named, type-only exports from the appropriate
+Core or runtime entrypoint. These include `ToolResultInput`, manifest schema helper
+types and `AicfVerifyActionInput`. They retain the classification of their existing
+contracts and add no runtime dependencies. Live-evaluation and provider types are
+documented under their existing optional subpaths.
+
 ## Root API Policy
 
 The root import is reserved for stable Core and descriptor APIs. It should stay small

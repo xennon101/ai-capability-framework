@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -14,6 +14,30 @@ import {
 } from "../scripts/lib/skill-common.mjs";
 
 const root = packageRoot();
+
+test("npm test uses portable default discovery and propagates failures", () => {
+  const command = readJson(path.join(root, "package.json")).scripts.test;
+  assert.equal(command, "node --test");
+  const temp = mkdtempSync(path.join(os.tmpdir(), "aicf-test-discovery-"));
+  try {
+    mkdirSync(path.join(temp, "tests"));
+    const files = readdirSync(path.join(root, "tests")).filter(name => name.endsWith(".test.mjs"));
+    assert.ok(files.length >= 3);
+    for (const name of files) writeFileSync(path.join(temp, "tests", name), `import test from 'node:test'; test(${JSON.stringify(name)}, () => {});\n`);
+    const args = [...command.split(" ").slice(1), "--test-reporter=tap"];
+    const env = { ...process.env };
+    // The fixture is an independent test run, not a child in the outer runner's
+    // internal reporting protocol.
+    delete env.NODE_TEST_CONTEXT;
+    const success = spawnSync(process.execPath, args, { cwd: temp, encoding: "utf8", shell: false, env });
+    assert.equal(success.status, 0, success.stderr);
+    for (const name of files) assert.ok(success.stdout.includes(name), `Default discovery missed ${name}`);
+    writeFileSync(path.join(temp, "tests/failure.test.mjs"), "import test from 'node:test'; import assert from 'node:assert/strict'; test('synthetic failure propagation', () => assert.fail('synthetic'));\n");
+    const failure = spawnSync(process.execPath, args, { cwd: temp, encoding: "utf8", shell: false, env });
+    assert.notEqual(failure.status, 0);
+    assert.match(failure.stdout, /synthetic failure propagation/u);
+  } finally { rmSync(temp, { recursive: true, force: true }); }
+});
 
 test("package and plugin metadata point to skills", () => {
   const pkg = readJson(path.join(root, "package.json"));

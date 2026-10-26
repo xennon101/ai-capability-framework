@@ -75,6 +75,7 @@ export type {
   AicfToolResultOperation,
   AicfToolResultStatus,
   AicfVerificationResult,
+  AicfVerifyActionInput,
   AicfWorkflowContext,
   BuildRuntimeContextInput,
   CapabilityRouteRequest,
