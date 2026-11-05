@@ -1,8 +1,8 @@
 # Final v1.0 Certification
 
-This checklist defines when AICF can be called v1.0 complete. It is a release readiness
-gate, not a compliance certification, audit opinion, legal opinion, or security
-guarantee.
+This checklist established v1.0 readiness and remains the certification gate for current
+stable releases and prereleases. It is a release readiness gate, not a compliance
+certification, audit opinion, legal opinion, or security guarantee.
 
 ## Automated Gate
 
@@ -78,7 +78,7 @@ publishing are configured.
 
 ## Required Passing State
 
-AICF is not v1.0 complete until:
+Every release requires:
 
 - `npm run check:certification` passes locally.
 - `npm run check:final-matrix` passes locally.
@@ -114,11 +114,11 @@ AICF is not v1.0 complete until:
 - public docs explain what AICF is and is not.
 - public repository files are present.
 - `SECURITY.md` exists and gives a private reporting path.
-- `CHANGELOG.md` includes v1.0-ready release notes.
+- `CHANGELOG.md` includes release notes for the target version.
 
 ## Manual Review Checklist
 
-Before a public v1.0 tag, manually inspect:
+Before each public release tag, manually inspect:
 
 - npm package contents.
 - `@aicf/agent-skills` package contents.

@@ -1,13 +1,15 @@
 # API
 
-AICF exposes a TypeScript API, optional subpath APIs, and the `aicf` CLI. The package is
-public npm release-candidate material, and the exported surface is treated as public
-developer API. AICF Core refers specifically to the root contracts, schemas, manifest
-validation, and deterministic decision helpers.
+AICF exposes a TypeScript API, optional subpath APIs, and the `aicf` CLI through stable
+npm releases. The Core API and the
+[named lexical/native workflow](api/stable-workflow.md) are stable public contracts.
+Other exports retain their individual
+[API maturity classifications](api/public-api-policy.md). AICF Core refers specifically
+to the root contracts, schemas, manifest validation, and deterministic decision helpers.
 
-If you are reading AICF for the first time, start with [Start here](start-here.md) and
-the [OpenAI walkthrough](openai-walkthrough.md). This page is the reference once the
-basic flow is familiar.
+If you are reading AICF for the first time, start with the
+[installed-package walkthrough](getting-started/provider-neutral-quickstart.md) or
+[Start here](start-here.md). This page is the reference once the basic flow is familiar.
 
 Recommended path:
 
@@ -824,7 +826,10 @@ gate is documented in [Final v1 certification](public-framework/v1-certification
 
 ## Capability discovery
 
-The optional release-candidate `ai-capability-framework/discovery` API provides a simple
-search facade, result-bound routers, explicit hybrid retrieval and dedicated selection,
-and provider-free evaluation. Start with
-[finding capabilities for a task](discovery.md).
+The optional `ai-capability-framework/discovery` subpath provides the
+[stable lexical/native workflow](api/stable-workflow.md): task search through
+`createCapabilityDiscovery`, followed by `routerFor(result)` for ordinary model tool
+selection. Lexical/native is the recommended default. Advanced discovery contracts,
+including dedicated selection, remain release-candidate public; hybrid retrieval is
+experimental and opt-in. See [finding capabilities for a task](discovery.md) and the
+[qualification limits](evals/discovery-qualification.md).

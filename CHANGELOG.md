@@ -4,6 +4,10 @@ All notable public changes to AI Capability Framework are documented here.
 
 ## Unreleased
 
+- Corrected stale prerelease wording, made stable skills installation the default, and
+  refreshed release guidance while preserving advanced API maturity and qualification
+  limits.
+
 ## 1.1.3 - 2026-10-26
 
 - Consolidated reviewed test, documentation, formatting, YAML and optional AWS SDK

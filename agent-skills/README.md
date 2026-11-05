@@ -21,7 +21,18 @@ The package contains 17 public skills:
 See [docs/skill-index.md](docs/skill-index.md) for descriptions and trigger examples
 generated from the current package.
 
-## Install And Check
+## Install
+
+Install the stable package and list its skills:
+
+```bash
+npm install @aicf/agent-skills
+npx aicf-skills list
+```
+
+See [installation](docs/installation.md) for skill-copy and plugin setup options.
+
+## Repository Development
 
 Run package commands from this directory:
 
@@ -76,15 +87,12 @@ The Codex plugin manifest lives at `.codex-plugin/plugin.json` and points to `./
 with relative asset paths. The package is released as `@aicf/agent-skills` and uses the
 same version and release tag as the root `ai-capability-framework` package.
 
-Prerelease install example:
+Normal npm installation selects the stable `latest` release. Use
+`@aicf/agent-skills@next` only when explicitly testing the prerelease channel; `next`
+can point to an older prerelease than the current stable version.
 
-```bash
-npm install @aicf/agent-skills@next
-npx aicf-skills list
-```
-
-Before the first real scoped-package publish, the maintainer must configure npm
-ownership and Trusted Publishing for `@aicf/agent-skills`.
+Before each release, maintainers verify npm ownership and Trusted Publishing for both
+packages through the repository's release preflight.
 
 Reference docs:
 

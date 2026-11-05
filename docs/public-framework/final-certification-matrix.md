@@ -93,7 +93,7 @@ does not publish.
 
 ## Manual Acceptance
 
-Before stable v1, maintainers should also review README positioning, MIT license
+Before each release, maintainers should also review README positioning, MIT license
 consistency, provider-neutral onboarding, at least one non-OpenAI quickstart, agent
 skills install docs, npm ownership, trusted publishing, source archive contents, opt-in
 live test boundaries, and root import optional-dependency isolation.

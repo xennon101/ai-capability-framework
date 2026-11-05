@@ -39,16 +39,16 @@ npm run check:secrets
 - Confirm root release certification includes `skills:ci`, `skills:check`, and
   `skills:pack:dry`.
 - Use `npm run skills:publish:dry` as a quick no-publish package check. For an actual
-  release-tag review, run the explicit tagged dry-run from the root release checklist,
-  such as `npm publish ./agent-skills --dry-run --access public --tag next`.
+  release-tag review, run `npm run release:publish:dry` from the repository root. It
+  selects `latest` for stable versions and `next` for prereleases.
 - Confirm the install script copies skills to a temporary directory and does not copy
   package metadata, tests, plugin metadata, dependency folders, or local artifacts.
 - Confirm the changelog, version consistency, and same-version, same-tag release policy
   before tagging or publishing.
 - Confirm source archive check and npm package check behavior in the root repository
   when preparing a full AICF release.
-- Confirm npm ownership and Trusted Publishing are configured for `@aicf/agent-skills`
-  before the first real scoped-package publish.
+- Verify npm ownership and Trusted Publishing for both packages before every release
+  tag.
 
 ## Public-Safety Review
 

@@ -1,7 +1,17 @@
 # Installation
 
-The AICF Agent Skills package is an independent nested npm package. Commands run from
-`agent-skills/` unless noted otherwise.
+Install the stable package in a consumer project and list its skills:
+
+```bash
+npm install @aicf/agent-skills
+npx aicf-skills list
+```
+
+The package does not install hooks or run provider calls. It ships public skill folders,
+docs, assets, and validation scripts.
+
+For repository development, AICF Agent Skills is an independent nested npm package. The
+repository commands below run from `agent-skills/` unless noted otherwise.
 
 ## Local package setup
 
@@ -77,20 +87,12 @@ For a public repository sparse install, use the real repository path:
 codex plugin marketplace add xennon101/ai-capability-framework --sparse agent-skills
 ```
 
-## npm package usage
+## Release channels
 
-Consumers can install the npm package and use its CLI. Use the `next` dist tag for
-release candidates:
-
-```bash
-npm install @aicf/agent-skills@next
-npx aicf-skills list
-```
-
-The npm package does not install hooks or run provider calls. It ships public skill
-folders, docs, assets, and validation scripts.
+Normal npm installation selects the stable `latest` release. Use
+`npm install @aicf/agent-skills@next` only for explicit prerelease testing. The `next`
+tag can point to an older prerelease than the current stable version.
 
 The skills package is released with the same version and Git tag as
-`ai-capability-framework`. Before the first real publish, the npm `@aicf/agent-skills`
-package must have scope ownership and Trusted Publishing configured for the repository
-publish workflow.
+`ai-capability-framework`. Before each release, maintainers verify package ownership and
+Trusted Publishing for both packages against the repository publish workflow.

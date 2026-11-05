@@ -1,11 +1,13 @@
 # Release Process
 
-AICF releases are public npm and GitHub artifacts. Release candidates must pass the
-checks in [Release checklist](../release.md).
+AICF releases are public npm and GitHub artifacts. Stable releases and prereleases must
+pass the checks in [Release checklist](../release.md).
 
 The public packages support Node.js `>=20`. CI must prove the core gate on Node 20.x,
-22.x, and 24.x before a release. Optional live/provider/cloud checks remain opt-in and
-may run only on the primary release Node unless a workflow explicitly matrices them.
+22.x, and 24.x before a release. Windows CI also runs the skills npm tests and installed
+consumer checks on those Node versions. Optional live/provider/cloud checks remain
+opt-in and may run only on the primary release Node unless a workflow explicitly
+matrices them.
 
 ## Semantic Versioning
 
@@ -62,7 +64,7 @@ and `@aicf/agent-skills` from the same tag with the same version. Prereleases pu
 with the `next` dist tag; stable releases publish with `latest`.
 
 Before the next release tag, run the
-[npm release preflight](../public/npm-release-preflight.md), configure npm trusted
+[npm release preflight](../public/npm-release-preflight.md), verify npm trusted
 publishing for both packages, and verify package ownership with `npm owner ls`. The
 scoped package `@aicf/agent-skills` must be owned by AICF maintainers and mapped to
 `.github/workflows/publish.yml` just like the root package.

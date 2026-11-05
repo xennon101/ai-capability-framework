@@ -1,9 +1,9 @@
 # Roadmap
 
-AICF 1.0 focuses on making governed capability exposure understandable, portable,
-testable, and release-ready.
+AICF's stable 1.1 release line supports governed capability exposure with installed
+packages, documented compatibility contracts, and verified examples.
 
-## Current 1.0 Focus
+## Supported Framework
 
 - Public capability, entity, eval, governance, audit, security, evidence, provenance,
   replay, and provider-conformance contracts.
@@ -19,7 +19,7 @@ AICF is not an agent framework, model gateway, RAG framework, durable workflow e
 production auth system, compliance product, hosted SaaS, or full content provenance
 signing implementation.
 
-## After 1.0
+## Ongoing Maintenance
 
 Future work should be driven by real adopter feedback and should preserve the same
 architecture: AICF owns capability safety contracts and host applications own production
@@ -36,5 +36,6 @@ experimental because incremental benefit was not qualified. See the
 [qualification report](docs/evals/discovery-qualification.md). Application-specific
 qualification and adoption remain separate from framework publication. Normal npm
 installation includes the stable workflow; advanced features retain their own maturity
-labels. The active framework roadmap is complete when installed-package usability and
-verified stable publication pass; application migrations are outside its scope.
+labels. Installed-package usability and stable publication are complete. Further
+framework work follows maintenance needs and adopter feedback; application migrations
+are outside its scope.

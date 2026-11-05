@@ -12,12 +12,13 @@ release notes. Its qualified lexical results apply to a tested synthetic configu
 and the revised workflow assessment is an offline checker correction rather than new
 live trials.
 
-Use a reviewed pull request, passing hosted Linux Node 20/22/24 checks, merge, and an
-exact-commit manual release dry-run before pushing the matching version tag. Local
-checks do not replace hosted checks. Prereleases publish both packages to `next`,
-preserving `latest` for prereleases. Stable releases publish to `latest` while
-preserving the existing `next` tag and prerelease versions. Verify normal installation
-as well as exact-version registry installs.
+Use a reviewed pull request, passing hosted Linux Node 20/22/24 checks and Windows
+skills checks on the same Node versions, merge, and an exact-commit manual release
+dry-run before pushing the matching version tag. Local checks do not replace hosted
+checks. Prereleases publish both packages to `next`, preserving the existing stable
+`latest` tag. Stable releases publish to `latest` while preserving the existing `next`
+tag and prerelease versions. Verify normal installation as well as exact-version
+registry installs.
 
 The publication and dry-run workflows run `npm run check` plus certification with
 `VITEST_MAX_WORKERS=2`. Publication is serialized; registry failures fail closed unless
@@ -236,8 +237,9 @@ and examples should be present at `docs/index.md`, `docs/getting-started/`,
   full release gate, package dry-run, source archive creation/checking, final
   certification, root npm publish dry-run, and agent-skills npm publish dry-run when a
   maintainer starts it with `workflow_dispatch`.
-- `.github/workflows/security.yml` runs production dependency audit, high-confidence
-  secret scanning, package public hygiene, and workspace public hygiene.
+- `.github/workflows/security.yml` audits full and production dependency trees for both
+  packages, checks dependency licenses, and runs high-confidence secret scanning,
+  package public hygiene, and workspace public hygiene.
 - `.github/workflows/docs.yml` runs TypeDoc generation and docs checks for docs and
   example changes.
 
@@ -248,8 +250,7 @@ AICF uses npm Trusted Publishing / GitHub OIDC for both public packages:
 - `ai-capability-framework`
 - `@aicf/agent-skills`
 
-Before relying on GitHub Actions publishing, configure trusted publishing for both npm
-packages:
+Before each release, verify the trusted publisher configuration for both npm packages:
 
 - Provider: GitHub Actions.
 - Organization or user: `xennon101`.
@@ -270,9 +271,8 @@ For final manual release review, run strict mode:
 node scripts/check-npm-release-preflight.mjs --strict
 ```
 
-The `@aicf/agent-skills` scope/package must be created or owned by the maintainer
-account before the first real publish, and npm trusted publishing must be configured for
-that scoped package too.
+Verify maintainer ownership of the `@aicf/agent-skills` scope/package and its trusted
+publisher alongside the root package before tagging.
 
 The workflow publishes only when a `v*` tag is pushed and only if the tagged commit is
 already reachable from `origin/main`. Pre-release versions such as `1.0.0-rc.6` publish
@@ -293,7 +293,7 @@ npm view "@aicf/agent-skills@${VERSION}" version
 
 If only one package published, mark the release incomplete and inspect its registry
 metadata before taking further action. The ordinary workflow rejects already-published
-targets, so do not blindly rerun it. Use a new coordinated release candidate when the
+targets, so do not blindly rerun it. Use a new coordinated patch or prerelease when the
 existing workflow cannot safely complete the missing package. Do not move the public
 tag, delete the published version, or reuse a published npm version as a normal recovery
 path.
@@ -305,7 +305,7 @@ which package failed, and which follow-up version supersedes the partial release
 
 ## GitHub repository metadata
 
-Before stable v1, update the GitHub repository About panel manually:
+Before each release, verify the GitHub repository About panel:
 
 - Description: Provider-agnostic governed capability layer for AI-accessible application
   functionality.

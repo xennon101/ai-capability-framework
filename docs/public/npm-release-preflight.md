@@ -24,8 +24,8 @@ npm owner ls ai-capability-framework
 npm owner ls @aicf/agent-skills
 ```
 
-For the first `@aicf/agent-skills` release, the `@aicf` npm scope and package-level
-trusted publishing setup must exist before the tag is pushed.
+Before every release tag, verify ownership of the `@aicf` npm scope/package and the
+trusted publisher configuration for both packages.
 
 ## Dist Tags
 
